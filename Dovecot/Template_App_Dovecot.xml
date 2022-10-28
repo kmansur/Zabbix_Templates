@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>5.0</version>
+    <date>2022-10-28T14:32:08Z</date>
+    <groups>
+        <group>
+            <name>Zabbix Templates</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <template>Template App Dovecot</template>
+            <name>Template App Dovecot</name>
+            <groups>
+                <group>
+                    <name>Zabbix Templates</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>Dovecot</name>
+                </application>
+            </applications>
+            <items>
+                <item>
+                    <name>Dovecot IMAP Connections</name>
+                    <key>dovecot.imap</key>
+                    <delay>30</delay>
+                    <units>#</units>
+                    <applications>
+                        <application>
+                            <name>Dovecot</name>
+                        </application>
+                    </applications>
+                    <triggers>
+                        <trigger>
+                            <expression>{last()}&gt;{$IMAP.HIGH}</expression>
+                            <name>Dovecot IMAP Connections High</name>
+                            <priority>HIGH</priority>
+                        </trigger>
+                        <trigger>
+                            <expression>{last()}&gt;{$IMAP.WARN}</expression>
+                            <name>Dovecot IMAP Connections Warnning</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Dovecot POP Connections</name>
+                    <key>dovecot.pop</key>
+                    <delay>30</delay>
+                    <units>#</units>
+                    <applications>
+                        <application>
+                            <name>Dovecot</name>
+                        </application>
+                    </applications>
+                    <triggers>
+                        <trigger>
+                            <expression>{last()}&gt;{$POP.HIGH}</expression>
+                            <name>Dovecot POP Connections High</name>
+                            <priority>HIGH</priority>
+                        </trigger>
+                        <trigger>
+                            <expression>{last()}&gt;{$POP.WARN}</expression>
+                            <name>Dovecot POP Connections Warnning</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Dovecot version</name>
+                    <key>dovecot.version</key>
+                    <delay>1h</delay>
+                    <trends>0</trends>
+                    <value_type>CHAR</value_type>
+                    <applications>
+                        <application>
+                            <name>Dovecot</name>
+                        </application>
+                    </applications>
+                    <triggers>
+                        <trigger>
+                            <expression>{diff(0)}&gt;0</expression>
+                            <name>Dovecot version has changed</name>
+                            <priority>INFO</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Dovecot IMAP server is running</name>
+                    <key>net.tcp.service[imap]</key>
+                    <delay>30</delay>
+                    <applications>
+                        <application>
+                            <name>Dovecot</name>
+                        </application>
+                    </applications>
+                    <valuemap>
+                        <name>Service state</name>
+                    </valuemap>
+                    <triggers>
+                        <trigger>
+                            <expression>{last(0)}=0</expression>
+                            <name>Dovecot IMAP server is down</name>
+                            <priority>HIGH</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Dovecot POP3 server is running</name>
+                    <key>net.tcp.service[pop]</key>
+                    <delay>30</delay>
+                    <applications>
+                        <application>
+                            <name>Dovecot</name>
+                        </application>
+                    </applications>
+                    <valuemap>
+                        <name>Service state</name>
+                    </valuemap>
+                    <triggers>
+                        <trigger>
+                            <expression>{last(0)}=0</expression>
+                            <name>Dovecot POP server is down</name>
+                            <priority>HIGH</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Dovecot IMAPS server is running</name>
+                    <key>net.tcp.service[tcp,,993]</key>
+                    <delay>30</delay>
+                    <applications>
+                        <application>
+                            <name>Dovecot</name>
+                        </application>
+                    </applications>
+                    <valuemap>
+                        <name>Service state</name>
+                    </valuemap>
+                    <triggers>
+                        <trigger>
+                            <expression>{last(0)}=0</expression>
+                            <name>Dovecot IMAPS server is down</name>
+                            <priority>HIGH</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Dovecot POP3S server is running</name>
+                    <key>net.tcp.service[tcp,,995]</key>
+                    <delay>30</delay>
+                    <applications>
+                        <application>
+                            <name>Dovecot</name>
+                        </application>
+                    </applications>
+                    <valuemap>
+                        <name>Service state</name>
+                    </valuemap>
+                    <triggers>
+                        <trigger>
+                            <expression>{last(0)}=0</expression>
+                            <name>Dovecot POPS server is down</name>
+                            <priority>HIGH</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Checksum of $1</name>
+                    <key>vfs.file.cksum[/usr/local/etc/dovecot/dovecot-mysql.conf]</key>
+                    <delay>30m</delay>
+                    <applications>
+                        <application>
+                            <name>Dovecot</name>
+                        </application>
+                    </applications>
+                    <triggers>
+                        <trigger>
+                            <expression>{diff()}&gt;0</expression>
+                            <name>Dovecot  file dovecot-mysql.conf has changed</name>
+                            <priority>INFO</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Checksum of $1</name>
+                    <key>vfs.file.cksum[/usr/local/etc/dovecot/dovecot.conf]</key>
+                    <delay>30m</delay>
+                    <applications>
+                        <application>
+                            <name>Dovecot</name>
+                        </application>
+                    </applications>
+                    <triggers>
+                        <trigger>
+                            <expression>{diff()}&gt;0</expression>
+                            <name>Dovecot  file dovecot.conf has changed</name>
+                            <priority>INFO</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+            </items>
+            <macros>
+                <macro>
+                    <macro>{$IMAP.HIGH}</macro>
+                    <value>350</value>
+                </macro>
+                <macro>
+                    <macro>{$IMAP.WARN}</macro>
+                    <value>200</value>
+                </macro>
+                <macro>
+                    <macro>{$POP.HIGH}</macro>
+                    <value>350</value>
+                </macro>
+                <macro>
+                    <macro>{$POP.WARN}</macro>
+                    <value>200</value>
+                </macro>
+            </macros>
+            <screens>
+                <screen>
+                    <name>Dovecot Graphs</name>
+                    <hsize>1</hsize>
+                    <vsize>1</vsize>
+                    <screen_items>
+                        <screen_item>
+                            <resourcetype>0</resourcetype>
+                            <style>0</style>
+                            <resource>
+                                <name># IMAP/POP3 connections</name>
+                                <host>Template App Dovecot</host>
+                            </resource>
+                            <width>500</width>
+                            <height>100</height>
+                            <x>0</x>
+                            <y>0</y>
+                            <colspan>1</colspan>
+                            <rowspan>1</rowspan>
+                            <elements>0</elements>
+                            <valign>0</valign>
+                            <halign>0</halign>
+                            <dynamic>0</dynamic>
+                            <sort_triggers>0</sort_triggers>
+                            <url/>
+                            <application/>
+                            <max_columns>3</max_columns>
+                        </screen_item>
+                    </screen_items>
+                </screen>
+            </screens>
+        </template>
+    </templates>
+    <graphs>
+        <graph>
+            <name># IMAP/POP3 connections</name>
+            <graph_items>
+                <graph_item>
+                    <sortorder>1</sortorder>
+                    <color>199C0D</color>
+                    <item>
+                        <host>Template App Dovecot</host>
+                        <key>dovecot.imap</key>
+                    </item>
+                </graph_item>
+                <graph_item>
+                    <sortorder>2</sortorder>
+                    <color>F63100</color>
+                    <item>
+                        <host>Template App Dovecot</host>
+                        <key>dovecot.pop</key>
+                    </item>
+                </graph_item>
+            </graph_items>
+        </graph>
+    </graphs>
+    <value_maps>
+        <value_map>
+            <name>Service state</name>
+            <mappings>
+                <mapping>
+                    <value>0</value>
+                    <newvalue>Down</newvalue>
+                </mapping>
+                <mapping>
+                    <value>1</value>
+                    <newvalue>Up</newvalue>
+                </mapping>
+            </mappings>
+        </value_map>
+    </value_maps>
+</zabbix_export>
