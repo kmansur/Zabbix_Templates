@@ -1,0 +1,1 @@
+My Zabbix templates collection
