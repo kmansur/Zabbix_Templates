@@ -1,0 +1,1002 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: 339dc321b20c49769b993dfaa6431c34
+      template: 'Mimosa C5x by SNMP'
+      name: 'Mimosa C5x by SNMP'
+      description: |
+        ## Description
+        
+        Template for Mimosa C5x radio using SNMP. Based on the original Mimosa C5c template by Dzset Tecnologia (www.dzset.com.br).
+        
+        ## Author
+        
+        Karim Mansur
+        
+        ## Required MIBs
+        
+        - MIMOSA-NETWORKS-BASE-MIB
+        - MIMOSA-MIB-TC
+        - MIMOSA-NETWORKS-BFIVE-MIB
+        - IF-MIB
+        - SNMPv2-MIB
+        - SNMPv2-SMI
+        - SNMPv2-TC
+        
+        This variant is adapted for Mimosa C5x (PTP or PTMP client). PTMP-only OIDs were removed to avoid unsupported items and thresholds are customizable via user macros.
+      groups:
+        - name: Templates
+      items:
+        - uuid: 014c4c3359e045cd94fdb0982262618f
+          name: 'Ethernet (RJ45) RX discards'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.2.2.1.13.1
+          key: ifInDiscards.1
+          history: 30d
+          description: 'Inbound packets discarded even though no errors were detected.'
+          tags:
+            - tag: Application
+              value: LAN
+        - uuid: e3d3acf2a8b54665a8bbc5232f6911d9
+          name: 'Ethernet (RJ45) RX errors'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.2.2.1.14.1
+          key: ifInErrors.1
+          history: 30d
+          description: 'Total number of inbound packets that contained errors.'
+          tags:
+            - tag: Application
+              value: LAN
+        - uuid: 991869d95e7543afa25c79596275cc4b
+          name: 'Ethernet (RJ45) link state'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.2.2.1.8.1
+          key: ifOperStatus.1
+          delay: '30'
+          history: 30d
+          description: 'Operational state of the Ethernet port (1=up, 2=down).'
+          tags:
+            - tag: Application
+              value: LAN
+          triggers:
+            - uuid: 715e03c1d4df43ffb2555489cfecb26b
+              expression: 'last(/Mimosa C5x by SNMP/ifOperStatus.1)<>1'
+              name: 'Ethernet (RJ45) link down'
+              priority: HIGH
+              manual_close: 'YES'
+        - uuid: 0f698d95d3ec40ba86a09e0160ec1be4
+          name: 'Ethernet (RJ45) TX discards'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.2.2.1.19.1
+          key: ifOutDiscards.1
+          history: 30d
+          description: 'Outbound packets discarded for reasons other than errors.'
+          tags:
+            - tag: Application
+              value: LAN
+        - uuid: b5c7aa125fac479fad59a01cdd4f1605
+          name: 'Ethernet (RJ45) TX errors'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.2.2.1.20.1
+          key: ifOutErrors.1
+          history: 30d
+          description: 'Total number of outbound packets that could not be transmitted because of errors.'
+          tags:
+            - tag: Application
+              value: LAN
+        - uuid: 4a82687f61d840758b0f23f7de0f3e7d
+          name: 'Ethernet (RJ45) speed'
+          type: SNMP_AGENT
+          snmp_oid: iso.3.6.1.2.1.2.2.1.5.1
+          key: ifSpeed.1
+          delay: 3m
+          history: 90d
+          value_type: FLOAT
+          units: bps
+          tags:
+            - tag: Application
+              value: LAN
+          triggers:
+            - uuid: fa4c9dde2e504748878bb622dae7c61f
+              expression: 'last(/Mimosa C5x by SNMP/ifSpeed.1)<1000000000'
+              name: 'LAN port speed below expected ({ITEM.LASTVALUE1})'
+              priority: HIGH
+              manual_close: 'YES'
+        - uuid: c27271fedaf94e05ac2c82d4de4e0e67
+          name: 'Device altitude'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.2.3.0
+          key: mimosaAltitude.0
+          delay: 1h
+          history: 365d
+          units: m
+          description: 'Altitude of the device in meters.'
+          tags:
+            - tag: Application
+              value: Location
+        - uuid: 8aec2b0f00ab4feeb659cca76b6731b8
+          name: 'Wireless antenna gain'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.4.0
+          key: mimosaAntennaGain.0
+          delay: 1h
+          history: 365d
+          value_type: FLOAT
+          units: dBi
+          description: 'Displays wireless cantenna gain for device'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 2cd7d08888d34b469694b73458350102
+          name: 'Wireless RF chain center frequency 1'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.1.1.6.1
+          key: mimosaCenterFreq.1
+          delay: 5m
+          history: 365d
+          value_type: FLOAT
+          description: 'Displays wireless center frequency 1 for device'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: df99f219a89e4942ae4b7a43e856e8c2
+          name: 'Wireless channel center frequency 1'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.3.1.5.1
+          key: mimosaChannelCenterFreq.1
+          delay: 5m
+          history: 365d
+          value_type: FLOAT
+          description: 'Displays wireless channel center frequency 1 for device'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: b4f59014d3ea43dc8824094f38180b38
+          name: 'Wireless channel TX power'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.3.1.4.1
+          key: mimosaChannelTxPower.1
+          delay: 5m
+          history: 365d
+          value_type: FLOAT
+          units: dbm
+          description: 'Displays wireless channel power 1 for device'
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: f701fe731a63447eafeb2e0aee5c9314
+          name: 'Wireless channel width'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.3.1.3.1
+          key: mimosaChannelWidth.1
+          delay: 5m
+          history: 365d
+          value_type: FLOAT
+          units: mhz
+          description: 'Displays wireless channel width 1 for device'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 9f63d24dc38b4f67bec080e41269c6f6
+          name: 'Clock accuracy'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.2.8.0
+          key: mimosaClockAccuracy.0
+          delay: 5m
+          history: 365d
+          value_type: FLOAT
+          units: ppb
+          description: 'Timing signal accuracy in parts per billion (PPB).'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - '^([0-9]+(?:\.[0-9]+)?)'
+                - \1
+          tags:
+            - tag: Application
+              value: Location
+          triggers:
+            - uuid: 6fea966b80304557b4a71f4a071aa81f
+              expression: 'last(/Mimosa C5x by SNMP/mimosaClockAccuracy.0)>1000'
+              name: 'Clock accuracy worse than 1000 ppb'
+              priority: WARNING
+              manual_close: 'YES'
+        - uuid: e97c290aaeb341e8bff6dcd930f2bfdd
+          name: 'Device name'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.1.1.0
+          key: mimosaDeviceName.0
+          delay: 1h
+          history: 365d
+          value_type: CHAR
+          trends: '0'
+          description: 'Displays name for device'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: bb3c13962fef4eb4bdea9e5aa9063331
+          name: 'Firmware build date'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.1.4.0
+          key: mimosaFirmwareBuildDate.0
+          delay: 1d
+          history: 30d
+          value_type: CHAR
+          trends: '0'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: 41ddd60cdd854d89bcb066fbf3d274eb
+          name: 'Firmware version'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.1.3.0
+          key: mimosaFirmwareVersion.0
+          delay: 1d
+          history: 30d
+          value_type: CHAR
+          trends: '0'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: ae0600cf766e43e981e8b2de3b27810c
+          name: 'GLONASS satellites'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.2.7.0
+          key: mimosaGlonassSatellites.0
+          delay: 5m
+          history: 365d
+          description: 'Total number of GLONASS satellites in view.'
+          tags:
+            - tag: Application
+              value: Location
+        - uuid: 7424d9e0262e4d43898f01755fd47bf1
+          name: 'GPS satellites'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.2.6.0
+          key: mimosaGPSSatellites.0
+          delay: 5m
+          history: 365d
+          status: DISABLED
+          description: 'Total number of GPS satellites in view.'
+          tags:
+            - tag: Application
+              value: Location
+          triggers:
+            - uuid: 464da051f7b94f0a93948524d25ae167
+              expression: 'last(/Mimosa C5x by SNMP/mimosaGPSSatellites.0)<4'
+              name: 'Low number of GPS satellites (<4)'
+              priority: WARNING
+              manual_close: 'YES'
+        - uuid: 5621c35246a54e06baff2a76242005c9
+          name: 'HTTPS management state'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.8.1.0
+          key: mimosaHttpsEnabled.0
+          delay: 1h
+          history: 365d
+          description: 'Whether HTTPS management is enabled (1=enabled, 2=disabled).'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: 2e439c5b2957455bb062661ded299e77
+          name: 'Internal temperature'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.1.8.0
+          key: mimosaInternalTemp.0
+          delay: 5m
+          history: 365d
+          value_type: FLOAT
+          description: 'Displays internal temperature for device'
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: b24d449f436b4eb78dcae8733883cf84
+          name: 'Last device reboot time'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.1.5.0
+          key: mimosaLastRebootTime.0
+          delay: 5m
+          history: 365d
+          value_type: CHAR
+          trends: '0'
+          description: 'Displays last reboot time for device'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: 6cb446d4b6f544d8b199667f63f06d0e
+          name: 'Device latitude'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.2.2.0
+          key: mimosaLatitude.0
+          delay: 1h
+          history: 365d
+          description: 'Latitude of the device location (5 decimal places).'
+          tags:
+            - tag: Application
+              value: Location
+        - uuid: 06363ac90b4c4a64baab3dc36d1da68b
+          name: 'Device longitude'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.2.1.0
+          key: mimosaLongitude.0
+          delay: 1h
+          history: 365d
+          description: 'Longitude of the device location (5 decimal places).'
+          tags:
+            - tag: Application
+              value: Location
+        - uuid: aa6c14dea9a3463d8a839486fc32bc2e
+          name: 'Wireless MAC total throughput'
+          type: CALCULATED
+          key: mimosaMacTotal.0
+          history: 365d
+          units: bps
+          params: last(//mimosaRxMacTotal.0)+last(//mimosaTxMacTotal.0)
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: c6af8dcef13b4324ba390646abe460ec
+          name: 'NTP mode'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.8.7.0
+          key: mimosaNtpMode.0
+          delay: 1h
+          history: 365d
+          description: 'Current NTP mode configured on the device.'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: 2fe489e082e74c1eb8ad7bab553dba1e
+          name: 'NTP server'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.8.8.0
+          key: mimosaNtpServer.0
+          delay: 1h
+          history: 365d
+          value_type: CHAR
+          trends: '0'
+          description: 'Configured NTP server address.'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: 0ea3ffe5c1654b06ac72043ad8c9088c
+          name: 'Wireless RX packet error rate (%)'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.7.4.0
+          key: mimosaPerRxRate.0
+          delay: '5'
+          history: 365d
+          value_type: FLOAT
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          tags:
+            - tag: Application
+              value: Wireless
+          triggers:
+            - uuid: 10244a4d3c1349d4b092e7873dd630e8
+              expression: 'avg(/Mimosa C5x by SNMP/mimosaPerRxRate.0,5m)>{$MIMOSA_MAX_PER}'
+              name: 'Wireless RX packet error rate > {$MIMOSA_MAX_PER}%'
+              priority: WARNING
+        - uuid: dc91f10421bc4988a330400164452894
+          name: 'Wireless TX packet error rate (%)'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.7.3.0
+          key: mimosaPerTxRate.0
+          delay: '5'
+          history: 365d
+          value_type: FLOAT
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          tags:
+            - tag: Application
+              value: Wireless
+          triggers:
+            - uuid: 4634d64467eb4f5482dd17fd8a7834e7
+              expression: 'avg(/Mimosa C5x by SNMP/mimosaPerTxRate.0,5m)>{$MIMOSA_MAX_PER}'
+              name: 'Wireless TX packet error rate > {$MIMOSA_MAX_PER}%'
+              priority: WARNING
+        - uuid: 85f6bc55abc3424db755afd05f257345
+          name: 'Wireless RX PHY rate'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.7.2.0
+          key: mimosaPhyRxRate.0
+          history: 365d
+          units: bps
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '8'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 42366f2d1c6f47e092177c4334fc9c4d
+          name: 'Wireless TX PHY rate'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.7.1.0
+          key: mimosaPhyTxRate.0
+          history: 365d
+          units: bps
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '8'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 628ec800499045ac80a065973ee13f2f
+          name: 'Regulatory domain country'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.1.9.0
+          key: mimosaRegulatoryDomain.0
+          delay: 1h
+          history: 365d
+          value_type: CHAR
+          trends: '0'
+          description: 'Displays regulatory domain for device'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: debd1a109c9d4be797f34abcf89c59a2
+          name: 'Wireless MAC RX throughput'
+          type: CALCULATED
+          key: mimosaRxMacTotal.0
+          history: 365d
+          units: bps
+          params: '.60*last(//mimosaRxPhyTotal.0)'
+          tags:
+            - tag: Application
+              value: Wireless
+          triggers:
+            - uuid: 59fd37dbebdc42a8a146866afc937e66
+              expression: 'last(/Mimosa C5x by SNMP/mimosaRxMacTotal.0)<75000000'
+              name: 'Wireless RX interface speed low ({ITEM.LASTVALUE1})'
+              priority: HIGH
+              manual_close: 'YES'
+        - uuid: 0310a57559ac4c23b2b1d2fc653ae29d
+          name: 'Wireless noise floor chain 1'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.1.1.4.1
+          key: mimosaRxNoise.1
+          delay: 3m
+          history: 365d
+          value_type: FLOAT
+          units: dbm
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 77fd952f1b7943f699476a03f7832d68
+          name: 'Wireless noise floor chain 2'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.1.1.4.2
+          key: mimosaRxNoise.2
+          delay: 3m
+          history: 365d
+          value_type: FLOAT
+          units: dbm
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 50b441d7463642f6bca8e89ef22a52cc
+          name: 'Wireless RX PHY speed 1'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.2.1.5.1
+          key: mimosaRxPhy.1
+          history: 365d
+          value_type: FLOAT
+          units: bps
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1000000'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: df0d1435f3de41db8497e6af399be227
+          name: 'Wireless RX PHY speed 2'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.2.1.5.2
+          key: mimosaRxPhy.2
+          history: 365d
+          value_type: FLOAT
+          units: bps
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1000000'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 0ef1b3e7512c4432949729922963baec
+          name: 'Wireless RX PHY speed total'
+          type: CALCULATED
+          key: mimosaRxPhyTotal.0
+          delay: '10'
+          history: 365d
+          units: bps
+          params: last(//mimosaRxPhy.1)+last(//mimosaRxPhy.2)
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 082aea843ce74fa5b23688c93866f0a9
+          name: 'Wireless RX power chain 1'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.1.1.3.1
+          key: mimosaRxPower.1
+          delay: '30'
+          history: 365d
+          value_type: FLOAT
+          units: dbm
+          description: 'Displays wireless Rx Power 1 for device'
+          tags:
+            - tag: Application
+              value: 'Radio Information - Chains Table'
+        - uuid: 590c9d2392c74b22bb13b23cb62e2cfe
+          name: 'Wireless RX power chain 2'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.1.1.3.2
+          key: mimosaRxPower.2
+          delay: '30'
+          history: 365d
+          value_type: FLOAT
+          units: dbm
+          description: 'Displays wireless Rx Power 2 for device'
+          tags:
+            - tag: Application
+              value: 'Radio Information - Chains Table'
+        - uuid: e22e873f2fa8405a924eef01381b98f7
+          name: 'Serial number'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.1.2.0
+          key: mimosaSerialNumber.0
+          delay: 1d
+          history: 365d
+          value_type: CHAR
+          trends: '0'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: 9d2fb3310e4f4eea95b1daaaf400231c
+          name: 'Wireless signal margin'
+          type: CALCULATED
+          key: mimosaSignalMargin.0
+          delay: '30'
+          history: 365d
+          value_type: FLOAT
+          units: dB
+          params: last(//mimosaTotalRxPower.0)-last(//mimosaTargetSignalStrength.0)
+          description: 'Difference between actual total RX power and target signal strength.'
+          tags:
+            - tag: Application
+              value: Wireless
+          triggers:
+            - uuid: 90029646283a47a1a920200fd49b8aa1
+              expression: 'last(/Mimosa C5x by SNMP/mimosaSignalMargin.0)<{$MIMOSA_MIN_MARGIN}'
+              name: 'Wireless signal margin < {$MIMOSA_MIN_MARGIN} dB'
+              priority: HIGH
+              manual_close: 'YES'
+        - uuid: 1ab42025026a4b56969c8b6ea32c38b0
+          name: 'Wireless SNR chain 1'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.1.1.5.1
+          key: mimosaSNR.1
+          delay: 5m
+          history: 365d
+          value_type: FLOAT
+          units: dbm
+          tags:
+            - tag: Application
+              value: 'Radio Information - Chains Table'
+        - uuid: d68f2962edd443b4ad5369ad9995996c
+          name: 'Wireless SNR chain 2'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.1.1.5.2
+          key: mimosaSNR.2
+          delay: 5m
+          history: 365d
+          units: dB
+          description: 'Signal-to-noise ratio (SNR) for RF chain 2.'
+          tags:
+            - tag: Application
+              value: 'Radio Information - Chains Table'
+        - uuid: 2c7932762bbc41cb9acfe44e8d559e96
+          name: 'Wireless target signal strength'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.7.0
+          key: mimosaTargetSignalStrength.0
+          delay: 5m
+          history: 365d
+          units: dB
+          description: 'Configured target signal strength for the wireless link.'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: e548e7bc4dee4468805125378d38cbd6
+          name: 'Wireless TDMA mode'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.4.3.0
+          key: mimosaTDMAMode.0
+          delay: '3600'
+          history: 365d
+          value_type: FLOAT
+          description: 'Displays wireless TDMA mode for device'
+          tags:
+            - tag: Application
+              value: 'TDMA Settings'
+        - uuid: 2d047122295e4b36b7830650852780a6
+          name: 'Wireless TDMA window'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.4.4.0
+          key: mimosaTDMAWindow.0
+          delay: '3600'
+          history: 365d
+          value_type: FLOAT
+          units: ms
+          description: 'Displays wireless TDMA window for device'
+          tags:
+            - tag: Application
+              value: 'TDMA Settings'
+        - uuid: f5fb3f9463b34e749c20dabaefb4c554
+          name: 'Wireless total RX power'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.6.0
+          key: mimosaTotalRxPower.0
+          delay: 5m
+          history: 365d
+          value_type: FLOAT
+          units: dbm
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+          tags:
+            - tag: Application
+              value: Wireless
+          triggers:
+            - uuid: 03081437ec444ad1972298b3beeac2c6
+              expression: 'last(/Mimosa C5x by SNMP/mimosaTotalRxPower.0)<{$MIMOSA_MIN_RX}'
+              name: 'Wireless link signal out of range {ITEM.LASTVALUE}'
+              priority: HIGH
+              manual_close: 'YES'
+        - uuid: 254ae2fe687b4fcabce7b831a4269dfd
+          name: 'Wireless total TX power'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.5.0
+          key: mimosaTotalTxPower.0
+          delay: 5m
+          history: 365d
+          value_type: FLOAT
+          units: dbm
+          description: 'Displays wireless total Tx power for device'
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 579076323fbb4cf4a306d77fc3f993de
+          name: 'Wireless MAC TX throughput'
+          type: CALCULATED
+          key: mimosaTxMacTotal.0
+          history: 365d
+          units: bps
+          params: '.60*last(//mimosaTxPhyTotal.0)'
+          tags:
+            - tag: Application
+              value: Wireless
+          triggers:
+            - uuid: 4e462a05702245819aec01c68e2c97af
+              expression: 'last(/Mimosa C5x by SNMP/mimosaTxMacTotal.0)<75000000'
+              name: 'Wireless TX interface speed low ({ITEM.LASTVALUE1})'
+              priority: HIGH
+              manual_close: 'YES'
+        - uuid: d1107ce64f0c45dabd0e889cc4d98b55
+          name: 'Wireless TX PHY speed 1'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.2.1.2.1
+          key: mimosaTxPhy.1
+          history: 365d
+          value_type: FLOAT
+          units: bps
+          description: 'Displays wireless Tx Speed 1 for device'
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1000000'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: e37a4dd1be944731abee412c2243e651
+          name: 'Wireless TX PHY speed 2'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.2.1.2.2
+          key: mimosaTxPhy.2
+          history: 365d
+          value_type: FLOAT
+          units: bps
+          description: 'Displays wireless Tx Speed 2 for device'
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1000000'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 5d0a47fb2be34da4a63258348e0699fa
+          name: 'Wireless TX PHY speed total'
+          type: CALCULATED
+          key: mimosaTxPhyTotal.0
+          history: 365d
+          units: bps
+          params: last(//mimosaTxPhy.1)+last(//mimosaTxPhy.2)
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 4a949a7f2f46480b850a54f61ae0991f
+          name: 'Wireless TX power chain 1'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.6.1.1.2.1
+          key: mimosaTxPower.1
+          delay: '30'
+          history: 365d
+          value_type: FLOAT
+          units: dbm
+          description: 'Displays wireless Tx Power 1 for device'
+          tags:
+            - tag: Application
+              value: 'Radio Information - Chains Table'
+        - uuid: f6ff4fc587b545f2a7ba72abf56a932a
+          name: 'Unlock code'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.1.6.0
+          key: mimosaUnlockCode.0
+          delay: 1d
+          history: 365d
+          value_type: CHAR
+          trends: '0'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: 2ea5cd1a97e7471bad5b95929784046f
+          name: 'Wireless link MAC'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.3.2.0
+          key: mimosaWanMac.0
+          delay: 1d
+          history: 365d
+          value_type: CHAR
+          trends: '0'
+          description: 'Displays wireless mac for device'
+          tags:
+            - tag: Application
+              value: 'General information'
+        - uuid: 1bde0a1dc8264686984800373cb0b8e3
+          name: 'Wireless link SSID'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.3.1.0
+          key: mimosaWanSsid.0
+          delay: 1h
+          history: 365d
+          value_type: CHAR
+          trends: '0'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: 0753777385004cc18b613d17421f3fcc
+          name: 'Wireless link status'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.3.3.0
+          key: mimosaWanStatus.0
+          history: 365d
+          value_type: FLOAT
+          description: 'Displays wireless link status for device'
+          tags:
+            - tag: Application
+              value: Wireless
+          triggers:
+            - uuid: 01f50458a7b74cd1bbc0939da4ab9f7e
+              expression: 'last(/Mimosa C5x by SNMP/mimosaWanStatus.0)=2'
+              name: 'Wireless interface down'
+              priority: DISASTER
+              manual_close: 'YES'
+        - uuid: 063b90a3bae3472589152d927148c040
+          name: 'Wireless link uptime'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.3.4.0
+          key: mimosaWanUpTime.0
+          delay: 5m
+          history: 365d
+          value_type: FLOAT
+          units: uptime
+          description: 'Displays wireless link uptime for device'
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          tags:
+            - tag: Application
+              value: Wireless
+        - uuid: f78025dbd99747218c448670c15f92ee
+          name: 'Wireless mode'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.43356.2.1.2.4.1.0
+          key: mimosaWirelessMode.0
+          delay: '3600'
+          history: 365d
+          value_type: FLOAT
+          description: 'Displays wireless mode for device'
+          tags:
+            - tag: Application
+              value: 'TDMA Settings'
+        - uuid: 2993dacdf70d48ea8bfa25f129f3694c
+          name: 'Device uptime'
+          type: SNMP_AGENT
+          snmp_oid: 'DISMAN-EVENT-MIB::sysUpTimeInstance'
+          key: sysUpTimeInstance.0
+          history: 365d
+          value_type: FLOAT
+          units: uptime
+          description: 'Device Uptime'
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          tags:
+            - tag: Application
+              value: 'General information'
+          triggers:
+            - uuid: 97e3dbe5ca7c437391e25ea9ebe16885
+              expression: 'last(/Mimosa C5x by SNMP/sysUpTimeInstance.0)<10m'
+              name: 'Device rebooted (uptime < 10m)'
+              priority: AVERAGE
+              manual_close: 'YES'
+      macros:
+        - macro: '{$MIMOSA_MAX_PER}'
+          value: '3'
+          description: 'Maximum acceptable wireless packet error rate (PER) in percent over 5 minutes.'
+        - macro: '{$MIMOSA_MIN_MARGIN}'
+          value: '3'
+          description: 'Minimum acceptable wireless signal margin in dB before raising a warning.'
+        - macro: '{$MIMOSA_MIN_RX}'
+          value: '-70'
+          description: 'Minimum acceptable total RX power in dBm before raising a warning.'
+  graphs:
+    - uuid: b350932aa2274220add5f90777cc645f
+      name: 'Clock accuracy'
+      graph_items:
+        - drawtype: GRADIENT_LINE
+          color: AA00AA
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaClockAccuracy.0
+    - uuid: 6ca05fdee9af4bd6b2e8d3ea3b2a912f
+      name: 'Ethernet errors and discards'
+      graph_items:
+        - drawtype: GRADIENT_LINE
+          color: FF0000
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: ifInErrors.1
+        - sortorder: '1'
+          drawtype: GRADIENT_LINE
+          color: AA0000
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: ifOutErrors.1
+        - sortorder: '2'
+          drawtype: GRADIENT_LINE
+          color: FF9900
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: ifInDiscards.1
+        - sortorder: '3'
+          drawtype: GRADIENT_LINE
+          color: AA6600
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: ifOutDiscards.1
+    - uuid: 9a7ee58343114b86a98aadcef801cb9f
+      name: 'GNSS satellites'
+      graph_items:
+        - drawtype: GRADIENT_LINE
+          color: 00AA00
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaGPSSatellites.0
+        - sortorder: '1'
+          drawtype: GRADIENT_LINE
+          color: 3333FF
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaGlonassSatellites.0
+    - uuid: 0cbad2102b6f44ddb867fca432aeab90
+      name: 'Wireless MAC Speed Total'
+      graph_items:
+        - drawtype: GRADIENT_LINE
+          color: 00AA00
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaRxMacTotal.0
+        - sortorder: '1'
+          drawtype: GRADIENT_LINE
+          color: 3333FF
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaTxMacTotal.0
+        - sortorder: '2'
+          drawtype: GRADIENT_LINE
+          color: F2EA00
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaMacTotal.0
+    - uuid: 71a24634b298460d82ce27ec31acaaa7
+      name: 'Wireless Phy Speed Total'
+      graph_items:
+        - drawtype: GRADIENT_LINE
+          color: 00AA00
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaRxPhyTotal.0
+        - sortorder: '1'
+          drawtype: GRADIENT_LINE
+          color: 3333FF
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaTxPhyTotal.0
+    - uuid: 0d3cf16b35434b8eaa8478567085f62d
+      name: 'Wireless Signal and Target'
+      graph_items:
+        - drawtype: GRADIENT_LINE
+          color: 00AA00
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaTotalRxPower.0
+        - sortorder: '1'
+          drawtype: GRADIENT_LINE
+          color: FF0000
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaTargetSignalStrength.0
+        - sortorder: '2'
+          drawtype: GRADIENT_LINE
+          color: 0000FF
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaSignalMargin.0
+    - uuid: ae82015115524a4da5f9752c5ead5fc7
+      name: 'Wireless Throughput Rate'
+      graph_items:
+        - drawtype: GRADIENT_LINE
+          color: 00AA00
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaPhyRxRate.0
+        - sortorder: '1'
+          drawtype: GRADIENT_LINE
+          color: 3333FF
+          item:
+            host: 'Mimosa C5x by SNMP'
+            key: mimosaPhyTxRate.0
