@@ -6,7 +6,6 @@ Zabbix 7.0 template for ICMP latency, packet loss, jitter, and RTT deviation.
 
 - `Advanced ICMP Ping with Jitter.yaml` - Zabbix 7.0 template export.
 - `advanced_icmp_ping.py` - external script used by the template.
-- `Advanced_ping.sh` - legacy helper kept for compatibility/reference.
 
 ## Requirements
 
