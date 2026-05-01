@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Advanced ICMP Ping with Jitter
-Version: 1.0.2
+Version: 1.0.3
 
 Author: Karim Mansur
 Original inspiration: Advanced ICMP Ping by Dusan Priechodsky
