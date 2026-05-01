@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi UDM Pro API Monitoring
-Version: 0.3.1
+Version: 0.3.3
 
 External script for Zabbix templates.
 
@@ -70,7 +70,7 @@ def normalize_base_url(base_url):
     """Normalize the Integration API base URL.
 
     The template macro can contain either the UDM Pro root URL
-    (https://100.100.1.1) or the full integration prefix. Supporting both keeps
+    (https://<udm-pro-ip>) or the full integration prefix. Supporting both keeps
     manual testing comfortable and prevents duplicated path segments.
     """
     if not base_url:
@@ -787,7 +787,19 @@ def parse_args():
         args.base_url = args.values[0]
         args.api_key = args.values[1]
         args.site_id = args.values[2]
-        if args.command == "wan-field":
+        if args.command == "storage-field":
+            if len(args.values) == 5:
+                # Storage field calls can auto-select the UDM device:
+                # url, key, legacy_site, mount_point, field.
+                args.extra_values = args.values[3:]
+            elif len(args.values) >= 6:
+                # Backward compatibility for an explicit device ID:
+                # url, key, legacy_site, device_id, mount_point, field.
+                args.object_id = args.values[3] or None
+                args.extra_values = args.values[4:]
+            else:
+                fail("invalid argument count", command=args.command, count=len(args.values))
+        elif args.command == "wan-field":
             if len(args.values) == 5:
                 # WAN field calls do not need a device ID because the script can
                 # auto-select the UDM device from the legacy payload. This
@@ -872,7 +884,7 @@ def main():
         return
 
     if command == "storage-field":
-        if not args.object_id or len(args.extra_values) < 2:
+        if len(args.extra_values) < 2:
             fail("missing storage field arguments")
         legacy_site = args.site_id or "default"
         payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)

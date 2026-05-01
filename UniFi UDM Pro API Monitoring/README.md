@@ -164,7 +164,7 @@ Recommended process:
 Current project version:
 
 ```text
-0.3.1
+0.3.3
 ```
 
 The importable Zabbix 7.0 template is:
@@ -210,6 +210,8 @@ The initial template includes:
   and WLAN standard.
 - System health from `/proxy/network/api/s/default/stat/device`: CPU, memory,
   load average, aggregate storage, uptime, and CPU temperature.
+- Storage discovery from the legacy endpoint with per-volume used, free, total,
+  utilization, trigger prototypes, and graph prototypes.
 - WAN health from the legacy endpoint: latency, packet loss, availability,
   upload/download rate, and speedtest results.
 - WAN discovery for multi-WAN environments. The current test environment has
@@ -265,7 +267,7 @@ site. In that case, the script discovers the site automatically.
 ./unifi_udm_pro_api.py devices
 ./unifi_udm_pro_api.py clients
 ./unifi_udm_pro_api.py networks
-./unifi_udm_pro_api.py device 7b03dd3d-443c-37fa-b3c3-2cfb3f97599c
+./unifi_udm_pro_api.py device xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 From the Zabbix external scripts directory:
@@ -322,8 +324,8 @@ devices that expose `ports` or `radios`.
 You can still test a single device manually:
 
 ```bash
-./unifi_udm_pro_api.py discover-ports 7b03dd3d-443c-37fa-b3c3-2cfb3f97599c
-./unifi_udm_pro_api.py discover-radios 4360d5fb-98fd-330a-a2dc-804d66c7b99d
+./unifi_udm_pro_api.py discover-ports xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+./unifi_udm_pro_api.py discover-radios xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 ### Suggested Next Additions
@@ -350,7 +352,7 @@ site response:
   "totalCount": 1,
   "data": [
     {
-      "id": "88f7af54-98f8-306a-a1c7-c9349722b1f6",
+      "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
       "internalReference": "default",
       "name": "Default"
     }
@@ -360,7 +362,7 @@ site response:
 
 Confirmed site values:
 
-- Site ID: `88f7af54-98f8-306a-a1c7-c9349722b1f6`
+- Site ID: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
 - Internal reference: `default`
 - Site name: `Default`
 
@@ -527,7 +529,7 @@ Returned:
 Returned 5 discovered UniFi devices.
 
 ```bash
-./unifi_udm_pro_api.py discover-ports 7b03dd3d-443c-37fa-b3c3-2cfb3f97599c
+./unifi_udm_pro_api.py discover-ports xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 Returned 11 discovered UDM Pro ports.

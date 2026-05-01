@@ -2,7 +2,41 @@
 
 All notable changes to this project are documented here.
 
-## 0.3.1 - Unreleased
+## 0.3.3 - Unreleased
+
+### Added
+
+- Added storage volume low-level discovery to the template.
+- Added per-storage used, free, total, and utilization item prototypes.
+- Added per-storage utilization trigger prototypes and usage graph prototypes.
+
+### Fixed
+
+- Allowed `storage-field` to auto-select the UDM device, matching
+  `discover-storage` and the WAN helper behavior.
+- Moved the WAN alive trigger prototype to the discovery rule level for cleaner
+  Zabbix import compatibility.
+
+### Changed
+
+- Updated script version to `0.3.3`.
+- Updated template vendor version to `0.3-3`.
+
+## 0.3.2 - Previous Unreleased
+
+### Fixed
+
+- Masked remaining real environment identifiers in the README examples and
+  confirmed API response notes.
+- Replaced the template default API URL with a placeholder value.
+- Replaced the script docstring example URL with a generic placeholder.
+
+### Changed
+
+- Updated script version to `0.3.2`.
+- Updated template vendor version to `0.3-2`.
+
+## 0.3.1 - Previous Unreleased
 
 ### Fixed
 

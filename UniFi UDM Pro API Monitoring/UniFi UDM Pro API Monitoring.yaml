@@ -15,7 +15,7 @@ zabbix_export:
         or proxy external scripts directory.
       vendor:
         name: 'Net Tech'
-        version: 0.3-1
+        version: 0.3-3
       groups:
         - name: Templates/Network devices
       items:
@@ -871,6 +871,86 @@ zabbix_export:
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
                     key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","satisfaction"]'
+        - uuid: 345f2b8e8f104a47bfac7e165996f1e5
+          name: 'UniFi storage discovery'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["discover-storage","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          delay: 1h
+          lifetime: 30d
+          timeout: 60s
+          description: 'Discovers storage volumes exposed by the UDM legacy telemetry payload.'
+          item_prototypes:
+            - uuid: 545cf97349f24e1f928d2362def2628a
+              name: 'Storage {#UNIFI.STORAGE.NAME} used'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.STORAGE.MOUNT}","used"]'
+              delay: 5m
+              history: 90d
+              units: B
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: storage
+                - tag: storage
+                  value: '{#UNIFI.STORAGE.NAME}'
+            - uuid: 091d340ea82b491a9573142171992fde
+              name: 'Storage {#UNIFI.STORAGE.NAME} free'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.STORAGE.MOUNT}","free"]'
+              delay: 5m
+              history: 90d
+              units: B
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: storage
+                - tag: storage
+                  value: '{#UNIFI.STORAGE.NAME}'
+            - uuid: 7d3eea9a94cd4030b845df6656daeefc
+              name: 'Storage {#UNIFI.STORAGE.NAME} total'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.STORAGE.MOUNT}","size"]'
+              delay: 1h
+              history: 90d
+              units: B
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: storage
+                - tag: storage
+                  value: '{#UNIFI.STORAGE.NAME}'
+            - uuid: e5384c3b3f2b493a874933ddf23e4e83
+              name: 'Storage {#UNIFI.STORAGE.NAME} utilization'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.STORAGE.MOUNT}","used_percent"]'
+              delay: 5m
+              history: 90d
+              value_type: FLOAT
+              units: '%'
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: storage
+                - tag: storage
+                  value: '{#UNIFI.STORAGE.NAME}'
+          trigger_prototypes:
+            - uuid: 41594fa0f1474e43924d2e4144c2587e
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.STORAGE.MOUNT}","used_percent"])>{$UNIFI.STORAGE.WARN}'
+              name: 'High UniFi storage utilization on {#UNIFI.STORAGE.NAME}'
+              priority: WARNING
+          graph_prototypes:
+            - uuid: 600611a3efe94dadafab72da999545e0
+              name: 'Storage {#UNIFI.STORAGE.NAME} usage'
+              graph_items:
+                - color: 42A5F5
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.STORAGE.MOUNT}","used"]'
+                - sortorder: '1'
+                  color: 66BB6A
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.STORAGE.MOUNT}","free"]'
         - uuid: 37d8fc7db6f741ada944c25b7649c8b1
           name: 'UniFi WAN discovery'
           type: EXTERNAL
@@ -960,11 +1040,11 @@ zabbix_export:
                   value: internet
                 - tag: wan
                   value: '{#UNIFI.WAN.NAME}'
-              trigger_prototypes:
-                - uuid: a2760ff9b7824b54a5ae4a04b2d12db6
-                  expression: 'last(/UniFi UDM Pro API Monitoring/unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","alive"])=0'
-                  name: '{#UNIFI.WAN.NAME} is not alive'
-                  priority: HIGH
+          trigger_prototypes:
+            - uuid: a2760ff9b7824b54a5ae4a04b2d12db6
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","alive"])=0'
+              name: '{#UNIFI.WAN.NAME} is not alive'
+              priority: HIGH
           graph_prototypes:
             - uuid: ce1d0f34b7d64e3a95609936f6e662d4
               name: '{#UNIFI.WAN.NAME} Internet activity'
@@ -994,7 +1074,7 @@ zabbix_export:
                     key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","tx_bps"]'
       macros:
         - macro: '{$UNIFI.API.URL}'
-          value: 'https://100.100.1.1'
+          value: 'https://xxx.xxx.xxx.xxx'
           description: 'Base URL of the UDM Pro. The script appends /proxy/network/integration/v1 automatically.'
         - macro: '{$UNIFI.API.KEY}'
           value: ''
