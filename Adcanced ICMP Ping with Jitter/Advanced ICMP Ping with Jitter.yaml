@@ -15,7 +15,7 @@ zabbix_export:
         License: GNU General Public License v3.0 (GPL-3.0).
       vendor:
         name: 'Net Tech'
-        version: 1.0-3
+        version: 1.0-4
       groups:
         - name: Templates/Modules
       items:
@@ -348,7 +348,6 @@ zabbix_export:
             host: 'Advanced ICMP Ping with Jitter'
             key: advanced.ping.loss
         - sortorder: '1'
-          drawtype: DASHED_LINE
           color: FF9800
           yaxisside: RIGHT
           calc_fnc: MAX
@@ -356,7 +355,7 @@ zabbix_export:
             host: 'Advanced ICMP Ping with Jitter'
             key: advanced.ping.max
         - sortorder: '2'
-          drawtype: DASHED_LINE
+          drawtype: GRADIENT_LINE
           color: 00FF00
           yaxisside: RIGHT
           calc_fnc: MIN

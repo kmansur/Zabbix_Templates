@@ -367,7 +367,7 @@ Template vendor:
 ```yaml
 vendor:
   name: 'Net Tech'
-  version: 1.0-3
+  version: 1.0-4
 ```
 
 Collector script:
