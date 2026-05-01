@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Advanced ICMP Ping with Jitter
-Version: 1.0.0
+Version: 1.0.1
 
 Author: Karim Mansur
 Original inspiration: Advanced ICMP Ping by Dusan Priechodsky
@@ -163,6 +163,7 @@ def stats(samples):
 
     if not received:
         return {
+            "error": "",
             "xmt": xmt,
             "rcv": 0,
             "loss": loss,
@@ -180,6 +181,7 @@ def stats(samples):
     variance = sum((sample - avg) ** 2 for sample in received) / rcv
 
     return {
+        "error": "",
         "xmt": xmt,
         "rcv": rcv,
         "loss": loss,

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Author:       Dusan Priechodsky
 # Date:         September, 2020
-# Description:  Advanced ping bla bla
+# Description:  Legacy fping helper kept for compatibility/reference.
 #
 
 # check args
