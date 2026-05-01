@@ -2,10 +2,24 @@
 
 Zabbix 7.0 template for ICMP latency, packet loss, jitter, and RTT deviation.
 
+## License and Attribution
+
+This project is based on `AdvancedPING` by Dusan Priechodsky:
+
+https://github.com/priechodsky/AdvancedPING
+
+The original project is licensed under the GNU General Public License v3.0
+GPL-3.0. This modified version is also released under GPL-3.0.
+
+Modified by Karim Mansur / Net Tech.
+
+See `LICENSE` for the full GPL-3.0 license text.
+
 ## Files
 
 - `Advanced ICMP Ping with Jitter.yaml` - Zabbix 7.0 template export.
 - `advanced_icmp_ping.py` - external script used by the template.
+- `LICENSE` - GNU General Public License v3.0.
 
 ## Requirements
 
@@ -90,7 +104,7 @@ Template vendor:
 ```yaml
 vendor:
   name: 'Net Tech'
-  version: 1.0-1
+  version: 1.0-2
 ```
 
 Every functional template change should increment `vendor.version`.

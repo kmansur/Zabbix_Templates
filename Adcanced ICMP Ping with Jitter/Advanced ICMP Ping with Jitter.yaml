@@ -7,10 +7,15 @@ zabbix_export:
     - uuid: afac17c2c17e443cbf0af2ae2963bede
       template: 'Advanced ICMP Ping with Jitter'
       name: 'Advanced ICMP Ping with Jitter'
-      description: 'Module Advanced ICMP Ping with Jitter based on Advanced ICMP Ping by Dusan Priechodsky'
+      description: |
+        Module Advanced ICMP Ping with Jitter based on AdvancedPING by Dusan Priechodsky.
+
+        Original project: https://github.com/priechodsky/AdvancedPING
+        Modified by Karim Mansur / Net Tech.
+        License: GNU General Public License v3.0 (GPL-3.0).
       vendor:
         name: 'Net Tech'
-        version: 1.0-1
+        version: 1.0-2
       groups:
         - name: Templates/Modules
       items:

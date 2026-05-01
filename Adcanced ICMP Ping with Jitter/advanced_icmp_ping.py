@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
 Advanced ICMP Ping with Jitter
-Version: 1.0.1
+Version: 1.0.2
 
 Author: Karim Mansur
 Original inspiration: Advanced ICMP Ping by Dusan Priechodsky
+Original project: https://github.com/priechodsky/AdvancedPING
+License: GNU General Public License v3.0 (GPL-3.0)
 
 Description:
     External script for Zabbix 7.0 templates.
