@@ -181,9 +181,9 @@ Before importing or enabling the template:
 4. Set host macros:
 
    ```text
-   {$UNIFI.API.URL} = https://100.100.1.1
+   {$UNIFI.API.URL} = https://xxx.xxx.xxx.xxx
    {$UNIFI.API.KEY} = your local UniFi Network API key
-   {$UNIFI.SITE.ID} = 88f7af54-98f8-306a-a1c7-c9349722b1f6
+   {$UNIFI.SITE.ID} = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
    {$UNIFI.LEGACY.SITE} = default
    {$UNIFI.DEVICE.ID} =
    ```
@@ -247,8 +247,8 @@ sudo install -m 0755 unifi_udm_pro_api.py /usr/lib/zabbix/externalscripts/unifi_
 Set these variables before testing:
 
 ```bash
-export UNIFI_API_URL="https://100.100.1.1"
-export UNIFI_SITE_ID="88f7af54-98f8-306a-a1c7-c9349722b1f6"
+export UNIFI_API_URL="https://xxx.xxx.xxx.xxx"
+export UNIFI_SITE_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 export UNIFI_API_KEY="replace-with-your-api-key"
 ```
 
