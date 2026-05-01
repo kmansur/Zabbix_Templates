@@ -1,0 +1,1270 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 9a7b1f8ac78a4c27aa0aa540c6485078
+      name: Templates/Network devices
+  templates:
+    - uuid: 1106dc5178b84ce9a7c6986128604c93
+      template: 'UniFi UDM Pro API Monitoring'
+      name: 'UniFi UDM Pro API Monitoring'
+      description: |
+        Template for monitoring a Ubiquiti UniFi Dream Machine Pro through the
+        local UniFi Network API.
+
+        Requires the external script unifi_udm_pro_api.py in the Zabbix server
+        or proxy external scripts directory.
+      vendor:
+        name: 'Net Tech'
+        version: 0.3-1
+      groups:
+        - name: Templates/Network devices
+      items:
+        - uuid: e404f614f7c0453ca21b8a94a2d64a63
+          name: 'UniFi API info raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}"]'
+          delay: 1h
+          history: 7d
+          value_type: TEXT
+          trends: '0'
+          timeout: 30s
+          tags:
+            - tag: component
+              value: api
+        - uuid: 6254713021174394af4ad792e6afd651
+          name: 'UniFi Network application version'
+          type: DEPENDENT
+          key: unifi.api.application_version
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.applicationVersion
+          master_item:
+            key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}"]'
+          tags:
+            - tag: component
+              value: api
+          triggers:
+            - uuid: 5d99c50b81584b3eb6cb5f4bf7b51582
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.api.application_version,#1)<>last(/UniFi UDM Pro API Monitoring/unifi.api.application_version,#2)'
+              name: 'UniFi Network application version changed'
+              opdata: 'Current version: {ITEM.LASTVALUE1}'
+              priority: INFO
+              manual_close: 'YES'
+        - uuid: 3dab808867e84e04a4234104afc18a8c
+          name: 'UniFi devices summary raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          delay: 2m
+          history: 7d
+          value_type: TEXT
+          trends: '0'
+          timeout: 30s
+          tags:
+            - tag: component
+              value: devices
+        - uuid: 3f9d82832f254b5aa7f0443287f1b34d
+          name: 'UniFi devices total'
+          type: DEPENDENT
+          key: unifi.devices.total
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.total
+          master_item:
+            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          tags:
+            - tag: component
+              value: devices
+        - uuid: 6c35c68d278549f09568e7e60638241c
+          name: 'UniFi devices online'
+          type: DEPENDENT
+          key: unifi.devices.online
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.online
+          master_item:
+            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          tags:
+            - tag: component
+              value: devices
+        - uuid: 278cb10cc7bc442d9515688be3e2a81d
+          name: 'UniFi devices offline'
+          type: DEPENDENT
+          key: unifi.devices.offline
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.offline
+          master_item:
+            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          tags:
+            - tag: component
+              value: devices
+          triggers:
+            - uuid: 1050877a97b84b97b3b677dd2ffbe2fe
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.devices.offline)>0'
+              name: 'One or more UniFi devices are offline'
+              opdata: 'Offline devices: {ITEM.LASTVALUE1}'
+              priority: HIGH
+        - uuid: f067061d6d7d48bf9cf7f75ef1a66193
+          name: 'UniFi devices with firmware update available'
+          type: DEPENDENT
+          key: unifi.devices.updatable
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.updatable
+          master_item:
+            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          tags:
+            - tag: component
+              value: devices
+          triggers:
+            - uuid: a904b63e471b4dbf9ea70dba89781e60
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.devices.updatable)>0'
+              name: 'One or more UniFi devices have firmware updates available'
+              opdata: 'Upgradeable devices: {ITEM.LASTVALUE1}'
+              priority: INFO
+        - uuid: 8b6cbe0a77e145e4bf5136387741e00b
+          name: 'UniFi clients summary raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          delay: 2m
+          history: 7d
+          value_type: TEXT
+          trends: '0'
+          timeout: 30s
+          tags:
+            - tag: component
+              value: clients
+        - uuid: 77de80b9934942a7a5a801e504af4776
+          name: 'UniFi clients total'
+          type: DEPENDENT
+          key: unifi.clients.total
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.total
+          master_item:
+            key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          tags:
+            - tag: component
+              value: clients
+        - uuid: 8bd0bdd5b4c54db6891e43ac5d2e447d
+          name: 'UniFi wired clients'
+          type: DEPENDENT
+          key: unifi.clients.wired
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.wired
+          master_item:
+            key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          tags:
+            - tag: component
+              value: clients
+        - uuid: bd789bd5599a44f89052bd86c47291bd
+          name: 'UniFi wireless clients'
+          type: DEPENDENT
+          key: unifi.clients.wireless
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.wireless
+          master_item:
+            key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          tags:
+            - tag: component
+              value: clients
+        - uuid: da9692947d1b481aa8458105cc7d3fa0
+          name: 'UniFi networks summary raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          delay: 5m
+          history: 7d
+          value_type: TEXT
+          trends: '0'
+          timeout: 30s
+          tags:
+            - tag: component
+              value: networks
+        - uuid: c37bcb1e0aad4dd9b8d8350d778e33fb
+          name: 'UniFi networks total'
+          type: DEPENDENT
+          key: unifi.networks.total
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.total
+          master_item:
+            key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          tags:
+            - tag: component
+              value: networks
+        - uuid: 6fded466bec2444aa5dddc7a6f995f9f
+          name: 'UniFi networks enabled'
+          type: DEPENDENT
+          key: unifi.networks.enabled
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.enabled
+          master_item:
+            key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          tags:
+            - tag: component
+              value: networks
+        - uuid: 4d74351599ab4238a3f1187e541c0aea
+          name: 'UniFi networks disabled'
+          type: DEPENDENT
+          key: unifi.networks.disabled
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.disabled
+          master_item:
+            key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          tags:
+            - tag: component
+              value: networks
+          triggers:
+            - uuid: e48a3c9c06804057984a7132cd066503
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.networks.disabled)>0'
+              name: 'One or more UniFi networks are disabled'
+              opdata: 'Disabled networks: {ITEM.LASTVALUE1}'
+              priority: WARNING
+        - uuid: 51e5f40a88ce4339ba7dd9ccb28738d5
+          name: 'UniFi system health raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          delay: 1m
+          history: 7d
+          value_type: TEXT
+          trends: '0'
+          timeout: 60s
+          tags:
+            - tag: component
+              value: system
+        - uuid: 94d5980801fc40279db1eb83d7139d36
+          name: 'UniFi system CPU utilization'
+          type: DEPENDENT
+          key: unifi.system.cpu.percent
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: '%'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.cpu_percent
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: system
+          triggers:
+            - uuid: 1aa49b3c3b9a43af82114fc6b42d4562
+              expression: 'avg(/UniFi UDM Pro API Monitoring/unifi.system.cpu.percent,5m)>{$UNIFI.CPU.WARN}'
+              name: 'High UniFi system CPU utilization'
+              opdata: 'CPU: {ITEM.LASTVALUE1}'
+              priority: WARNING
+        - uuid: 12ef83b8336d471fb81dbccb4fcd3d64
+          name: 'UniFi system memory utilization'
+          type: DEPENDENT
+          key: unifi.system.memory.percent
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: '%'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.memory_percent
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: system
+          triggers:
+            - uuid: 14addb82de4a413c9e38f66f4725e8c3
+              expression: 'avg(/UniFi UDM Pro API Monitoring/unifi.system.memory.percent,5m)>{$UNIFI.MEMORY.WARN}'
+              name: 'High UniFi system memory utilization'
+              opdata: 'Memory: {ITEM.LASTVALUE1}'
+              priority: WARNING
+        - uuid: 28fcb2c11dcf4c19956cf2524cbdff7d
+          name: 'UniFi system memory total'
+          type: DEPENDENT
+          key: unifi.system.memory.total
+          delay: '0'
+          history: 90d
+          units: B
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.memory_total
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: system
+        - uuid: 38e0770ff9f64976936674ced88800f1
+          name: 'UniFi system memory used'
+          type: DEPENDENT
+          key: unifi.system.memory.used
+          delay: '0'
+          history: 90d
+          units: B
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.memory_used
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: system
+        - uuid: 6304ae77b11141a6a2597e69a4e1d831
+          name: 'UniFi system load average 1m'
+          type: DEPENDENT
+          key: unifi.system.loadavg_1
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.loadavg_1
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: system
+        - uuid: 9d44a984e4cd41909f92784af3d09243
+          name: 'UniFi system storage utilization'
+          type: DEPENDENT
+          key: unifi.system.storage.percent
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: '%'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.storage_used_percent
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: storage
+          triggers:
+            - uuid: fc9551ce6d2744c2be4ab9a18f8ff504
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.system.storage.percent)>{$UNIFI.STORAGE.WARN}'
+              name: 'High UniFi system storage utilization'
+              opdata: 'Storage: {ITEM.LASTVALUE1}'
+              priority: WARNING
+        - uuid: e3916972a7e74566946c3e7110517480
+          name: 'UniFi system storage total'
+          type: DEPENDENT
+          key: unifi.system.storage.total
+          delay: '0'
+          history: 90d
+          units: B
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.storage_total
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: storage
+        - uuid: 25863b1e78144503ac89d232eeb3d082
+          name: 'UniFi system storage used'
+          type: DEPENDENT
+          key: unifi.system.storage.used
+          delay: '0'
+          history: 90d
+          units: B
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.storage_used
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: storage
+        - uuid: 0729c1854e4046098886be6f20f54278
+          name: 'UniFi system storage free'
+          type: DEPENDENT
+          key: unifi.system.storage.free
+          delay: '0'
+          history: 90d
+          units: B
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.storage_free
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: storage
+        - uuid: f90f4fc1c23c44eea29e4896a3577937
+          name: 'UniFi system CPU temperature'
+          type: DEPENDENT
+          key: unifi.system.temperature.cpu
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: C
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.temperature_cpu
+              error_handler: CUSTOM_VALUE
+              error_handler_params: '0'
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: temperature
+          triggers:
+            - uuid: 56de8cd08da64b658f379f35114783a1
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.system.temperature.cpu)>{$UNIFI.TEMP.WARN}'
+              name: 'High UniFi system CPU temperature'
+              opdata: 'CPU temperature: {ITEM.LASTVALUE1}'
+              priority: WARNING
+        - uuid: b2c1d09c2e6647c88aa4341805ceea4b
+          name: 'UniFi WAN health raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          delay: 1m
+          history: 7d
+          value_type: TEXT
+          trends: '0'
+          timeout: 60s
+          tags:
+            - tag: component
+              value: internet
+        - uuid: 7a08b50aae0f45349db31ed79f610abb
+          name: 'UniFi WAN latency'
+          type: DEPENDENT
+          key: unifi.wan.latency
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: ms
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.latency_ms
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+          triggers:
+            - uuid: 14a43165a09c405e8c970287a2b54f38
+              expression: 'avg(/UniFi UDM Pro API Monitoring/unifi.wan.latency,5m)>{$UNIFI.WAN.LATENCY.WARN}'
+              name: 'High UniFi WAN latency'
+              opdata: 'Latency: {ITEM.LASTVALUE1}'
+              priority: WARNING
+        - uuid: 94e2763e8e0c4582b8b712dafd25642f
+          name: 'UniFi WAN packet loss'
+          type: DEPENDENT
+          key: unifi.wan.packet_loss
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: '%'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.packet_loss_percent
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+          triggers:
+            - uuid: d310ce73981b4961ae1a0db15de118bc
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.wan.packet_loss)>{$UNIFI.WAN.LOSS.WARN}'
+              name: 'High UniFi WAN packet loss'
+              opdata: 'Packet loss: {ITEM.LASTVALUE1}'
+              priority: HIGH
+        - uuid: 03d07f8f85384062942052a584586aa6
+          name: 'UniFi WAN availability'
+          type: DEPENDENT
+          key: unifi.wan.availability
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: '%'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.availability_percent
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+        - uuid: 8ae03c9289834292990cd56c789b49a0
+          name: 'UniFi WAN download rate'
+          type: DEPENDENT
+          key: unifi.wan.rx_bps
+          delay: '0'
+          history: 90d
+          units: bps
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.rx_bps
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+        - uuid: 9c07b363607840358f88a011a95650d1
+          name: 'UniFi WAN upload rate'
+          type: DEPENDENT
+          key: unifi.wan.tx_bps
+          delay: '0'
+          history: 90d
+          units: bps
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.tx_bps
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+        - uuid: c484d0fef770435285ca4cdbdd6972eb
+          name: 'UniFi WAN speedtest download'
+          type: DEPENDENT
+          key: unifi.wan.speedtest.download
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: Mbps
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.speedtest_download_mbps
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+        - uuid: 7f803e3d2338419988efba405bd92c5d
+          name: 'UniFi WAN speedtest upload'
+          type: DEPENDENT
+          key: unifi.wan.speedtest.upload
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: Mbps
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.speedtest_upload_mbps
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+      discovery_rules:
+        - uuid: 850053dae79e41778cb024190992ac40
+          name: 'UniFi device discovery'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["discover-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          delay: 15m
+          lifetime: 30d
+          timeout: 30s
+          description: 'Discovers UniFi devices from the local Network API.'
+        - uuid: e09bac0916214333825d7b6e24a00b69
+          name: 'UniFi network discovery'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["discover-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          delay: 1h
+          lifetime: 30d
+          timeout: 30s
+          description: 'Discovers UniFi networks and VLANs from the local Network API.'
+        - uuid: a268db968f864a399eeea0ff3d60235a
+          name: 'UniFi client discovery'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["discover-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          delay: 15m
+          lifetime: 7d
+          timeout: 30s
+          description: 'Discovers currently connected UniFi clients from the local Network API.'
+        - uuid: b05ea9168c89446eae28c7fdfd4b52a3
+          name: 'UniFi port discovery'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["discover-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          delay: 1h
+          lifetime: 30d
+          timeout: 60s
+          description: 'Discovers physical ports from all UniFi devices that expose port interfaces.'
+          item_prototypes:
+            - uuid: d7ca3569e4cd4cbcae3097a6421ca12b
+              name: 'Port {#UNIFI.PORT.IDX} state on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","state"]'
+              delay: 2m
+              history: 90d
+              value_type: CHAR
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: ports
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 604464bae5404d1eba541436e6b4d565
+              name: 'Port {#UNIFI.PORT.IDX} speed on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","speedMbps"]'
+              delay: 2m
+              history: 90d
+              units: Mbps
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: ports
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 3ec9707fec5f4f27ae8d7df599d865a1
+              name: 'Port {#UNIFI.PORT.IDX} max speed on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","maxSpeedMbps"]'
+              delay: 1h
+              history: 90d
+              units: Mbps
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: ports
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 3e8eec90550245379c948c5b487add99
+              name: 'Port {#UNIFI.PORT.IDX} connector on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","connector"]'
+              delay: 1h
+              history: 90d
+              value_type: CHAR
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: ports
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+        - uuid: 0f82eeab022548aaaffe4591608f916c
+          name: 'UniFi radio discovery'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["discover-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          delay: 1h
+          lifetime: 30d
+          timeout: 60s
+          description: 'Discovers Wi-Fi radios from all UniFi access points that expose radio interfaces.'
+          item_prototypes:
+            - uuid: 2cc3da7e5e66483fad14e207d2f1ee34
+              name: 'Radio {#UNIFI.RADIO.INDEX} channel on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","channel"]'
+              delay: 5m
+              history: 90d
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: radios
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 441e879d1c4645fbb8de9d94841799ff
+              name: 'Radio {#UNIFI.RADIO.INDEX} channel width on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","channelWidthMHz"]'
+              delay: 5m
+              history: 90d
+              units: MHz
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: radios
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 1326d1824c5041dc92e7f0a078c9e193
+              name: 'Radio {#UNIFI.RADIO.INDEX} frequency on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","frequencyGHz"]'
+              delay: 1h
+              history: 90d
+              value_type: FLOAT
+              units: GHz
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: radios
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 4ab810907e39443bb1e7a6e976d6326e
+              name: 'Radio {#UNIFI.RADIO.INDEX} WLAN standard on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","wlanStandard"]'
+              delay: 1h
+              history: 90d
+              value_type: CHAR
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: radios
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+        - uuid: 02bea3760966435fa33498040b2b09ce
+          name: 'UniFi radio performance discovery'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["legacy-discover-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          delay: 1h
+          lifetime: 30d
+          timeout: 60s
+          description: 'Discovers radio runtime statistics from the legacy UniFi Network API.'
+          item_prototypes:
+            - uuid: 20694b9752544753bee1b1600dfd25cc
+              name: 'Radio {#UNIFI.RADIO.BAND} utilization on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_total"]'
+              delay: 2m
+              history: 90d
+              units: '%'
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: radios
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 6aec8bfb9868443faec180fcf1167cd4
+              name: 'Radio {#UNIFI.RADIO.BAND} self RX utilization on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_self_rx"]'
+              delay: 2m
+              history: 90d
+              units: '%'
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: radios
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: dbd721fe23654df5b9ff7427354dcd2b
+              name: 'Radio {#UNIFI.RADIO.BAND} self TX utilization on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_self_tx"]'
+              delay: 2m
+              history: 90d
+              units: '%'
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: radios
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: cb4a69bc52bb45c581557f040599c822
+              name: 'Radio {#UNIFI.RADIO.BAND} retry percentage on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","tx_retries_pct"]'
+              delay: 2m
+              history: 90d
+              value_type: FLOAT
+              units: '%'
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: radios
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 02d744e3e3a34d46949fbf86cc42b9c7
+              name: 'Radio {#UNIFI.RADIO.BAND} clients on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","num_sta"]'
+              delay: 2m
+              history: 90d
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: radios
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 2a8426e860e14f1f8c4f81fc81425ef3
+              name: 'Radio {#UNIFI.RADIO.BAND} satisfaction on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","satisfaction"]'
+              delay: 2m
+              history: 90d
+              units: '%'
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: radios
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+          graph_prototypes:
+            - uuid: 8f29b129b4a842d28ecf5ec9d9c1faef
+              name: 'Radio {#UNIFI.RADIO.BAND} channel utilization on {#UNIFI.DEVICE.NAME}'
+              graph_items:
+                - color: 42A5F5
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_total"]'
+                - sortorder: '1'
+                  color: FFC107
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_self_rx"]'
+                - sortorder: '2'
+                  color: 66BB6A
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_self_tx"]'
+            - uuid: bb590f6707404e3893df03ef784c98fb
+              name: 'Radio {#UNIFI.RADIO.BAND} quality on {#UNIFI.DEVICE.NAME}'
+              graph_items:
+                - color: F06292
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","tx_retries_pct"]'
+                - sortorder: '1'
+                  color: 7E57C2
+                  yaxisside: RIGHT
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","num_sta"]'
+                - sortorder: '2'
+                  color: 26A69A
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","satisfaction"]'
+        - uuid: 37d8fc7db6f741ada944c25b7649c8b1
+          name: 'UniFi WAN discovery'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["discover-wans","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          delay: 1h
+          lifetime: 30d
+          timeout: 60s
+          description: 'Discovers WAN interfaces from the legacy UniFi Network API. Single-WAN UDM Pro systems discover WAN; multi-WAN systems may discover WAN2 and additional WAN labels.'
+          item_prototypes:
+            - uuid: 2d07d2cfc5974caf84a224a26597abac
+              name: '{#UNIFI.WAN.NAME} latency'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","latency_ms"]'
+              delay: 1m
+              history: 90d
+              value_type: FLOAT
+              units: ms
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: internet
+                - tag: wan
+                  value: '{#UNIFI.WAN.NAME}'
+            - uuid: d8639d7cb94c492f81a08e6888f8fe19
+              name: '{#UNIFI.WAN.NAME} packet loss'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","packet_loss_percent"]'
+              delay: 1m
+              history: 90d
+              value_type: FLOAT
+              units: '%'
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: internet
+                - tag: wan
+                  value: '{#UNIFI.WAN.NAME}'
+            - uuid: 470bf30f607f4c8c94c27b4ab426fda9
+              name: '{#UNIFI.WAN.NAME} availability'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","availability_percent"]'
+              delay: 1m
+              history: 90d
+              value_type: FLOAT
+              units: '%'
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: internet
+                - tag: wan
+                  value: '{#UNIFI.WAN.NAME}'
+            - uuid: 43259d1ab2e446268d7e551bb869daed
+              name: '{#UNIFI.WAN.NAME} download rate'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","rx_bps"]'
+              delay: 1m
+              history: 90d
+              units: bps
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: internet
+                - tag: wan
+                  value: '{#UNIFI.WAN.NAME}'
+            - uuid: d898e059e3214d08acbf3af54edc5c37
+              name: '{#UNIFI.WAN.NAME} upload rate'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","tx_bps"]'
+              delay: 1m
+              history: 90d
+              units: bps
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: internet
+                - tag: wan
+                  value: '{#UNIFI.WAN.NAME}'
+            - uuid: b17a401ff49e4d1bb913f1c3638dcbd3
+              name: '{#UNIFI.WAN.NAME} alive'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","alive"]'
+              delay: 1m
+              history: 90d
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: internet
+                - tag: wan
+                  value: '{#UNIFI.WAN.NAME}'
+              trigger_prototypes:
+                - uuid: a2760ff9b7824b54a5ae4a04b2d12db6
+                  expression: 'last(/UniFi UDM Pro API Monitoring/unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","alive"])=0'
+                  name: '{#UNIFI.WAN.NAME} is not alive'
+                  priority: HIGH
+          graph_prototypes:
+            - uuid: ce1d0f34b7d64e3a95609936f6e662d4
+              name: '{#UNIFI.WAN.NAME} Internet activity'
+              graph_items:
+                - color: 42A5F5
+                  yaxisside: RIGHT
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","latency_ms"]'
+                - sortorder: '1'
+                  drawtype: BOLD_LINE
+                  color: F06292
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","packet_loss_percent"]'
+                - sortorder: '2'
+                  color: 66BB6A
+                  yaxisside: RIGHT
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","rx_bps"]'
+                - sortorder: '3'
+                  color: FFC107
+                  yaxisside: RIGHT
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.WAN.NAME}","tx_bps"]'
+      macros:
+        - macro: '{$UNIFI.API.URL}'
+          value: 'https://100.100.1.1'
+          description: 'Base URL of the UDM Pro. The script appends /proxy/network/integration/v1 automatically.'
+        - macro: '{$UNIFI.API.KEY}'
+          value: ''
+          type: SECRET_TEXT
+          description: 'Local UniFi Network API key generated in Control Plane > Integrations.'
+        - macro: '{$UNIFI.SITE.ID}'
+          value: ''
+          description: 'Optional site ID. Leave empty when the controller has only one site.'
+        - macro: '{$UNIFI.LEGACY.SITE}'
+          value: default
+          description: 'Legacy UniFi Network site reference used by /proxy/network/api/s/<site>/stat/device.'
+        - macro: '{$UNIFI.DEVICE.ID}'
+          value: ''
+          description: 'Optional UniFi external device ID for system health. Leave empty to use the first UDM device.'
+        - macro: '{$UNIFI.CPU.WARN}'
+          value: '85'
+          description: 'CPU utilization warning threshold in percent.'
+        - macro: '{$UNIFI.MEMORY.WARN}'
+          value: '90'
+          description: 'Memory utilization warning threshold in percent.'
+        - macro: '{$UNIFI.STORAGE.WARN}'
+          value: '85'
+          description: 'Storage utilization warning threshold in percent.'
+        - macro: '{$UNIFI.TEMP.WARN}'
+          value: '75'
+          description: 'CPU temperature warning threshold in Celsius.'
+        - macro: '{$UNIFI.WAN.LATENCY.WARN}'
+          value: '100'
+          description: 'WAN latency warning threshold in milliseconds.'
+        - macro: '{$UNIFI.WAN.LOSS.WARN}'
+          value: '1'
+          description: 'WAN packet loss warning threshold in percent.'
+      dashboards:
+        - uuid: b2c6d9866761431c9be8f9847a9df1f6
+          name: 'UniFi Controller Overview'
+          pages:
+            - name: Internet
+              widgets:
+                - type: graph
+                  width: '72'
+                  height: '9'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        name: 'UniFi Internet activity'
+                    - type: STRING
+                      name: reference
+                      value: UNIFIWAN
+                - type: graph
+                  y: '9'
+                  width: '36'
+                  height: '7'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        name: 'UniFi system health'
+                    - type: STRING
+                      name: reference
+                      value: UNIFISYS
+                - type: graph
+                  x: '36'
+                  y: '9'
+                  width: '36'
+                  height: '7'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        name: 'UniFi clients and devices'
+                    - type: STRING
+                      name: reference
+                      value: UNIFICLI
+        - uuid: e7eab61b19ce4d9cabeee9ba614de3be
+          name: 'UniFi Controller Overview - Experimental'
+          pages:
+            - name: Internet
+              widgets:
+                - type: graph
+                  width: '72'
+                  height: '10'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        name: 'UniFi Internet activity'
+                    - type: STRING
+                      name: reference
+                      value: UWANX
+                - type: graph
+                  y: '10'
+                  width: '24'
+                  height: '6'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        name: 'UniFi WAN quality'
+                    - type: STRING
+                      name: reference
+                      value: UWANQ
+                - type: graph
+                  x: '24'
+                  y: '10'
+                  width: '24'
+                  height: '6'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        name: 'UniFi system health'
+                    - type: STRING
+                      name: reference
+                      value: USYSX
+                - type: graph
+                  x: '48'
+                  y: '10'
+                  width: '24'
+                  height: '6'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        name: 'UniFi clients and devices'
+                    - type: STRING
+                      name: reference
+                      value: UCLIX
+            - name: Wireless
+              widgets:
+                - type: graph
+                  width: '36'
+                  height: '8'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        name: 'UniFi clients and devices'
+                    - type: STRING
+                      name: reference
+                      value: UWIFI1
+                - type: graph
+                  x: '36'
+                  width: '36'
+                  height: '8'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        name: 'UniFi system health'
+                    - type: STRING
+                      name: reference
+                      value: UWIFI2
+            - name: System
+              widgets:
+                - type: graph
+                  width: '72'
+                  height: '8'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        name: 'UniFi system health'
+                    - type: STRING
+                      name: reference
+                      value: USYSFULL
+  graphs:
+    - uuid: e7b6dd25c843487d80477b8ee3dbfaca
+      name: 'UniFi Internet activity'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 42A5F5
+          yaxisside: RIGHT
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.wan.latency
+        - sortorder: '1'
+          drawtype: BOLD_LINE
+          color: F06292
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.wan.packet_loss
+        - sortorder: '2'
+          color: 66BB6A
+          yaxisside: RIGHT
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.wan.rx_bps
+        - sortorder: '3'
+          color: FFC107
+          yaxisside: RIGHT
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.wan.tx_bps
+    - uuid: 0b8d2d27309f4c32a653b4a8ce162420
+      name: 'UniFi system health'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: FF7043
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.system.cpu.percent
+        - sortorder: '1'
+          color: 7E57C2
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.system.memory.percent
+        - sortorder: '2'
+          color: 26A69A
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.system.storage.percent
+        - sortorder: '3'
+          color: EF5350
+          yaxisside: RIGHT
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.system.temperature.cpu
+    - uuid: 8d8266c6760641e8a373406e03ef8182
+      name: 'UniFi WAN quality'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 42A5F5
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.wan.latency
+        - sortorder: '1'
+          drawtype: BOLD_LINE
+          color: F06292
+          yaxisside: RIGHT
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.wan.packet_loss
+        - sortorder: '2'
+          color: 66BB6A
+          yaxisside: RIGHT
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.wan.availability
+    - uuid: 0d94be77045042b38576e20528a9b377
+      name: 'UniFi clients and devices'
+      ymin_type_1: FIXED
+      graph_items:
+        - drawtype: FILLED_REGION
+          color: 5C6BC0
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.clients.total
+        - sortorder: '1'
+          color: 26A69A
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.clients.wireless
+        - sortorder: '2'
+          color: FDD835
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.clients.wired
+        - sortorder: '3'
+          color: EF5350
+          item:
+            host: 'UniFi UDM Pro API Monitoring'
+            key: unifi.devices.offline
