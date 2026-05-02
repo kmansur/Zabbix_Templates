@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi UDM Pro API Monitoring
-Version: 0.3.3
+Version: 0.4.4
 
 External script for Zabbix templates.
 
@@ -35,6 +35,7 @@ import json
 import os
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -459,7 +460,11 @@ def port_field(base_url, api_key, site_id, device_id, port_idx, field, insecure=
     ports = ((payload.get("interfaces") or {}).get("ports") or [])
     for port in ports:
         if str(port.get("idx")) == str(port_idx):
-            print_scalar(port.get(field))
+            value = port.get(field)
+            if field in {"speedMbps", "maxSpeedMbps"} and value in (None, ""):
+                print_scalar(0)
+                return
+            print_scalar(value)
             return
     print_scalar(None)
 
@@ -490,7 +495,13 @@ def legacy_radio_field(device, radio_index, field):
     except (IndexError, TypeError, ValueError):
         print_scalar(None)
         return
-    print_scalar(radio.get(field))
+
+    value = radio.get(field)
+    if field == "satisfaction" and to_float(value, 0.0) < 0:
+        print_scalar(0)
+        return
+
+    print_scalar(value)
 
 
 def legacy_stat_devices(base_url, api_key, legacy_site, insecure=True, timeout=20):
@@ -697,6 +708,8 @@ def wan_health(device, wan_name="WAN"):
     """
     uptime_stats, interface_state, wan_table, uplink = wan_source(device, wan_name)
     speedtest = device.get("speedtest-status") or {}
+    speedtest_last_run = to_int(speedtest.get("rundate") or uplink.get("speedtest_lastrun"))
+    speedtest_age = int(time.time()) - speedtest_last_run if speedtest_last_run else 0
 
     availability = to_float(uptime_stats.get("availability"), 0.0)
     rx_bps = to_float(uplink.get("rx_bytes-r")) * 8
@@ -720,6 +733,9 @@ def wan_health(device, wan_name="WAN"):
         "speedtest_download_mbps": to_float(speedtest.get("xput_download") or uplink.get("xput_down")),
         "speedtest_upload_mbps": to_float(speedtest.get("xput_upload") or uplink.get("xput_up")),
         "speedtest_latency_ms": to_float(speedtest.get("latency") or speedtest.get("speedtest_ping")),
+        "speedtest_last_run": speedtest_last_run,
+        "speedtest_age_seconds": speedtest_age,
+        "speedtest_status": uplink.get("speedtest_status") or speedtest.get("status_summary") or "",
     }
 
 

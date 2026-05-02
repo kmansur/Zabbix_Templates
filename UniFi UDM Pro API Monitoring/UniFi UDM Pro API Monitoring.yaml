@@ -15,7 +15,7 @@ zabbix_export:
         or proxy external scripts directory.
       vendor:
         name: 'Net Tech'
-        version: 0.3-3
+        version: 0.4-4
       groups:
         - name: Templates/Network devices
       items:
@@ -601,6 +601,134 @@ zabbix_export:
           tags:
             - tag: component
               value: internet
+        - uuid: d1437919063b40ccb54e1a98b12b5681
+          name: 'UniFi WAN speedtest latency'
+          type: DEPENDENT
+          key: unifi.wan.speedtest.latency
+          delay: '0'
+          history: 90d
+          value_type: FLOAT
+          units: ms
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.speedtest_latency_ms
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+        - uuid: ca47c35e55bb4aee8bf67f4c45284513
+          name: 'UniFi WAN speedtest last run'
+          type: DEPENDENT
+          key: unifi.wan.speedtest.last_run
+          delay: '0'
+          history: 90d
+          units: unixtime
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.speedtest_last_run
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+        - uuid: d7a982c9fb7b4ed2abb90251be0d3ef3
+          name: 'UniFi WAN speedtest age'
+          type: DEPENDENT
+          key: unifi.wan.speedtest.age
+          delay: '0'
+          history: 90d
+          units: s
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.speedtest_age_seconds
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+          triggers:
+            - uuid: 08dd8dbf847e40bbbb546fc6dbfa8dac
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.wan.speedtest.age)>{$UNIFI.SPEEDTEST.MAX_AGE}'
+              name: 'UniFi WAN speedtest result is stale'
+              opdata: 'Speedtest age: {ITEM.LASTVALUE1}'
+              priority: INFO
+        - uuid: 16d56f8aff5e4876a41b22f6515ef3fe
+          name: 'UniFi WAN speedtest status'
+          type: DEPENDENT
+          key: unifi.wan.speedtest.status
+          delay: '0'
+          history: 90d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.speedtest_status
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+        - uuid: df6607337f364f4498b42eee29c6ffef
+          name: 'UniFi WAN alive'
+          type: DEPENDENT
+          key: unifi.wan.alive
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.alive
+            - type: JAVASCRIPT
+              parameters:
+                - 'return value === true || value === "true" ? 1 : 0;'
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+          triggers:
+            - uuid: 6e269c2148bb4003bb18d8b5aef47171
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.wan.alive)=0'
+              name: 'UniFi WAN is not alive'
+              priority: HIGH
+        - uuid: c96f27ad87f84f7d83185e7ab0ed1e28
+          name: 'UniFi WAN IP address'
+          type: DEPENDENT
+          key: unifi.wan.ip
+          delay: '0'
+          history: 90d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ip
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: internet
+        - uuid: b8e354582c9148d38efa868b073dc52e
+          name: 'UniFi system uptime'
+          type: DEPENDENT
+          key: unifi.system.uptime
+          delay: '0'
+          history: 90d
+          units: uptime
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.uptime
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: system
       discovery_rules:
         - uuid: 850053dae79e41778cb024190992ac40
           name: 'UniFi device discovery'
@@ -1107,6 +1235,9 @@ zabbix_export:
         - macro: '{$UNIFI.WAN.LOSS.WARN}'
           value: '1'
           description: 'WAN packet loss warning threshold in percent.'
+        - macro: '{$UNIFI.SPEEDTEST.MAX_AGE}'
+          value: '172800'
+          description: 'Maximum accepted age for the last WAN speedtest result, in seconds.'
       dashboards:
         - uuid: b2c6d9866761431c9be8f9847a9df1f6
           name: 'UniFi Controller Overview'
@@ -1152,105 +1283,272 @@ zabbix_export:
                     - type: STRING
                       name: reference
                       value: UNIFICLI
-        - uuid: e7eab61b19ce4d9cabeee9ba614de3be
-          name: 'UniFi Controller Overview - Experimental'
+        - uuid: 451628ed33ee4388bdaf3283d8110d62
+          name: 'Unifi Controller'
           pages:
-            - name: Internet
+            - name: Overview
               widgets:
-                - type: graph
-                  width: '72'
-                  height: '10'
-                  fields:
-                    - type: GRAPH
-                      name: graphid.0
-                      value:
-                        host: 'UniFi UDM Pro API Monitoring'
-                        name: 'UniFi Internet activity'
-                    - type: STRING
-                      name: reference
-                      value: UWANX
-                - type: graph
-                  y: '10'
-                  width: '24'
-                  height: '6'
-                  fields:
-                    - type: GRAPH
-                      name: graphid.0
-                      value:
-                        host: 'UniFi UDM Pro API Monitoring'
-                        name: 'UniFi WAN quality'
-                    - type: STRING
-                      name: reference
-                      value: UWANQ
-                - type: graph
-                  x: '24'
-                  y: '10'
-                  width: '24'
-                  height: '6'
-                  fields:
-                    - type: GRAPH
-                      name: graphid.0
-                      value:
-                        host: 'UniFi UDM Pro API Monitoring'
-                        name: 'UniFi system health'
-                    - type: STRING
-                      name: reference
-                      value: USYSX
-                - type: graph
-                  x: '48'
-                  y: '10'
-                  width: '24'
-                  height: '6'
-                  fields:
-                    - type: GRAPH
-                      name: graphid.0
-                      value:
-                        host: 'UniFi UDM Pro API Monitoring'
-                        name: 'UniFi clients and devices'
-                    - type: STRING
-                      name: reference
-                      value: UCLIX
-            - name: Wireless
-              widgets:
-                - type: graph
-                  width: '36'
+                - type: svggraph
+                  name: 'WAN X clients'
+                  width: '60'
                   height: '8'
                   fields:
-                    - type: GRAPH
-                      name: graphid.0
-                      value:
-                        host: 'UniFi UDM Pro API Monitoring'
-                        name: 'UniFi clients and devices'
+                    - type: INTEGER
+                      name: ds.0.axisy
+                      value: '1'
+                    - type: INTEGER
+                      name: ds.0.color_palette
+                      value: '10'
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: 'UniFi WAN download rate'
+                    - type: STRING
+                      name: ds.0.items.1
+                      value: 'UniFi WAN upload rate'
+                    - type: INTEGER
+                      name: ds.0.stacked
+                      value: '1'
+                    - type: INTEGER
+                      name: ds.0.width
+                      value: '2'
+                    - type: STRING
+                      name: ds.1.color
+                      value: CFD8DC
+                    - type: STRING
+                      name: ds.1.items.0
+                      value: 'UniFi clients total'
+                    - type: INTEGER
+                      name: ds.1.transparency
+                      value: '2'
+                    - type: INTEGER
+                      name: ds.1.width
+                      value: '2'
+                    - type: STRING
+                      name: ds.2.color
+                      value: FFBF00
+                    - type: INTEGER
+                      name: ds.2.fill
+                      value: '0'
+                    - type: STRING
+                      name: ds.2.items.0
+                      value: 'UniFi WAN latency'
+                    - type: INTEGER
+                      name: ds.2.transparency
+                      value: '0'
+                    - type: STRING
+                      name: ds.3.color
+                      value: FF0000
+                    - type: INTEGER
+                      name: ds.3.fill
+                      value: '0'
+                    - type: STRING
+                      name: ds.3.items.0
+                      value: 'UniFi WAN packet loss'
+                    - type: INTEGER
+                      name: ds.3.transparency
+                      value: '0'
+                    - type: INTEGER
+                      name: legend_lines
+                      value: '5'
+                    - type: INTEGER
+                      name: legend_statistic
+                      value: '1'
                     - type: STRING
                       name: reference
-                      value: UWIFI1
-                - type: graph
-                  x: '36'
-                  width: '36'
-                  height: '8'
+                      value: XHFVP
+                    - type: INTEGER
+                      name: show_problems
+                      value: '1'
+                - type: item
+                  name: Version
+                  x: '60'
+                  width: '12'
                   fields:
-                    - type: GRAPH
-                      name: graphid.0
+                    - type: INTEGER
+                      name: decimal_size
+                      value: '24'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '16'
+                    - type: ITEM
+                      name: itemid.0
                       value:
                         host: 'UniFi UDM Pro API Monitoring'
-                        name: 'UniFi system health'
-                    - type: STRING
-                      name: reference
-                      value: UWIFI2
-            - name: System
-              widgets:
-                - type: graph
-                  width: '72'
-                  height: '8'
+                        key: unifi.api.application_version
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: units_size
+                      value: '16'
+                    - type: INTEGER
+                      name: value_size
+                      value: '24'
+                - type: gauge
+                  name: 'Memory utilization'
+                  x: '60'
+                  'y': '2'
+                  width: '12'
+                  height: '3'
                   fields:
-                    - type: GRAPH
-                      name: graphid.0
+                    - type: INTEGER
+                      name: angle
+                      value: '270'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '8'
+                    - type: ITEM
+                      name: itemid.0
                       value:
                         host: 'UniFi UDM Pro API Monitoring'
-                        name: 'UniFi system health'
+                        key: unifi.system.memory.percent
                     - type: STRING
-                      name: reference
-                      value: USYSFULL
+                      name: max
+                      value: '100'
+                    - type: STRING
+                      name: min
+                      value: '0'
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: show.2
+                      value: '3'
+                    - type: INTEGER
+                      name: show.3
+                      value: '4'
+                    - type: INTEGER
+                      name: show.4
+                      value: '5'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: 0080FF
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: 9CCC65
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '20'
+                    - type: STRING
+                      name: thresholds.2.color
+                      value: FFEE58
+                    - type: STRING
+                      name: thresholds.2.threshold
+                      value: '40'
+                    - type: STRING
+                      name: thresholds.3.color
+                      value: FFA726
+                    - type: STRING
+                      name: thresholds.3.threshold
+                      value: '60'
+                    - type: STRING
+                      name: thresholds.4.color
+                      value: FF7043
+                    - type: STRING
+                      name: thresholds.4.threshold
+                      value: '80'
+                    - type: INTEGER
+                      name: th_arc_size
+                      value: '9'
+                    - type: INTEGER
+                      name: th_show_arc
+                      value: '1'
+                    - type: INTEGER
+                      name: th_show_labels
+                      value: '1'
+                    - type: INTEGER
+                      name: value_size
+                      value: '24'
+                - type: gauge
+                  name: 'CPU utilization'
+                  x: '60'
+                  'y': '5'
+                  width: '12'
+                  height: '3'
+                  fields:
+                    - type: INTEGER
+                      name: angle
+                      value: '270'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '8'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        key: unifi.system.cpu.percent
+                    - type: STRING
+                      name: max
+                      value: '100'
+                    - type: STRING
+                      name: min
+                      value: '0'
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: show.2
+                      value: '3'
+                    - type: INTEGER
+                      name: show.3
+                      value: '4'
+                    - type: INTEGER
+                      name: show.4
+                      value: '5'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: 0080FF
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: 9CCC65
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '20'
+                    - type: STRING
+                      name: thresholds.2.color
+                      value: FFEE58
+                    - type: STRING
+                      name: thresholds.2.threshold
+                      value: '40'
+                    - type: STRING
+                      name: thresholds.3.color
+                      value: FFA726
+                    - type: STRING
+                      name: thresholds.3.threshold
+                      value: '60'
+                    - type: STRING
+                      name: thresholds.4.color
+                      value: FF7043
+                    - type: STRING
+                      name: thresholds.4.threshold
+                      value: '80'
+                    - type: INTEGER
+                      name: th_arc_size
+                      value: '9'
+                    - type: INTEGER
+                      name: th_show_arc
+                      value: '1'
+                    - type: INTEGER
+                      name: th_show_labels
+                      value: '1'
+                    - type: INTEGER
+                      name: value_size
+                      value: '24'
   graphs:
     - uuid: e7b6dd25c843487d80477b8ee3dbfaca
       name: 'UniFi Internet activity'

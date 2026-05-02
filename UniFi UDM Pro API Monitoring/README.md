@@ -164,7 +164,7 @@ Recommended process:
 Current project version:
 
 ```text
-0.3.3
+0.4.4
 ```
 
 The importable Zabbix 7.0 template is:
@@ -206,6 +206,8 @@ The initial template includes:
 - Network discovery.
 - Port discovery with item prototypes for state, negotiated speed, maximum speed,
   and connector type.
+- Empty port speed values are normalized to `0` Mbps, which avoids numeric item
+  errors on disconnected or inactive ports.
 - Radio discovery with item prototypes for channel, channel width, frequency,
   and WLAN standard.
 - System health from `/proxy/network/api/s/default/stat/device`: CPU, memory,
@@ -213,16 +215,19 @@ The initial template includes:
 - Storage discovery from the legacy endpoint with per-volume used, free, total,
   utilization, trigger prototypes, and graph prototypes.
 - WAN health from the legacy endpoint: latency, packet loss, availability,
-  upload/download rate, and speedtest results.
+  alive state, WAN IP, upload/download rate, and speedtest status, latency,
+  last run, age, download, and upload results.
 - WAN discovery for multi-WAN environments. The current test environment has
   one WAN, but the template includes WAN item prototypes for WAN2 and additional
   discovered WAN labels when the legacy payload exposes them.
 - Radio performance from the legacy endpoint: channel utilization, self RX/TX
   utilization, retry percentage, connected stations, and satisfaction.
-- A dashboard named `UniFi Controller Overview` with graphs for Internet
-  activity, system health, and clients/devices.
-- A second dashboard named `UniFi Controller Overview - Experimental`, intended
-  as a more UniFi-like visual layout for evaluation.
+- Radio satisfaction values below zero are normalized to `0`, because some
+  UniFi controllers return `-1` until that metric is available.
+- A dashboard named `UniFi Controller Overview` with classic graphs for
+  Internet activity, system health, and clients/devices.
+- A dashboard named `Unifi Controller` with a modern SVG graph, version widget,
+  and CPU/memory gauges.
 - Triggers for offline devices, firmware updates, disabled networks, and
   application version changes, high CPU, high memory, high storage usage, and
   high CPU temperature, WAN latency, and WAN packet loss.
@@ -336,8 +341,28 @@ You can still test a single device manually:
 - VPN tunnel discovery and status from the legacy `network_table`.
 - DHCP lease count per VLAN from legacy network details.
 - IDS/IPS signature status and rule count.
-- Speedtest freshness trigger when the last run is too old.
 - WAN failover state and active WAN detection for multi-WAN environments.
+
+### API Review Notes
+
+The legacy `stat/device` payload contains several high-value fields that are
+good candidates for future template expansion:
+
+- Gateway identity and firmware: `model`, `version`, `displayable_version`,
+  `kernel_version`, `architecture`, and `upgradable`.
+- WAN health: `last_wan_status`, `last_wan_interfaces`, `wan1`, `wan2`,
+  `uplink`, `uptime_stats`, and `speedtest-status`.
+- Traffic and switch ports: `port_table`, `uplink`, `downlink_table`, and
+  per-port counters under `stat.sw`.
+- PoE and switch power: `poe_power`, `poe_voltage`, `poe_good`,
+  `total_used_power`, `total_max_power`, and near-limit flags.
+- Wireless quality: `radio_table_stats`, `vap_table`, retry percentage,
+  channel utilization, station count, and satisfaction.
+- Storage and temperature: `storage`, `temperatures`, and `overheating`.
+- Security and IDS/IPS: `ids_ips_signature` rule count, update time, signature
+  type, and activation state.
+- Network services: `network_table`, VPN status, DHCP lease counts, IPv4 active
+  leases, reported networks, and WAN failover state.
 
 ## Confirmed Local API Responses
 

@@ -2,7 +2,75 @@
 
 All notable changes to this project are documented here.
 
-## 0.3.3 - Unreleased
+## 0.4.4 - Unreleased
+
+### Fixed
+
+- Normalized empty port speed and max speed values to `0` so Zabbix numeric
+  unsigned items do not reject inactive-port API placeholders.
+
+### Changed
+
+- Updated script version to `0.4.4`.
+- Updated template vendor version to `0.4-4`.
+
+## 0.4.3 - Previous Unreleased
+
+### Fixed
+
+- Normalized negative legacy radio satisfaction values to `0` so Zabbix numeric
+  unsigned items do not reject UniFi `-1` placeholders.
+
+### Changed
+
+- Updated script version to `0.4.3`.
+- Updated template vendor version to `0.4-3`.
+
+## 0.4.2 - Previous Unreleased
+
+### Fixed
+
+- Removed the WAN IP address change trigger because the target Zabbix import
+  rejected the `diff()` trigger function.
+
+### Changed
+
+- Updated script version to `0.4.2`.
+- Updated template vendor version to `0.4-2`.
+
+## 0.4.1 - Previous Unreleased
+
+### Fixed
+
+- Fixed the `Unifi Controller` dashboard page export structure by adding a
+  named page before the `widgets` list.
+
+### Changed
+
+- Updated script version to `0.4.1`.
+- Updated template vendor version to `0.4-1`.
+
+## 0.4.0 - Previous Unreleased
+
+### Added
+
+- Added fixed WAN items for alive state, IP address, speedtest latency,
+  speedtest last run, speedtest age, and speedtest status.
+- Added fixed system uptime item from the existing system health master item.
+- Added an informational trigger for stale WAN speedtest results.
+- Added an informational trigger for WAN IP address changes.
+- Added the `Unifi Controller` dashboard with a modern SVG graph, version item
+  widget, and CPU/memory gauges.
+- Added API review notes to the README with candidate telemetry fields for the
+  next template iterations.
+
+### Changed
+
+- Removed the previous experimental dashboard.
+- Updated script version to `0.4.0`.
+- Updated template vendor version to `0.4-0`.
+
+## 0.3.3 - Previous Unreleased
 
 ### Added
 
