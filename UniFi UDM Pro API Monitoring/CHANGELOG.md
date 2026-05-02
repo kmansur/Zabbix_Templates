@@ -2,7 +2,22 @@
 
 All notable changes to this project are documented here.
 
-## 0.4.4 - Unreleased
+## 0.5.0 - Unreleased
+
+### Added
+
+- Added legacy port telemetry discovery from `port_table` with item prototypes
+  for link state, negotiated speed, traffic rates, RX/TX errors, RX/TX drops,
+  PoE power, PoE voltage, PoE good state, and PoE mode.
+- Added graph prototypes for legacy port traffic, errors/drops, and PoE.
+- Added `legacy-discover-ports` and `legacy-port-field` script commands.
+
+### Changed
+
+- Updated script version to `0.5.0`.
+- Updated template vendor version to `0.5-0`.
+
+## 0.4.4 - Previous Unreleased
 
 ### Fixed
 

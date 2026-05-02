@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi UDM Pro API Monitoring
-Version: 0.4.4
+Version: 0.5.0
 
 External script for Zabbix templates.
 
@@ -504,6 +504,86 @@ def legacy_radio_field(device, radio_index, field):
     print_scalar(value)
 
 
+def first_value(mapping, *keys):
+    """Return the first non-empty value from a mapping."""
+    for key in keys:
+        value = mapping.get(key)
+        if value not in (None, ""):
+            return value
+    return None
+
+
+def legacy_port_index(port):
+    """Return the most stable port index exposed by legacy port tables."""
+    return first_value(port, "port_idx", "idx", "port", "port_id")
+
+
+def legacy_ports(device):
+    """Return the legacy `port_table` list safely."""
+    ports = device.get("port_table") or []
+    return ports if isinstance(ports, list) else []
+
+
+def legacy_discover_ports(payload):
+    """Discover richer switch/gateway ports from legacy `port_table` data."""
+    discovered = []
+    for device in legacy_devices(payload):
+        for port in legacy_ports(device):
+            port_idx = legacy_port_index(port)
+            if port_idx is None:
+                continue
+            discovered.append(lld_item({
+                "{#UNIFI.DEVICE.ID}": device.get("external_id"),
+                "{#UNIFI.DEVICE.NAME}": device.get("name"),
+                "{#UNIFI.DEVICE.MODEL}": device.get("model"),
+                "{#UNIFI.PORT.IDX}": port_idx,
+                "{#UNIFI.PORT.NAME}": first_value(port, "name", "ifname", "label"),
+                "{#UNIFI.PORT.IFNAME}": first_value(port, "ifname", "name"),
+                "{#UNIFI.PORT.POE_MODE}": first_value(port, "poe_mode", "poe_caps"),
+            }))
+    return {"data": discovered}
+
+
+def legacy_port_value(port, field):
+    """Return normalized legacy port metrics for Zabbix items."""
+    if field == "up":
+        return bool(first_value(port, "up", "link", "link_up"))
+    if field == "speed_mbps":
+        return to_float(first_value(port, "speed", "speedMbps", "speed_mbps"))
+    if field == "rx_bps":
+        return round(to_float(first_value(port, "rx_bytes-r", "rx_bytes_rate", "rx_rate")) * 8, 2)
+    if field == "tx_bps":
+        return round(to_float(first_value(port, "tx_bytes-r", "tx_bytes_rate", "tx_rate")) * 8, 2)
+    if field == "rx_errors":
+        return to_int(first_value(port, "rx_errors", "rx_error", "rx_errors_delta"))
+    if field == "tx_errors":
+        return to_int(first_value(port, "tx_errors", "tx_error", "tx_errors_delta"))
+    if field == "rx_dropped":
+        return to_int(first_value(port, "rx_dropped", "rx_drops", "rx_drop"))
+    if field == "tx_dropped":
+        return to_int(first_value(port, "tx_dropped", "tx_drops", "tx_drop"))
+    if field == "poe_power_w":
+        return to_float(first_value(port, "poe_power", "poe_power_w"))
+    if field == "poe_voltage_v":
+        return to_float(first_value(port, "poe_voltage", "poe_voltage_v"))
+    if field == "poe_good":
+        return bool(first_value(port, "poe_good", "poe_enable", "poe_power"))
+    if field == "poe_mode":
+        return first_value(port, "poe_mode", "poe_caps")
+    if field == "name":
+        return first_value(port, "name", "ifname", "label")
+    return port.get(field)
+
+
+def legacy_port_field(device, port_idx, field):
+    """Print one scalar field from a legacy `port_table` row."""
+    for port in legacy_ports(device):
+        if str(legacy_port_index(port)) == str(port_idx):
+            print_scalar(legacy_port_value(port, field))
+            return
+    print_scalar(None)
+
+
 def legacy_stat_devices(base_url, api_key, legacy_site, insecure=True, timeout=20):
     """Fetch the legacy stat/device payload for the selected site."""
     return request_legacy_json(base_url, api_key, legacy_site, "stat/device", insecure=insecure, timeout=timeout)
@@ -897,6 +977,20 @@ def main():
         legacy_site = args.site_id or "default"
         payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
         print_json(legacy_discover_radios(payload))
+        return
+
+    if command == "legacy-discover-ports":
+        legacy_site = args.site_id or "default"
+        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
+        print_json(legacy_discover_ports(payload))
+        return
+
+    if command == "legacy-port-field":
+        if not args.object_id or len(args.extra_values) < 2:
+            fail("missing legacy port field arguments")
+        legacy_site = args.site_id or "default"
+        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
+        legacy_port_field(find_legacy_device(payload, args.object_id), args.extra_values[0], args.extra_values[1])
         return
 
     if command == "storage-field":

@@ -164,7 +164,7 @@ Recommended process:
 Current project version:
 
 ```text
-0.4.4
+0.5.0
 ```
 
 The importable Zabbix 7.0 template is:
@@ -208,6 +208,10 @@ The initial template includes:
   and connector type.
 - Empty port speed values are normalized to `0` Mbps, which avoids numeric item
   errors on disconnected or inactive ports.
+- Legacy port telemetry discovery from `port_table`, with link state,
+  negotiated speed, upload/download rate, RX/TX errors, RX/TX drops, PoE power,
+  PoE voltage, PoE good state, PoE mode, and graph prototypes for traffic,
+  errors/drops, and PoE.
 - Radio discovery with item prototypes for channel, channel width, frequency,
   and WLAN standard.
 - System health from `/proxy/network/api/s/default/stat/device`: CPU, memory,
@@ -335,9 +339,7 @@ You can still test a single device manually:
 
 ### Suggested Next Additions
 
-- Per-port traffic and error counters from the legacy `port_table`.
-- PoE monitoring for switches that expose `poe_power`, `poe_voltage`, and
-  `poe_good`.
+- Switch-level PoE budget from `total_used_power` and `total_max_power`.
 - VPN tunnel discovery and status from the legacy `network_table`.
 - DHCP lease count per VLAN from legacy network details.
 - IDS/IPS signature status and rule count.
