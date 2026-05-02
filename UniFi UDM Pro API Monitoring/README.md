@@ -1,7 +1,12 @@
 # UniFi UDM Pro API Monitoring
 
+Portuguese version: [README.pt-BR.md](README.pt-BR.md)
+
 > Development status: this template is currently under active development and
 > should be validated in a test host before production use.
+>
+> Documentation maintenance: when this English README is updated, update
+> `README.pt-BR.md` in the same change.
 
 Zabbix template project for monitoring a Ubiquiti UniFi Dream Machine Pro
 through the UniFi Network API, Site Manager API, CEF/syslog events, and
@@ -230,13 +235,78 @@ The initial template includes:
   so AP-heavy environments do not call the UniFi API once per radio metric.
 - Radio satisfaction values below zero are normalized to `0`, because some
   UniFi controllers return `-1` until that metric is available.
+- Collector health items for Integration API, legacy system, legacy WAN, legacy
+  port, and legacy radio master items. These show whether the script returned
+  usable JSON and expose the last API/script error as text.
+- Low-level discovery include filters controlled by host macros. They default
+  to `.*`, so nothing is excluded unless you change the macros.
 - A dashboard named `UniFi Controller Overview` with classic graphs for
   Internet activity, system health, and clients/devices.
 - A dashboard named `Unifi Controller` with a modern SVG graph, version widget,
   and CPU/memory gauges.
 - Triggers for offline devices, firmware updates, disabled networks, and
-  application version changes, high CPU, high memory, high storage usage, and
-  high CPU temperature, WAN latency, and WAN packet loss.
+  application version changes, collector failures, high CPU, high memory, high
+  storage usage, high CPU temperature, WAN latency, WAN packet loss, low WAN
+  availability, stale speedtest results, high radio utilization, high radio
+  retries, and low radio satisfaction.
+
+### Useful Tuning Macros
+
+The most common operational thresholds are exposed as host macros:
+
+```text
+{$UNIFI.CPU.WARN}
+{$UNIFI.MEMORY.WARN}
+{$UNIFI.STORAGE.WARN}
+{$UNIFI.TEMP.WARN}
+{$UNIFI.WAN.LATENCY.WARN}
+{$UNIFI.WAN.LOSS.WARN}
+{$UNIFI.WAN.AVAILABILITY.MIN}
+{$UNIFI.SPEEDTEST.MAX_AGE}
+{$UNIFI.RADIO.UTIL.WARN}
+{$UNIFI.RADIO.RETRY.WARN}
+{$UNIFI.RADIO.SATISFACTION.MIN}
+```
+
+Low-level discovery can be narrowed with include regex macros. Defaults are
+permissive:
+
+```text
+{$UNIFI.LLD.DEVICE.NAME.MATCHES} = .*
+{$UNIFI.LLD.DEVICE.MODEL.MATCHES} = .*
+{$UNIFI.LLD.NETWORK.NAME.MATCHES} = .*
+{$UNIFI.LLD.CLIENT.TYPE.MATCHES} = .*
+{$UNIFI.LLD.PORT.IDX.MATCHES} = .*
+{$UNIFI.LLD.PORT.NAME.MATCHES} = .*
+{$UNIFI.LLD.RADIO.INDEX.MATCHES} = .*
+{$UNIFI.LLD.RADIO.BAND.MATCHES} = .*
+{$UNIFI.LLD.STORAGE.MOUNT.MATCHES} = .*
+{$UNIFI.LLD.WAN.NAME.MATCHES} = .*
+```
+
+Example: to monitor only AP names starting with `ap-`, set
+`{$UNIFI.LLD.DEVICE.NAME.MATCHES}` to `^ap-`.
+
+### Troubleshooting No Data
+
+When a graph stops receiving data, check these items first on the controller
+host:
+
+```text
+UniFi Integration API collection available
+UniFi Integration API last error
+UniFi legacy system collection available
+UniFi legacy system last error
+UniFi legacy WAN collection available
+UniFi legacy WAN last error
+UniFi legacy port collection available
+UniFi legacy port last error
+UniFi legacy radio collection available
+UniFi legacy radio last error
+```
+
+If an availability item is `0`, the matching `last error` item usually points to
+TLS, API key, firewall, site ID, legacy site, or endpoint changes.
 
 ## External Script
 

@@ -31,6 +31,44 @@ zabbix_export:
           tags:
             - tag: component
               value: api
+        - uuid: 9d38c15e9bb04ee4bf105022e7fed628
+          name: 'UniFi Integration API collection available'
+          type: DEPENDENT
+          key: unifi.collector.integration.available
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}"]'
+          tags:
+            - tag: component
+              value: collector
+          triggers:
+            - uuid: 5b7725bf8cad4f01bd4a49acac225b12
+              expression: 'max(/UniFi UDM Pro API Monitoring/unifi.collector.integration.available,10m)=0'
+              name: 'UniFi Integration API collection is failing'
+              priority: HIGH
+              description: 'The Integration API master item is returning an error or invalid JSON.'
+        - uuid: 1f17bbedaa0045c8932205b2f067c8d4
+          name: 'UniFi Integration API last error'
+          type: DEPENDENT
+          key: unifi.collector.integration.error
+          delay: '0'
+          history: 30d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}"]'
+          tags:
+            - tag: component
+              value: collector
         - uuid: 6254713021174394af4ad792e6afd651
           name: 'UniFi Network application version'
           type: DEPENDENT
@@ -270,6 +308,44 @@ zabbix_export:
           tags:
             - tag: component
               value: system
+        - uuid: 51edfff4c941420fb8918a33e1df2a21
+          name: 'UniFi legacy system collection available'
+          type: DEPENDENT
+          key: unifi.collector.legacy.system.available
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
+          triggers:
+            - uuid: 7cef57945cf44b1489a6b661a39169df
+              expression: 'max(/UniFi UDM Pro API Monitoring/unifi.collector.legacy.system.available,10m)=0'
+              name: 'UniFi legacy system collection is failing'
+              priority: HIGH
+              description: 'The legacy system-health master item is returning an error or invalid JSON.'
+        - uuid: d32cc38ca3fd4c27af994f292ca97747
+          name: 'UniFi legacy system last error'
+          type: DEPENDENT
+          key: unifi.collector.legacy.system.error
+          delay: '0'
+          history: 30d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
         - uuid: 94d5980801fc40279db1eb83d7139d36
           name: 'UniFi system CPU utilization'
           type: DEPENDENT
@@ -472,6 +548,44 @@ zabbix_export:
           tags:
             - tag: component
               value: internet
+        - uuid: 4ab7a39ce2f842028a7c64b10f522c2c
+          name: 'UniFi legacy WAN collection available'
+          type: DEPENDENT
+          key: unifi.collector.legacy.wan.available
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
+          triggers:
+            - uuid: 82f2213752fc430291a381d9cab30464
+              expression: 'max(/UniFi UDM Pro API Monitoring/unifi.collector.legacy.wan.available,10m)=0'
+              name: 'UniFi legacy WAN collection is failing'
+              priority: HIGH
+              description: 'The legacy wan-health master item is returning an error or invalid JSON.'
+        - uuid: a455f8faea4447fca0132fdf51c1479f
+          name: 'UniFi legacy WAN last error'
+          type: DEPENDENT
+          key: unifi.collector.legacy.wan.error
+          delay: '0'
+          history: 30d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
         - uuid: 7a08b50aae0f45349db31ed79f610abb
           name: 'UniFi WAN latency'
           type: DEPENDENT
@@ -535,6 +649,12 @@ zabbix_export:
           tags:
             - tag: component
               value: internet
+          triggers:
+            - uuid: c5116a844f6f498e9c5f53aeb1c9d22e
+              expression: 'avg(/UniFi UDM Pro API Monitoring/unifi.wan.availability,10m)<{$UNIFI.WAN.AVAILABILITY.MIN}'
+              name: 'Low UniFi WAN availability'
+              opdata: 'Availability: {ITEM.LASTVALUE1}'
+              priority: WARNING
         - uuid: 8ae03c9289834292990cd56c789b49a0
           name: 'UniFi WAN download rate'
           type: DEPENDENT
@@ -726,6 +846,44 @@ zabbix_export:
           tags:
             - tag: component
               value: ports
+        - uuid: e24c9b0d15ce423a96ec9bf116eb62ba
+          name: 'UniFi legacy port collection available'
+          type: DEPENDENT
+          key: unifi.collector.legacy.ports.available
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
+          triggers:
+            - uuid: a7c5deb0f11747568394b287d036019e
+              expression: 'max(/UniFi UDM Pro API Monitoring/unifi.collector.legacy.ports.available,15m)=0'
+              name: 'UniFi legacy port collection is failing'
+              priority: WARNING
+              description: 'The legacy port telemetry master item is returning an error or invalid JSON.'
+        - uuid: b34b84b6d3484844a72073937b97ec9c
+          name: 'UniFi legacy port last error'
+          type: DEPENDENT
+          key: unifi.collector.legacy.ports.error
+          delay: '0'
+          history: 30d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
         - uuid: 928ff53e228f40c9a52b2f0f2c8c382f
           name: 'UniFi legacy radio performance raw'
           type: EXTERNAL
@@ -739,6 +897,44 @@ zabbix_export:
           tags:
             - tag: component
               value: radios
+        - uuid: f166288f7c3048a6a051d13ac96259b3
+          name: 'UniFi legacy radio collection available'
+          type: DEPENDENT
+          key: unifi.collector.legacy.radios.available
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["legacy-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
+          triggers:
+            - uuid: 562ab5f03e1e4aaaab9de658d022eb6b
+              expression: 'max(/UniFi UDM Pro API Monitoring/unifi.collector.legacy.radios.available,15m)=0'
+              name: 'UniFi legacy radio collection is failing'
+              priority: WARNING
+              description: 'The legacy radio performance master item is returning an error or invalid JSON.'
+        - uuid: 4528ab32a02a48a09eb347327866152d
+          name: 'UniFi legacy radio last error'
+          type: DEPENDENT
+          key: unifi.collector.legacy.radios.error
+          delay: '0'
+          history: 30d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["legacy-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
         - uuid: b8e354582c9148d38efa868b073dc52e
           name: 'UniFi system uptime'
           type: DEPENDENT
@@ -764,6 +960,15 @@ zabbix_export:
           lifetime: 30d
           timeout: 30s
           description: 'Discovers UniFi devices from the local Network API.'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#UNIFI.DEVICE.NAME}'
+                value: '{$UNIFI.LLD.DEVICE.NAME.MATCHES}'
+                formulaid: A
+              - macro: '{#UNIFI.DEVICE.MODEL}'
+                value: '{$UNIFI.LLD.DEVICE.MODEL.MATCHES}'
+                formulaid: B
         - uuid: e09bac0916214333825d7b6e24a00b69
           name: 'UniFi network discovery'
           type: EXTERNAL
@@ -772,6 +977,12 @@ zabbix_export:
           lifetime: 30d
           timeout: 30s
           description: 'Discovers UniFi networks and VLANs from the local Network API.'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#UNIFI.NETWORK.NAME}'
+                value: '{$UNIFI.LLD.NETWORK.NAME.MATCHES}'
+                formulaid: A
         - uuid: a268db968f864a399eeea0ff3d60235a
           name: 'UniFi client discovery'
           type: EXTERNAL
@@ -780,6 +991,12 @@ zabbix_export:
           lifetime: 7d
           timeout: 30s
           description: 'Discovers currently connected UniFi clients from the local Network API.'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#UNIFI.CLIENT.TYPE}'
+                value: '{$UNIFI.LLD.CLIENT.TYPE.MATCHES}'
+                formulaid: A
         - uuid: b05ea9168c89446eae28c7fdfd4b52a3
           name: 'UniFi port discovery'
           type: EXTERNAL
@@ -788,6 +1005,15 @@ zabbix_export:
           lifetime: 30d
           timeout: 60s
           description: 'Discovers physical ports from all UniFi devices that expose port interfaces.'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#UNIFI.DEVICE.NAME}'
+                value: '{$UNIFI.LLD.DEVICE.NAME.MATCHES}'
+                formulaid: A
+              - macro: '{#UNIFI.PORT.IDX}'
+                value: '{$UNIFI.LLD.PORT.IDX.MATCHES}'
+                formulaid: B
           item_prototypes:
             - uuid: d7ca3569e4cd4cbcae3097a6421ca12b
               name: 'Port {#UNIFI.PORT.IDX} state on {#UNIFI.DEVICE.NAME}'
@@ -849,6 +1075,15 @@ zabbix_export:
           lifetime: 30d
           timeout: 60s
           description: 'Discovers richer runtime port telemetry from legacy port_table data, including traffic counters, errors, drops, and PoE fields when available.'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#UNIFI.DEVICE.NAME}'
+                value: '{$UNIFI.LLD.DEVICE.NAME.MATCHES}'
+                formulaid: A
+              - macro: '{#UNIFI.PORT.NAME}'
+                value: '{$UNIFI.LLD.PORT.NAME.MATCHES}'
+                formulaid: B
           item_prototypes:
             - uuid: 829592e49c0547c0a4387fd077283879
               name: 'Legacy port {#UNIFI.PORT.IDX} link state on {#UNIFI.DEVICE.NAME}'
@@ -1115,6 +1350,15 @@ zabbix_export:
           lifetime: 30d
           timeout: 60s
           description: 'Discovers Wi-Fi radios from all UniFi access points that expose radio interfaces.'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#UNIFI.DEVICE.NAME}'
+                value: '{$UNIFI.LLD.DEVICE.NAME.MATCHES}'
+                formulaid: A
+              - macro: '{#UNIFI.RADIO.INDEX}'
+                value: '{$UNIFI.LLD.RADIO.INDEX.MATCHES}'
+                formulaid: B
           item_prototypes:
             - uuid: 2cc3da7e5e66483fad14e207d2f1ee34
               name: 'Radio {#UNIFI.RADIO.INDEX} channel on {#UNIFI.DEVICE.NAME}'
@@ -1176,6 +1420,15 @@ zabbix_export:
           lifetime: 30d
           timeout: 60s
           description: 'Discovers radio runtime statistics from the legacy UniFi Network API.'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#UNIFI.DEVICE.NAME}'
+                value: '{$UNIFI.LLD.DEVICE.NAME.MATCHES}'
+                formulaid: A
+              - macro: '{#UNIFI.RADIO.BAND}'
+                value: '{$UNIFI.LLD.RADIO.BAND.MATCHES}'
+                formulaid: B
           item_prototypes:
             - uuid: 20694b9752544753bee1b1600dfd25cc
               name: 'Radio {#UNIFI.RADIO.BAND} utilization on {#UNIFI.DEVICE.NAME}'
@@ -1289,6 +1542,22 @@ zabbix_export:
                   value: radios
                 - tag: device
                   value: '{#UNIFI.DEVICE.NAME}'
+          trigger_prototypes:
+            - uuid: bfccb0b6d4a342c6bb767e9423a50b8f
+              expression: 'avg(/UniFi UDM Pro API Monitoring/unifi.legacy.radio.cu_total[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}],10m)>{$UNIFI.RADIO.UTIL.WARN}'
+              name: 'High radio {#UNIFI.RADIO.BAND} utilization on {#UNIFI.DEVICE.NAME}'
+              opdata: 'Utilization: {ITEM.LASTVALUE1}'
+              priority: WARNING
+            - uuid: 69b4969b23b74abf9632d311a366c468
+              expression: 'avg(/UniFi UDM Pro API Monitoring/unifi.legacy.radio.tx_retries_pct[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}],10m)>{$UNIFI.RADIO.RETRY.WARN}'
+              name: 'High radio {#UNIFI.RADIO.BAND} retry percentage on {#UNIFI.DEVICE.NAME}'
+              opdata: 'Retries: {ITEM.LASTVALUE1}'
+              priority: WARNING
+            - uuid: e67dc88a902748a989314de9224af9a2
+              expression: 'avg(/UniFi UDM Pro API Monitoring/unifi.legacy.radio.satisfaction[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}],10m)<{$UNIFI.RADIO.SATISFACTION.MIN} and last(/UniFi UDM Pro API Monitoring/unifi.legacy.radio.satisfaction[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}])>0'
+              name: 'Low radio {#UNIFI.RADIO.BAND} satisfaction on {#UNIFI.DEVICE.NAME}'
+              opdata: 'Satisfaction: {ITEM.LASTVALUE1}'
+              priority: WARNING
           graph_prototypes:
             - uuid: 8f29b129b4a842d28ecf5ec9d9c1faef
               name: 'Radio {#UNIFI.RADIO.BAND} channel utilization on {#UNIFI.DEVICE.NAME}'
@@ -1333,6 +1602,12 @@ zabbix_export:
           lifetime: 30d
           timeout: 60s
           description: 'Discovers storage volumes exposed by the UDM legacy telemetry payload.'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#UNIFI.STORAGE.MOUNT}'
+                value: '{$UNIFI.LLD.STORAGE.MOUNT.MATCHES}'
+                formulaid: A
           item_prototypes:
             - uuid: 545cf97349f24e1f928d2362def2628a
               name: 'Storage {#UNIFI.STORAGE.NAME} used'
@@ -1413,6 +1688,12 @@ zabbix_export:
           lifetime: 30d
           timeout: 60s
           description: 'Discovers WAN interfaces from the legacy UniFi Network API. Single-WAN UDM Pro systems discover WAN; multi-WAN systems may discover WAN2 and additional WAN labels.'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#UNIFI.WAN.NAME}'
+                value: '{$UNIFI.LLD.WAN.NAME.MATCHES}'
+                formulaid: A
           item_prototypes:
             - uuid: 2d07d2cfc5974caf84a224a26597abac
               name: '{#UNIFI.WAN.NAME} latency'
@@ -1558,9 +1839,51 @@ zabbix_export:
         - macro: '{$UNIFI.WAN.LOSS.WARN}'
           value: '1'
           description: 'WAN packet loss warning threshold in percent.'
+        - macro: '{$UNIFI.WAN.AVAILABILITY.MIN}'
+          value: '99'
+          description: 'Minimum acceptable WAN availability percentage.'
         - macro: '{$UNIFI.SPEEDTEST.MAX_AGE}'
           value: '172800'
           description: 'Maximum accepted age for the last WAN speedtest result, in seconds.'
+        - macro: '{$UNIFI.RADIO.UTIL.WARN}'
+          value: '80'
+          description: 'Radio channel utilization warning threshold in percent.'
+        - macro: '{$UNIFI.RADIO.RETRY.WARN}'
+          value: '20'
+          description: 'Radio retry percentage warning threshold.'
+        - macro: '{$UNIFI.RADIO.SATISFACTION.MIN}'
+          value: '60'
+          description: 'Minimum acceptable radio satisfaction percentage.'
+        - macro: '{$UNIFI.LLD.DEVICE.NAME.MATCHES}'
+          value: '.*'
+          description: 'Regular expression for UniFi device names included in low-level discovery.'
+        - macro: '{$UNIFI.LLD.DEVICE.MODEL.MATCHES}'
+          value: '.*'
+          description: 'Regular expression for UniFi device models included in low-level discovery.'
+        - macro: '{$UNIFI.LLD.NETWORK.NAME.MATCHES}'
+          value: '.*'
+          description: 'Regular expression for UniFi networks included in low-level discovery.'
+        - macro: '{$UNIFI.LLD.CLIENT.TYPE.MATCHES}'
+          value: '.*'
+          description: 'Regular expression for UniFi client types included in low-level discovery.'
+        - macro: '{$UNIFI.LLD.PORT.IDX.MATCHES}'
+          value: '.*'
+          description: 'Regular expression for Integration API port indexes included in low-level discovery.'
+        - macro: '{$UNIFI.LLD.PORT.NAME.MATCHES}'
+          value: '.*'
+          description: 'Regular expression for legacy port names included in low-level discovery.'
+        - macro: '{$UNIFI.LLD.RADIO.INDEX.MATCHES}'
+          value: '.*'
+          description: 'Regular expression for Integration API radio indexes included in low-level discovery.'
+        - macro: '{$UNIFI.LLD.RADIO.BAND.MATCHES}'
+          value: '.*'
+          description: 'Regular expression for legacy radio bands included in low-level discovery.'
+        - macro: '{$UNIFI.LLD.STORAGE.MOUNT.MATCHES}'
+          value: '.*'
+          description: 'Regular expression for storage mount points included in low-level discovery.'
+        - macro: '{$UNIFI.LLD.WAN.NAME.MATCHES}'
+          value: '.*'
+          description: 'Regular expression for WAN labels included in low-level discovery.'
       dashboards:
         - uuid: b2c6d9866761431c9be8f9847a9df1f6
           name: 'UniFi Controller Overview'

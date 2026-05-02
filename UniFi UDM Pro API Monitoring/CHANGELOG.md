@@ -1,8 +1,24 @@
 # Changelog
 
+Portuguese version: [CHANGELOG.pt-BR.md](CHANGELOG.pt-BR.md)
+
 All notable changes to this project are documented here.
 
+Documentation maintenance: when this English changelog is updated, update
+`CHANGELOG.pt-BR.md` in the same change.
+
 ## 0.6.0 - Unreleased
+
+### Added
+
+- Added collector health dependent items and triggers for Integration API,
+  legacy system, legacy WAN, legacy port, and legacy radio master items.
+- Added last-error text items for the same collector surfaces to make no-data
+  troubleshooting faster.
+- Added low-level discovery include filter macros for devices, networks,
+  clients, ports, radios, storage, and WAN labels.
+- Added warning triggers for low WAN availability, high radio utilization, high
+  radio retry percentage, and low radio satisfaction.
 
 ### Changed
 
