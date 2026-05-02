@@ -164,7 +164,7 @@ Recommended process:
 Current project version:
 
 ```text
-0.5.0
+0.5.1
 ```
 
 The importable Zabbix 7.0 template is:
@@ -212,6 +212,8 @@ The initial template includes:
   negotiated speed, upload/download rate, RX/TX errors, RX/TX drops, PoE power,
   PoE voltage, PoE good state, PoE mode, and graph prototypes for traffic,
   errors/drops, and PoE.
+- Legacy port telemetry uses one master item with dependent item prototypes, so
+  large switch/AP environments do not call the UniFi API once per metric.
 - Radio discovery with item prototypes for channel, channel width, frequency,
   and WLAN standard.
 - System health from `/proxy/network/api/s/default/stat/device`: CPU, memory,

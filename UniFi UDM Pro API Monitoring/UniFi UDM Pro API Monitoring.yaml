@@ -15,7 +15,7 @@ zabbix_export:
         or proxy external scripts directory.
       vendor:
         name: 'Net Tech'
-        version: 0.5-0
+        version: 0.5-1
       groups:
         - name: Templates/Network devices
       items:
@@ -713,6 +713,19 @@ zabbix_export:
           tags:
             - tag: component
               value: internet
+        - uuid: 4f2d12c6478c43e5abfbc1aad5d035cb
+          name: 'UniFi legacy port telemetry raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          delay: 1m
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          timeout: 60s
+          description: 'Master item for legacy port_table telemetry. Dependent item prototypes read per-port values from this payload to reduce API calls.'
+          tags:
+            - tag: component
+              value: ports
         - uuid: b8e354582c9148d38efa868b073dc52e
           name: 'UniFi system uptime'
           type: DEPENDENT
@@ -826,11 +839,18 @@ zabbix_export:
           item_prototypes:
             - uuid: 829592e49c0547c0a4387fd077283879
               name: 'Legacy port {#UNIFI.PORT.IDX} link state on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","up"]'
-              delay: 1m
+              type: DEPENDENT
+              key: 'unifi.legacy.port.up[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].up'
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value === true || value === "true" ? 1 : 0;'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: ports
@@ -838,13 +858,17 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: 200e207493f94db3aa9b80f25d634074
               name: 'Legacy port {#UNIFI.PORT.IDX} speed on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","speed_mbps"]'
-              delay: 1m
+              type: DEPENDENT
+              key: 'unifi.legacy.port.speed_mbps[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
               value_type: FLOAT
               units: Mbps
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].speed_mbps'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: ports
@@ -852,13 +876,17 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: 6600562d177542c28edabd82526672a9
               name: 'Legacy port {#UNIFI.PORT.IDX} download rate on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","rx_bps"]'
-              delay: 1m
+              type: DEPENDENT
+              key: 'unifi.legacy.port.rx_bps[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
               value_type: FLOAT
               units: bps
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].rx_bps'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: ports
@@ -866,13 +894,17 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: 079ceb95f42b46318534869da3d33ee9
               name: 'Legacy port {#UNIFI.PORT.IDX} upload rate on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","tx_bps"]'
-              delay: 1m
+              type: DEPENDENT
+              key: 'unifi.legacy.port.tx_bps[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
               value_type: FLOAT
               units: bps
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].tx_bps'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: ports
@@ -880,11 +912,15 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: c5d8e2a872eb4757b65094a86b4f2977
               name: 'Legacy port {#UNIFI.PORT.IDX} RX errors on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","rx_errors"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.port.rx_errors[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].rx_errors'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: ports
@@ -892,11 +928,15 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: dc495e6de4aa44cebefa88fdd9518541
               name: 'Legacy port {#UNIFI.PORT.IDX} TX errors on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","tx_errors"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.port.tx_errors[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].tx_errors'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: ports
@@ -904,11 +944,15 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: 0e77bbc479cf4371a7a8d653d0e9049e
               name: 'Legacy port {#UNIFI.PORT.IDX} RX drops on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","rx_dropped"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.port.rx_dropped[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].rx_dropped'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: ports
@@ -916,11 +960,15 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: ebbb5f3eb50b4828bc93d89b6bf0beab
               name: 'Legacy port {#UNIFI.PORT.IDX} TX drops on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","tx_dropped"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.port.tx_dropped[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].tx_dropped'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: ports
@@ -928,13 +976,17 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: d70a55c88bc544e39c4d907ee259240e
               name: 'Legacy port {#UNIFI.PORT.IDX} PoE power on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","poe_power_w"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.port.poe_power_w[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
               value_type: FLOAT
               units: W
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].poe_power_w'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: poe
@@ -942,13 +994,17 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: 29c9e37f732d4ed2a7a3e2aaa00e4501
               name: 'Legacy port {#UNIFI.PORT.IDX} PoE voltage on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","poe_voltage_v"]'
-              delay: 5m
+              type: DEPENDENT
+              key: 'unifi.legacy.port.poe_voltage_v[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
               value_type: FLOAT
               units: V
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].poe_voltage_v'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: poe
@@ -956,11 +1012,18 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: f961b9e2ecc24a3b805814355edad9cd
               name: 'Legacy port {#UNIFI.PORT.IDX} PoE good on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","poe_good"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.port.poe_good[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].poe_good'
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value === true || value === "true" ? 1 : 0;'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: poe
@@ -968,12 +1031,16 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: 698aee3fd06f4f938a598b5746553f37
               name: 'Legacy port {#UNIFI.PORT.IDX} PoE mode on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","poe_mode"]'
-              delay: 1h
+              type: DEPENDENT
+              key: 'unifi.legacy.port.poe_mode[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
               history: 90d
               value_type: CHAR
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].poe_mode'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: poe
@@ -986,47 +1053,47 @@ zabbix_export:
                 - color: 42A5F5
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","rx_bps"]'
+                    key: 'unifi.legacy.port.rx_bps[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
                 - sortorder: '1'
                   color: FFC107
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","tx_bps"]'
+                    key: 'unifi.legacy.port.tx_bps[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
             - uuid: 5503f094b22b43a29e57380cda84a7b3
               name: 'Legacy port {#UNIFI.PORT.IDX} errors and drops on {#UNIFI.DEVICE.NAME}'
               graph_items:
                 - color: EF5350
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","rx_errors"]'
+                    key: 'unifi.legacy.port.rx_errors[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
                 - sortorder: '1'
                   color: AB47BC
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","tx_errors"]'
+                    key: 'unifi.legacy.port.tx_errors[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
                 - sortorder: '2'
                   color: FF7043
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","rx_dropped"]'
+                    key: 'unifi.legacy.port.rx_dropped[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
                 - sortorder: '3'
                   color: 5C6BC0
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","tx_dropped"]'
+                    key: 'unifi.legacy.port.tx_dropped[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
             - uuid: eea923b94fee4652be90aa32e7581c07
               name: 'Legacy port {#UNIFI.PORT.IDX} PoE on {#UNIFI.DEVICE.NAME}'
               graph_items:
                 - color: 66BB6A
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","poe_power_w"]'
+                    key: 'unifi.legacy.port.poe_power_w[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
                 - sortorder: '1'
                   color: 42A5F5
                   yaxisside: RIGHT
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","poe_voltage_v"]'
+                    key: 'unifi.legacy.port.poe_voltage_v[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]'
         - uuid: 0f82eeab022548aaaffe4591608f916c
           name: 'UniFi radio discovery'
           type: EXTERNAL

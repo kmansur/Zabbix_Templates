@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi UDM Pro API Monitoring
-Version: 0.5.0
+Version: 0.5.1
 
 External script for Zabbix templates.
 
@@ -527,19 +527,16 @@ def legacy_ports(device):
 def legacy_discover_ports(payload):
     """Discover richer switch/gateway ports from legacy `port_table` data."""
     discovered = []
-    for device in legacy_devices(payload):
-        for port in legacy_ports(device):
-            port_idx = legacy_port_index(port)
-            if port_idx is None:
-                continue
+    for device_id, device_ports in legacy_ports_document(payload).items():
+        for port_idx, port in device_ports.items():
             discovered.append(lld_item({
-                "{#UNIFI.DEVICE.ID}": device.get("external_id"),
-                "{#UNIFI.DEVICE.NAME}": device.get("name"),
-                "{#UNIFI.DEVICE.MODEL}": device.get("model"),
+                "{#UNIFI.DEVICE.ID}": device_id,
+                "{#UNIFI.DEVICE.NAME}": port.get("device_name"),
+                "{#UNIFI.DEVICE.MODEL}": port.get("device_model"),
                 "{#UNIFI.PORT.IDX}": port_idx,
-                "{#UNIFI.PORT.NAME}": first_value(port, "name", "ifname", "label"),
-                "{#UNIFI.PORT.IFNAME}": first_value(port, "ifname", "name"),
-                "{#UNIFI.PORT.POE_MODE}": first_value(port, "poe_mode", "poe_caps"),
+                "{#UNIFI.PORT.NAME}": port.get("name"),
+                "{#UNIFI.PORT.IFNAME}": port.get("ifname"),
+                "{#UNIFI.PORT.POE_MODE}": port.get("poe_mode"),
             }))
     return {"data": discovered}
 
@@ -582,6 +579,49 @@ def legacy_port_field(device, port_idx, field):
             print_scalar(legacy_port_value(port, field))
             return
     print_scalar(None)
+
+
+def legacy_ports_document(payload):
+    """Build a compact device/port map for dependent item prototypes."""
+    document = {}
+    fields = (
+        "up",
+        "speed_mbps",
+        "rx_bps",
+        "tx_bps",
+        "rx_errors",
+        "tx_errors",
+        "rx_dropped",
+        "tx_dropped",
+        "poe_power_w",
+        "poe_voltage_v",
+        "poe_good",
+        "poe_mode",
+    )
+
+    for device in legacy_devices(payload):
+        device_id = str(device.get("external_id") or device.get("_id") or device.get("device_id") or device.get("mac") or "")
+        if not device_id:
+            continue
+
+        device_ports = document.setdefault(device_id, {})
+        for port in legacy_ports(device):
+            port_idx = legacy_port_index(port)
+            if port_idx is None:
+                continue
+
+            port_idx = str(port_idx)
+            item = {
+                "device_name": device.get("name") or "",
+                "device_model": device.get("model") or "",
+                "name": legacy_port_value(port, "name") or "",
+                "ifname": first_value(port, "ifname", "name") or "",
+            }
+            for field in fields:
+                item[field] = legacy_port_value(port, field)
+            device_ports[port_idx] = item
+
+    return document
 
 
 def legacy_stat_devices(base_url, api_key, legacy_site, insecure=True, timeout=20):
@@ -983,6 +1023,12 @@ def main():
         legacy_site = args.site_id or "default"
         payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
         print_json(legacy_discover_ports(payload))
+        return
+
+    if command == "legacy-ports":
+        legacy_site = args.site_id or "default"
+        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
+        print_json(legacy_ports_document(payload))
         return
 
     if command == "legacy-port-field":

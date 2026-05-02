@@ -2,7 +2,22 @@
 
 All notable changes to this project are documented here.
 
-## 0.5.0 - Unreleased
+## 0.5.1 - Unreleased
+
+### Added
+
+- Added a `legacy-ports` master command that returns normalized legacy port
+  telemetry as a compact device/port map.
+
+### Changed
+
+- Converted legacy port telemetry item prototypes from external checks to
+  dependent item prototypes backed by the `legacy-ports` master item.
+- Kept `legacy-port-field` available for manual testing and compatibility.
+- Updated script version to `0.5.1`.
+- Updated template vendor version to `0.5-1`.
+
+## 0.5.0 - Previous Unreleased
 
 ### Added
 
