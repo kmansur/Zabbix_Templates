@@ -3,6 +3,9 @@ zabbix_export:
   template_groups:
     - uuid: 9a7b1f8ac78a4c27aa0aa540c6485078
       name: Templates/Network devices
+  host_groups:
+    - uuid: ef964932197243c5913d0a8c2b1bfd6b
+      name: 'UniFi discovered devices'
   templates:
     - uuid: 1106dc5178b84ce9a7c6986128604c93
       template: 'UniFi UDM Pro API Monitoring'
@@ -15,7 +18,7 @@ zabbix_export:
         or proxy external scripts directory.
       vendor:
         name: 'Net Tech'
-        version: 0.5-1
+        version: 0.6-0
       groups:
         - name: Templates/Network devices
       items:
@@ -261,7 +264,7 @@ zabbix_export:
         - uuid: 51e5f40a88ce4339ba7dd9ccb28738d5
           name: 'UniFi system health raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           delay: 1m
           history: 7d
           value_type: TEXT
@@ -283,7 +286,7 @@ zabbix_export:
               parameters:
                 - $.cpu_percent
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: system
@@ -306,7 +309,7 @@ zabbix_export:
               parameters:
                 - $.memory_percent
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: system
@@ -328,7 +331,7 @@ zabbix_export:
               parameters:
                 - $.memory_total
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: system
@@ -344,7 +347,7 @@ zabbix_export:
               parameters:
                 - $.memory_used
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: system
@@ -360,7 +363,7 @@ zabbix_export:
               parameters:
                 - $.loadavg_1
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: system
@@ -377,7 +380,7 @@ zabbix_export:
               parameters:
                 - $.storage_used_percent
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: storage
@@ -399,7 +402,7 @@ zabbix_export:
               parameters:
                 - $.storage_total
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: storage
@@ -415,7 +418,7 @@ zabbix_export:
               parameters:
                 - $.storage_used
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: storage
@@ -431,7 +434,7 @@ zabbix_export:
               parameters:
                 - $.storage_free
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: storage
@@ -450,7 +453,7 @@ zabbix_export:
               error_handler: CUSTOM_VALUE
               error_handler_params: '0'
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: temperature
@@ -463,7 +466,7 @@ zabbix_export:
         - uuid: b2c1d09c2e6647c88aa4341805ceea4b
           name: 'UniFi WAN health raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+          key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           delay: 1m
           history: 7d
           value_type: TEXT
@@ -485,7 +488,7 @@ zabbix_export:
               parameters:
                 - $.latency_ms
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -508,7 +511,7 @@ zabbix_export:
               parameters:
                 - $.packet_loss_percent
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -531,7 +534,7 @@ zabbix_export:
               parameters:
                 - $.availability_percent
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -547,7 +550,7 @@ zabbix_export:
               parameters:
                 - $.rx_bps
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -563,7 +566,7 @@ zabbix_export:
               parameters:
                 - $.tx_bps
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -580,7 +583,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_download_mbps
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -597,7 +600,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_upload_mbps
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -614,7 +617,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_latency_ms
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -630,7 +633,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_last_run
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -646,7 +649,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_age_seconds
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -669,7 +672,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_status
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -687,7 +690,7 @@ zabbix_export:
               parameters:
                 - 'return value === true || value === "true" ? 1 : 0;'
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -709,7 +712,7 @@ zabbix_export:
               parameters:
                 - $.ip
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: internet
@@ -726,6 +729,19 @@ zabbix_export:
           tags:
             - tag: component
               value: ports
+        - uuid: 928ff53e228f40c9a52b2f0f2c8c382f
+          name: 'UniFi legacy radio performance raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["legacy-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
+          delay: 2m
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          timeout: 60s
+          description: 'Master item for legacy radio_table_stats telemetry. Dependent item prototypes read per-radio values from this payload to reduce API calls.'
+          tags:
+            - tag: component
+              value: radios
         - uuid: b8e354582c9148d38efa868b073dc52e
           name: 'UniFi system uptime'
           type: DEPENDENT
@@ -738,7 +754,7 @@ zabbix_export:
               parameters:
                 - $.uptime
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{$UNIFI.DEVICE.ID}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
           tags:
             - tag: component
               value: system
@@ -751,6 +767,34 @@ zabbix_export:
           lifetime: 30d
           timeout: 30s
           description: 'Discovers UniFi devices from the local Network API.'
+          host_prototypes:
+            - uuid: 82084bf4071743d784fc2240b8da96a0
+              host: 'unifi-{#UNIFI.DEVICE.ID}'
+              name: 'UniFi {#UNIFI.DEVICE.NAME}'
+              group_links:
+                - group:
+                    name: 'UniFi discovered devices'
+              group_prototypes:
+                - name: 'UniFi/{#UNIFI.DEVICE.MODEL}'
+              templates:
+                - name: 'UniFi Device API Monitoring'
+              macros:
+                - macro: '{$UNIFI.DEVICE.ID}'
+                  value: '{#UNIFI.DEVICE.ID}'
+                  description: 'UniFi Integration API device ID discovered from the controller.'
+                - macro: '{$UNIFI.DEVICE.MAC}'
+                  value: '{#UNIFI.DEVICE.MAC}'
+                  description: 'UniFi device MAC address discovered from the controller.'
+                - macro: '{$UNIFI.DEVICE.MODEL}'
+                  value: '{#UNIFI.DEVICE.MODEL}'
+                  description: 'UniFi device model discovered from the controller.'
+              tags:
+                - tag: component
+                  value: device
+                - tag: unifi.model
+                  value: '{#UNIFI.DEVICE.MODEL}'
+                - tag: unifi.state
+                  value: '{#UNIFI.DEVICE.STATE}'
         - uuid: e09bac0916214333825d7b6e24a00b69
           name: 'UniFi network discovery'
           type: EXTERNAL
@@ -1166,12 +1210,18 @@ zabbix_export:
           item_prototypes:
             - uuid: 20694b9752544753bee1b1600dfd25cc
               name: 'Radio {#UNIFI.RADIO.BAND} utilization on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_total"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.radio.cu_total[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
+              delay: '0'
               history: 90d
+              value_type: FLOAT
               units: '%'
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].cu_total'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: radios
@@ -1179,12 +1229,18 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: 6aec8bfb9868443faec180fcf1167cd4
               name: 'Radio {#UNIFI.RADIO.BAND} self RX utilization on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_self_rx"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.radio.cu_self_rx[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
+              delay: '0'
               history: 90d
+              value_type: FLOAT
               units: '%'
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].cu_self_rx'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: radios
@@ -1192,12 +1248,18 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: dbd721fe23654df5b9ff7427354dcd2b
               name: 'Radio {#UNIFI.RADIO.BAND} self TX utilization on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_self_tx"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.radio.cu_self_tx[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
+              delay: '0'
               history: 90d
+              value_type: FLOAT
               units: '%'
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].cu_self_tx'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: radios
@@ -1205,13 +1267,18 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: cb4a69bc52bb45c581557f040599c822
               name: 'Radio {#UNIFI.RADIO.BAND} retry percentage on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","tx_retries_pct"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.radio.tx_retries_pct[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
+              delay: '0'
               history: 90d
               value_type: FLOAT
               units: '%'
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].tx_retries_pct'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: radios
@@ -1219,11 +1286,16 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: 02d744e3e3a34d46949fbf86cc42b9c7
               name: 'Radio {#UNIFI.RADIO.BAND} clients on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","num_sta"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.radio.num_sta[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
+              delay: '0'
               history: 90d
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].num_sta'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: radios
@@ -1231,12 +1303,18 @@ zabbix_export:
                   value: '{#UNIFI.DEVICE.NAME}'
             - uuid: 2a8426e860e14f1f8c4f81fc81425ef3
               name: 'Radio {#UNIFI.RADIO.BAND} satisfaction on {#UNIFI.DEVICE.NAME}'
-              type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","satisfaction"]'
-              delay: 2m
+              type: DEPENDENT
+              key: 'unifi.legacy.radio.satisfaction[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
+              delay: '0'
               history: 90d
+              value_type: FLOAT
               units: '%'
-              timeout: 30s
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].satisfaction'
+              master_item:
+                key: 'unifi_udm_pro_api.py["legacy-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}"]'
               tags:
                 - tag: component
                   value: radios
@@ -1249,35 +1327,35 @@ zabbix_export:
                 - color: 42A5F5
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_total"]'
+                    key: 'unifi.legacy.radio.cu_total[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
                 - sortorder: '1'
                   color: FFC107
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_self_rx"]'
+                    key: 'unifi.legacy.radio.cu_self_rx[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
                 - sortorder: '2'
                   color: 66BB6A
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","cu_self_tx"]'
+                    key: 'unifi.legacy.radio.cu_self_tx[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
             - uuid: bb590f6707404e3893df03ef784c98fb
               name: 'Radio {#UNIFI.RADIO.BAND} quality on {#UNIFI.DEVICE.NAME}'
               graph_items:
                 - color: F06292
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","tx_retries_pct"]'
+                    key: 'unifi.legacy.radio.tx_retries_pct[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
                 - sortorder: '1'
                   color: 7E57C2
                   yaxisside: RIGHT
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","num_sta"]'
+                    key: 'unifi.legacy.radio.num_sta[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
                 - sortorder: '2'
                   color: 26A69A
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["legacy-radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.LEGACY.SITE}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","satisfaction"]'
+                    key: 'unifi.legacy.radio.satisfaction[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]'
         - uuid: 345f2b8e8f104a47bfac7e165996f1e5
           name: 'UniFi storage discovery'
           type: EXTERNAL
@@ -1493,9 +1571,6 @@ zabbix_export:
         - macro: '{$UNIFI.LEGACY.SITE}'
           value: default
           description: 'Legacy UniFi Network site reference used by /proxy/network/api/s/<site>/stat/device.'
-        - macro: '{$UNIFI.DEVICE.ID}'
-          value: ''
-          description: 'Optional UniFi external device ID for system health. Leave empty to use the first UDM device.'
         - macro: '{$UNIFI.CPU.WARN}'
           value: '85'
           description: 'CPU utilization warning threshold in percent.'
@@ -1568,22 +1643,22 @@ zabbix_export:
             - name: Overview
               widgets:
                 - type: svggraph
-                  name: 'WAN X clients'
+                  name: 'WAN Traffic'
                   width: '60'
-                  height: '8'
+                  height: '4'
                   fields:
+                    - type: STRING
+                      name: ds.0.color
+                      value: 00AA00
+                    - type: STRING
+                      name: ds.0.data_set_label
+                      value: 'UniFi download rate'
                     - type: INTEGER
-                      name: ds.0.axisy
-                      value: '1'
-                    - type: INTEGER
-                      name: ds.0.color_palette
-                      value: '10'
+                      name: ds.0.fill
+                      value: '0'
                     - type: STRING
                       name: ds.0.items.0
                       value: 'UniFi WAN download rate'
-                    - type: STRING
-                      name: ds.0.items.1
-                      value: 'UniFi WAN upload rate'
                     - type: INTEGER
                       name: ds.0.stacked
                       value: '1'
@@ -1592,49 +1667,160 @@ zabbix_export:
                       value: '2'
                     - type: STRING
                       name: ds.1.color
-                      value: CFD8DC
+                      value: 2774A4
+                    - type: STRING
+                      name: ds.1.data_set_label
+                      value: 'UniFi WAN upload rate'
+                    - type: INTEGER
+                      name: ds.1.fill
+                      value: '0'
                     - type: STRING
                       name: ds.1.items.0
-                      value: 'UniFi clients total'
-                    - type: INTEGER
-                      name: ds.1.transparency
-                      value: '2'
+                      value: 'UniFi WAN upload rate'
                     - type: INTEGER
                       name: ds.1.width
                       value: '2'
-                    - type: STRING
-                      name: ds.2.color
-                      value: FFBF00
-                    - type: INTEGER
-                      name: ds.2.fill
-                      value: '0'
-                    - type: STRING
-                      name: ds.2.items.0
-                      value: 'UniFi WAN latency'
-                    - type: INTEGER
-                      name: ds.2.transparency
-                      value: '0'
-                    - type: STRING
-                      name: ds.3.color
-                      value: FF0000
-                    - type: INTEGER
-                      name: ds.3.fill
-                      value: '0'
-                    - type: STRING
-                      name: ds.3.items.0
-                      value: 'UniFi WAN packet loss'
-                    - type: INTEGER
-                      name: ds.3.transparency
-                      value: '0'
                     - type: INTEGER
                       name: legend_lines
-                      value: '5'
+                      value: '2'
                     - type: INTEGER
                       name: legend_statistic
                       value: '1'
                     - type: STRING
                       name: reference
                       value: XHFVP
+                    - type: INTEGER
+                      name: righty
+                      value: '0'
+                    - type: INTEGER
+                      name: show_problems
+                      value: '1'
+                - type: svggraph
+                  name: 'WAN Quality'
+                  'y': '4'
+                  width: '60'
+                  height: '4'
+                  fields:
+                    - type: STRING
+                      name: ds.0.color
+                      value: FFD54F
+                    - type: STRING
+                      name: ds.0.data_set_label
+                      value: 'UniFi WAN latency'
+                    - type: INTEGER
+                      name: ds.0.fill
+                      value: '0'
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: 'UniFi WAN latency'
+                    - type: INTEGER
+                      name: ds.0.width
+                      value: '2'
+                    - type: INTEGER
+                      name: ds.1.axisy
+                      value: '1'
+                    - type: STRING
+                      name: ds.1.color
+                      value: CC0000
+                    - type: STRING
+                      name: ds.1.data_set_label
+                      value: 'UniFi WAN packet loss'
+                    - type: INTEGER
+                      name: ds.1.fill
+                      value: '0'
+                    - type: STRING
+                      name: ds.1.items.0
+                      value: 'UniFi WAN packet loss'
+                    - type: INTEGER
+                      name: ds.1.width
+                      value: '2'
+                    - type: STRING
+                      name: lefty_max
+                      value: '20'
+                    - type: STRING
+                      name: lefty_min
+                      value: '0'
+                    - type: INTEGER
+                      name: legend_lines
+                      value: '2'
+                    - type: INTEGER
+                      name: legend_statistic
+                      value: '1'
+                    - type: STRING
+                      name: reference
+                      value: VEHLU
+                    - type: STRING
+                      name: righty_max
+                      value: '100'
+                    - type: STRING
+                      name: righty_min
+                      value: '0'
+                    - type: INTEGER
+                      name: show_problems
+                      value: '1'
+                - type: svggraph
+                  name: 'UniFi Clients'
+                  'y': '8'
+                  width: '60'
+                  height: '4'
+                  fields:
+                    - type: STRING
+                      name: ds.0.color
+                      value: C0C0C0
+                    - type: STRING
+                      name: ds.0.data_set_label
+                      value: 'UniFi clients total'
+                    - type: INTEGER
+                      name: ds.0.fill
+                      value: '0'
+                    - type: STRING
+                      name: ds.0.items.0
+                      value: 'UniFi clients total'
+                    - type: INTEGER
+                      name: ds.0.width
+                      value: '2'
+                    - type: STRING
+                      name: ds.1.color
+                      value: FFC000
+                    - type: STRING
+                      name: ds.1.data_set_label
+                      value: 'UniFi wireless clients'
+                    - type: INTEGER
+                      name: ds.1.fill
+                      value: '0'
+                    - type: STRING
+                      name: ds.1.items.0
+                      value: 'UniFi wireless clients'
+                    - type: INTEGER
+                      name: ds.1.width
+                      value: '2'
+                    - type: STRING
+                      name: ds.2.color
+                      value: 00B894
+                    - type: STRING
+                      name: ds.2.data_set_label
+                      value: 'UniFi wired clients'
+                    - type: INTEGER
+                      name: ds.2.fill
+                      value: '0'
+                    - type: STRING
+                      name: ds.2.items.0
+                      value: 'UniFi wired clients'
+                    - type: INTEGER
+                      name: ds.2.width
+                      value: '2'
+                    - type: INTEGER
+                      name: legend_lines
+                      value: '2'
+                    - type: INTEGER
+                      name: legend_statistic
+                      value: '1'
+                    - type: STRING
+                      name: reference
+                      value: NXVNO
+                    - type: INTEGER
+                      name: righty
+                      value: '0'
                     - type: INTEGER
                       name: show_problems
                       value: '1'
@@ -1828,6 +2014,241 @@ zabbix_export:
                     - type: INTEGER
                       name: value_size
                       value: '24'
+                - type: gauge
+                  name: 'CPU temperature'
+                  x: '60'
+                  'y': '8'
+                  width: '12'
+                  height: '3'
+                  fields:
+                    - type: INTEGER
+                      name: angle
+                      value: '270'
+                    - type: INTEGER
+                      name: desc_size
+                      value: '8'
+                    - type: ITEM
+                      name: itemid.0
+                      value:
+                        host: 'UniFi UDM Pro API Monitoring'
+                        key: unifi.system.temperature.cpu
+                    - type: STRING
+                      name: max
+                      value: '100'
+                    - type: STRING
+                      name: min
+                      value: '0'
+                    - type: INTEGER
+                      name: show.0
+                      value: '1'
+                    - type: INTEGER
+                      name: show.1
+                      value: '2'
+                    - type: INTEGER
+                      name: show.2
+                      value: '3'
+                    - type: INTEGER
+                      name: show.3
+                      value: '4'
+                    - type: INTEGER
+                      name: show.4
+                      value: '5'
+                    - type: STRING
+                      name: thresholds.0.color
+                      value: 9CCC65
+                    - type: STRING
+                      name: thresholds.0.threshold
+                      value: '0'
+                    - type: STRING
+                      name: thresholds.1.color
+                      value: FFEE58
+                    - type: STRING
+                      name: thresholds.1.threshold
+                      value: '60'
+                    - type: STRING
+                      name: thresholds.2.color
+                      value: FFA726
+                    - type: STRING
+                      name: thresholds.2.threshold
+                      value: '70'
+                    - type: STRING
+                      name: thresholds.3.color
+                      value: FF7043
+                    - type: STRING
+                      name: thresholds.3.threshold
+                      value: '80'
+                    - type: STRING
+                      name: thresholds.4.color
+                      value: E65660
+                    - type: STRING
+                      name: thresholds.4.threshold
+                      value: '90'
+                    - type: INTEGER
+                      name: th_arc_size
+                      value: '9'
+                    - type: INTEGER
+                      name: th_show_arc
+                      value: '1'
+                    - type: INTEGER
+                      name: th_show_labels
+                      value: '1'
+                    - type: INTEGER
+                      name: value_size
+                      value: '24'
+    - uuid: d84ee77255fa44d7bac9eea14bfdc221
+      template: 'UniFi Device API Monitoring'
+      name: 'UniFi Device API Monitoring'
+      description: |
+        Child template linked to UniFi device host prototypes. It keeps
+        per-device state, firmware, model, and address information on the
+        discovered device hosts while the controller host keeps aggregate and
+        gateway telemetry.
+      vendor:
+        name: 'Net Tech'
+        version: 0.6-0
+      groups:
+        - name: Templates/Network devices
+      items:
+        - uuid: b91993bf3ee54a6fa5214703c935a81a
+          name: 'UniFi device detail raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["device","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.DEVICE.ID}"]'
+          delay: 1m
+          history: 7d
+          value_type: TEXT
+          trends: '0'
+          timeout: 60s
+          tags:
+            - tag: component
+              value: device
+        - uuid: 3718565502784f89b98e133e54f3a2e4
+          name: 'UniFi device online'
+          type: DEPENDENT
+          key: unifi.device.online
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.state
+            - type: JAVASCRIPT
+              parameters:
+                - 'return value === "ONLINE" ? 1 : 0;'
+          master_item:
+            key: 'unifi_udm_pro_api.py["device","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: device
+          triggers:
+            - uuid: c308233999164507b95b0797f28fb149
+              expression: 'last(/UniFi Device API Monitoring/unifi.device.online)=0'
+              name: 'UniFi device is offline'
+              priority: HIGH
+        - uuid: 9a76d4c47b384f3a97ac6a2588536542
+          name: 'UniFi device state'
+          type: DEPENDENT
+          key: unifi.device.state
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.state
+          master_item:
+            key: 'unifi_udm_pro_api.py["device","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: device
+        - uuid: a92747a1533346a4a9d3655d1c08e83f
+          name: 'UniFi device model'
+          type: DEPENDENT
+          key: unifi.device.model
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.model
+          master_item:
+            key: 'unifi_udm_pro_api.py["device","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: device
+        - uuid: a1a7502723134ff3973cc808999d6298
+          name: 'UniFi device firmware version'
+          type: DEPENDENT
+          key: unifi.device.firmware
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.firmwareVersion
+          master_item:
+            key: 'unifi_udm_pro_api.py["device","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: device
+        - uuid: 30f055c26e7845bb8b39d21d540bcac6
+          name: 'UniFi device firmware update available'
+          type: DEPENDENT
+          key: unifi.device.firmware.updatable
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.firmwareUpdatable
+            - type: JAVASCRIPT
+              parameters:
+                - 'return value === true || value === "true" ? 1 : 0;'
+          master_item:
+            key: 'unifi_udm_pro_api.py["device","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: device
+          triggers:
+            - uuid: 09b6e9da438641f38990837761c19556
+              expression: 'last(/UniFi Device API Monitoring/unifi.device.firmware.updatable)=1'
+              name: 'UniFi device firmware update is available'
+              priority: INFO
+        - uuid: 473c2758bb49446283b4fdf3f2ae337a
+          name: 'UniFi device IP address'
+          type: DEPENDENT
+          key: unifi.device.ip
+          delay: '0'
+          history: 90d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ipAddress
+          master_item:
+            key: 'unifi_udm_pro_api.py["device","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.DEVICE.ID}"]'
+          tags:
+            - tag: component
+              value: device
+      macros:
+        - macro: '{$UNIFI.API.URL}'
+          value: ''
+          description: 'Inherited from the controller host. Base URL of the UDM Pro.'
+        - macro: '{$UNIFI.API.KEY}'
+          value: ''
+          type: SECRET_TEXT
+          description: 'Inherited from the controller host. Local UniFi Network API key.'
+        - macro: '{$UNIFI.SITE.ID}'
+          value: ''
+          description: 'Inherited from the controller host. Optional site ID.'
+        - macro: '{$UNIFI.DEVICE.ID}'
+          value: ''
+          description: 'Set by the UniFi device host prototype.'
   graphs:
     - uuid: e7b6dd25c843487d80477b8ee3dbfaca
       name: 'UniFi Internet activity'

@@ -2,7 +2,58 @@
 
 All notable changes to this project are documented here.
 
-## 0.5.1 - Unreleased
+## 0.6.0 - Unreleased
+
+### Added
+
+- Added a `UniFi Device API Monitoring` child template for hosts created from
+  UniFi device discovery.
+- Added host prototypes to the main device discovery rule. Discovered UniFi
+  devices are linked to the child template, grouped under `UniFi discovered
+  devices`, and assigned model-specific `UniFi/<model>` group prototypes.
+- Added per-device child-template items for detail raw JSON, online state,
+  current state, model, firmware version, firmware update availability, and IP
+  address.
+
+### Changed
+
+- Updated script version to `0.6.0`.
+- Updated template vendor version to `0.6-0`.
+
+## 0.5.3 - Previous Unreleased
+
+### Fixed
+
+- Removed `{$UNIFI.DEVICE.ID}` from fixed system and WAN master item keys so
+  controller-level graphs keep working even when a host has a mismatched device
+  ID macro. The script still supports explicit device IDs for manual legacy
+  endpoint tests.
+- Treat unresolved Zabbix user macros such as `{$UNIFI.DEVICE.ID}` as empty
+  optional arguments in the script.
+- Fall back to the `default` legacy site when an optional legacy site argument
+  is empty or unresolved.
+
+### Changed
+
+- Updated script version to `0.5.3`.
+- Updated template vendor version to `0.5-3`.
+
+## 0.5.2 - Previous Unreleased
+
+### Added
+
+- Added a `legacy-radios` master command that returns normalized legacy radio
+  performance telemetry as a compact device/radio map.
+
+### Changed
+
+- Converted legacy radio performance item prototypes from external checks to
+  dependent item prototypes backed by the `legacy-radios` master item.
+- Kept `legacy-radio-field` available for manual testing and compatibility.
+- Updated script version to `0.5.2`.
+- Updated template vendor version to `0.5-2`.
+
+## 0.5.1 - Previous Unreleased
 
 ### Added
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi UDM Pro API Monitoring
-Version: 0.5.1
+Version: 0.6.0
 
 External script for Zabbix templates.
 
@@ -44,6 +44,14 @@ import urllib.request
 DEFAULT_LIMIT = 200
 
 
+def is_blank_arg(value):
+    """Return true for empty values and unresolved Zabbix user macros."""
+    if value is None:
+        return True
+    text = str(value)
+    return text == "" or (text.startswith("{$") and text.endswith("}"))
+
+
 def print_json(payload):
     """Print compact JSON.
 
@@ -74,7 +82,7 @@ def normalize_base_url(base_url):
     (https://<udm-pro-ip>) or the full integration prefix. Supporting both keeps
     manual testing comfortable and prevents duplicated path segments.
     """
-    if not base_url:
+    if is_blank_arg(base_url):
         fail("missing UniFi API URL")
 
     base_url = base_url.rstrip("/")
@@ -99,10 +107,10 @@ def build_legacy_url(base_url, legacy_site, path, query=None):
     returned by the Integration API sites endpoint in single-site UDM Pro
     deployments.
     """
-    if not base_url:
+    if is_blank_arg(base_url):
         fail("missing UniFi API URL")
 
-    legacy_site = legacy_site or "default"
+    legacy_site = "default" if is_blank_arg(legacy_site) else legacy_site
     base_url = base_url.rstrip("/")
     path = path.lstrip("/")
     url = f"{base_url}/proxy/network/api/s/{urllib.parse.quote(legacy_site)}/{path}"
@@ -113,7 +121,7 @@ def build_legacy_url(base_url, legacy_site, path, query=None):
 
 def request_json(base_url, api_key, path, query=None, insecure=True, timeout=20):
     """Perform a GET request against the Integration API and parse JSON."""
-    if not api_key:
+    if is_blank_arg(api_key):
         fail("missing UniFi API key")
 
     req = urllib.request.Request(
@@ -150,7 +158,7 @@ def request_json(base_url, api_key, path, query=None, insecure=True, timeout=20)
 
 def request_legacy_json(base_url, api_key, legacy_site, path, query=None, insecure=True, timeout=20):
     """Perform a GET request against the legacy Network API and parse JSON."""
-    if not api_key:
+    if is_blank_arg(api_key):
         fail("missing UniFi API key")
 
     req = urllib.request.Request(
@@ -423,15 +431,14 @@ def legacy_discover_radios(payload):
     counts, and satisfaction.
     """
     discovered = []
-    for device in legacy_devices(payload):
-        radios = device.get("radio_table_stats") or []
-        for index, radio in enumerate(radios):
+    for device_id, device_radios in legacy_radios_document(payload).items():
+        for index, radio in device_radios.items():
             discovered.append(lld_item({
-                "{#UNIFI.DEVICE.ID}": device.get("external_id"),
-                "{#UNIFI.DEVICE.NAME}": device.get("name"),
+                "{#UNIFI.DEVICE.ID}": device_id,
+                "{#UNIFI.DEVICE.NAME}": radio.get("device_name"),
                 "{#UNIFI.RADIO.INDEX}": index,
                 "{#UNIFI.RADIO.NAME}": radio.get("name"),
-                "{#UNIFI.RADIO.BAND}": radio.get("radio"),
+                "{#UNIFI.RADIO.BAND}": radio.get("band"),
                 "{#UNIFI.RADIO.CHANNEL}": radio.get("channel"),
                 "{#UNIFI.RADIO.STATE}": radio.get("state"),
             }))
@@ -502,6 +509,53 @@ def legacy_radio_field(device, radio_index, field):
         return
 
     print_scalar(value)
+
+
+def legacy_radio_value(radio, field):
+    """Return normalized legacy radio metrics for Zabbix items."""
+    if field in {"cu_total", "cu_self_rx", "cu_self_tx", "tx_retries_pct", "satisfaction"}:
+        value = to_float(radio.get(field))
+        if field == "satisfaction" and value < 0:
+            return 0
+        return value
+    if field == "num_sta":
+        return to_int(radio.get(field))
+    return radio.get(field)
+
+
+def legacy_radios_document(payload):
+    """Build a compact device/radio map for dependent item prototypes."""
+    document = {}
+    fields = (
+        "cu_total",
+        "cu_self_rx",
+        "cu_self_tx",
+        "tx_retries_pct",
+        "num_sta",
+        "satisfaction",
+    )
+
+    for device in legacy_devices(payload):
+        device_id = str(device.get("external_id") or device.get("_id") or device.get("device_id") or device.get("mac") or "")
+        if not device_id:
+            continue
+
+        radios = device.get("radio_table_stats") or []
+        device_radios = document.setdefault(device_id, {})
+        for index, radio in enumerate(radios):
+            item = {
+                "device_name": device.get("name") or "",
+                "device_model": device.get("model") or "",
+                "name": radio.get("name") or "",
+                "band": radio.get("radio") or "",
+                "channel": radio.get("channel"),
+                "state": radio.get("state") or "",
+            }
+            for field in fields:
+                item[field] = legacy_radio_value(radio, field)
+            device_radios[str(index)] = item
+
+    return document
 
 
 def first_value(mapping, *keys):
@@ -642,6 +696,9 @@ def find_legacy_device(payload, device_id=None):
     case the first legacy device with type `udm` or model `UDMPRO` is selected.
     """
     devices = legacy_devices(payload)
+    if is_blank_arg(device_id):
+        device_id = None
+
     if device_id:
         for device in devices:
             identifiers = {
@@ -881,7 +938,7 @@ def summarize(payload, field):
 
 
 def resolve_site_id(base_url, api_key, site_id, insecure=True, timeout=20, limit=DEFAULT_LIMIT):
-    if site_id:
+    if not is_blank_arg(site_id):
         return site_id
 
     payload = paginated_get(base_url, api_key, "sites", insecure=insecure, timeout=timeout, limit=limit)
@@ -931,7 +988,7 @@ def parse_args():
             elif len(args.values) >= 6:
                 # Backward compatibility for an explicit device ID:
                 # url, key, legacy_site, device_id, mount_point, field.
-                args.object_id = args.values[3] or None
+                args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]
                 args.extra_values = args.values[4:]
             else:
                 fail("invalid argument count", command=args.command, count=len(args.values))
@@ -944,7 +1001,7 @@ def parse_args():
             elif len(args.values) >= 6:
                 # Backward compatibility for older template keys:
                 # url, key, legacy_site, device_id, wan_name, field.
-                args.object_id = args.values[3] or None
+                args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]
                 args.extra_values = args.values[4:]
             else:
                 fail("invalid argument count", command=args.command, count=len(args.values))
@@ -955,13 +1012,13 @@ def parse_args():
             if str(args.values[3]).upper().startswith("WAN"):
                 args.extra_values = [args.values[3]]
             else:
-                args.object_id = args.values[3] or None
+                args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]
         elif args.command in optional_legacy_device_commands and len(args.values) >= 4:
-            args.object_id = args.values[3] or None
+            args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]
             if len(args.values) >= 5:
                 args.extra_values = args.values[4:]
         elif len(args.values) >= 4:
-            args.object_id = args.values[3]
+            args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]
             if len(args.values) >= 5:
                 args.extra_values = args.values[4:]
     elif args.values:
@@ -1017,6 +1074,12 @@ def main():
         legacy_site = args.site_id or "default"
         payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
         print_json(legacy_discover_radios(payload))
+        return
+
+    if command == "legacy-radios":
+        legacy_site = args.site_id or "default"
+        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
+        print_json(legacy_radios_document(payload))
         return
 
     if command == "legacy-discover-ports":

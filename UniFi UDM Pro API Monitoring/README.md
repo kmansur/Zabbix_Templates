@@ -164,7 +164,7 @@ Recommended process:
 Current project version:
 
 ```text
-0.5.1
+0.6.0
 ```
 
 The importable Zabbix 7.0 template is:
@@ -185,15 +185,13 @@ Before importing or enabling the template:
    {$UNIFI.API.KEY} = your local UniFi Network API key
    {$UNIFI.SITE.ID} = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
    {$UNIFI.LEGACY.SITE} = default
-   {$UNIFI.DEVICE.ID} =
    ```
 
 `{$UNIFI.SITE.ID}` can be left empty when the controller has only one site. The
 script will discover it automatically.
-`{$UNIFI.DEVICE.ID}` can be left empty when the legacy endpoint has a UDM
-device. The script will select the first device with `type` equal to `udm`.
-This is recommended for WAN items because WAN discovery uses the UDM device
-automatically.
+Fixed system and WAN items auto-select the UDM device from the legacy payload.
+Do not set a device ID macro for normal template use; explicit legacy device
+IDs are only needed for manual script tests.
 
 The initial template includes:
 
@@ -202,6 +200,12 @@ The initial template includes:
 - Client summary: total, wired, wireless.
 - Network summary: total, enabled, disabled.
 - Device discovery.
+- Host prototypes for discovered UniFi devices. The main template now creates
+  per-device hosts linked to `UniFi Device API Monitoring`, grouped under
+  `UniFi discovered devices` and model-specific `UniFi/<model>` groups.
+- The `UniFi Device API Monitoring` child template collects per-device detail,
+  online state, firmware version, firmware update availability, model, and IP
+  address from the Integration API.
 - Client discovery.
 - Network discovery.
 - Port discovery with item prototypes for state, negotiated speed, maximum speed,
@@ -228,6 +232,8 @@ The initial template includes:
   discovered WAN labels when the legacy payload exposes them.
 - Radio performance from the legacy endpoint: channel utilization, self RX/TX
   utilization, retry percentage, connected stations, and satisfaction.
+- Legacy radio performance uses one master item with dependent item prototypes,
+  so AP-heavy environments do not call the UniFi API once per radio metric.
 - Radio satisfaction values below zero are normalized to `0`, because some
   UniFi controllers return `-1` until that metric is available.
 - A dashboard named `UniFi Controller Overview` with classic graphs for
