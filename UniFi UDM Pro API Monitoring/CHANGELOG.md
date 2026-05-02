@@ -4,21 +4,12 @@ All notable changes to this project are documented here.
 
 ## 0.6.0 - Unreleased
 
-### Added
-
-- Added a `UniFi Device API Monitoring` child template for hosts created from
-  UniFi device discovery.
-- Added host prototypes to the main device discovery rule. Discovered UniFi
-  devices are linked to the child template, grouped under `UniFi discovered
-  devices`, and assigned model-specific `UniFi/<model>` group prototypes.
-- Added per-device child-template items for detail raw JSON, online state,
-  current state, model, firmware version, firmware update availability, and IP
-  address.
-
 ### Changed
 
 - Updated script version to `0.6.0`.
 - Updated template vendor version to `0.6-0`.
+- Replaced the `Unifi Controller` dashboard with a split WAN traffic, WAN
+  quality, clients, and system gauge layout.
 
 ## 0.5.3 - Previous Unreleased
 
