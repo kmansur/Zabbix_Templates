@@ -15,7 +15,7 @@ zabbix_export:
         or proxy external scripts directory.
       vendor:
         name: 'Net Tech'
-        version: 0.6-5
+        version: 0.6-6
       groups:
         - name: Templates/Network devices
       items:
@@ -308,6 +308,171 @@ zabbix_export:
           tags:
             - tag: component
               value: system
+        - uuid: 7c9ef206f7fb4300ad7f4929494d0349
+          name: 'UniFi gateway info raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          delay: 15m
+          history: 7d
+          value_type: TEXT
+          trends: '0'
+          timeout: 60s
+          description: 'Master item for gateway identity and firmware information from the UniFi Network API device payload.'
+          tags:
+            - tag: component
+              value: gateway
+        - uuid: ad1deee83dde4003ad34238758e1471f
+          name: 'UniFi Network API gateway info collection available'
+          type: DEPENDENT
+          key: unifi.collector.network.gateway_info.available
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
+          triggers:
+            - uuid: b463ad5be3a346baaeb8e90f5c73c793
+              expression: 'max(/UniFi UDM Pro API Monitoring/unifi.collector.network.gateway_info.available,30m)=0'
+              name: 'UniFi Network API gateway info collection is failing'
+              priority: WARNING
+              description: 'The gateway-info master item is returning an error or invalid JSON.'
+        - uuid: e19e2ba02c7e4727ba178fe1a35cda87
+          name: 'UniFi Network API gateway info last error'
+          type: DEPENDENT
+          key: unifi.collector.network.gateway_info.error
+          delay: '0'
+          history: 30d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
+        - uuid: 1d32dbfc0f6b45ac8484e60c31609d98
+          name: 'UniFi gateway model'
+          type: DEPENDENT
+          key: unifi.gateway.model
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.model
+          master_item:
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: gateway
+        - uuid: e36a0ea262484734b7a79423d58f2e5b
+          name: 'UniFi gateway firmware version'
+          type: DEPENDENT
+          key: unifi.gateway.version
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.version
+          master_item:
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: gateway
+          triggers:
+            - uuid: 285dac7593ae4893a8816e84045c4aef
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.gateway.version,#1)<>last(/UniFi UDM Pro API Monitoring/unifi.gateway.version,#2)'
+              name: 'UniFi gateway firmware version changed'
+              opdata: 'Current version: {ITEM.LASTVALUE1}'
+              priority: INFO
+        - uuid: 5869923c905e4130be6af7f170ced502
+          name: 'UniFi gateway displayable version'
+          type: DEPENDENT
+          key: unifi.gateway.displayable_version
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.displayable_version
+          master_item:
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: gateway
+        - uuid: 4cf120c277674909b9ffaa83f17f5924
+          name: 'UniFi gateway kernel version'
+          type: DEPENDENT
+          key: unifi.gateway.kernel_version
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.kernel_version
+          master_item:
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: gateway
+        - uuid: 07de12f822554d8ba6b88be9d38324ee
+          name: 'UniFi gateway architecture'
+          type: DEPENDENT
+          key: unifi.gateway.architecture
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.architecture
+          master_item:
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: gateway
+        - uuid: 366bd34332b04d48a3adcf605bb1fc00
+          name: 'UniFi gateway firmware update available'
+          type: DEPENDENT
+          key: unifi.gateway.upgradable
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.upgradable
+            - type: JAVASCRIPT
+              parameters:
+                - 'return value === true || value === "true" ? 1 : 0;'
+          master_item:
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: gateway
+          triggers:
+            - uuid: 37d8c72d19ce4808b027d6fe693ebf68
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.gateway.upgradable)=1'
+              name: 'UniFi gateway firmware update is available'
+              priority: INFO
         - uuid: 51edfff4c941420fb8918a33e1df2a21
           name: 'UniFi Network API system collection available'
           type: DEPENDENT

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi UDM Pro API Monitoring
-Version: 0.6.5
+Version: 0.6.6
 
 External script for Zabbix templates.
 
@@ -1012,6 +1012,24 @@ def network_services(device):
     }
 
 
+def gateway_info(device):
+    """Build a compact gateway identity and firmware document."""
+    version = first_value(device, "version", "firmwareVersion", "fw_version")
+    displayable_version = first_value(device, "displayable_version", "displayableVersion", "firmware_version")
+
+    return {
+        "name": device.get("name") or "",
+        "model": device.get("model") or "",
+        "type": device.get("type") or "",
+        "mac": device.get("mac") or "",
+        "version": version or displayable_version or "",
+        "displayable_version": displayable_version or version or "",
+        "kernel_version": first_value(device, "kernel_version", "kernelVersion") or "",
+        "architecture": first_value(device, "architecture", "arch") or "",
+        "upgradable": to_bool(first_value(device, "upgradable", "upgradeable", "firmwareUpdatable")),
+    }
+
+
 def system_health(device):
     """Build a compact system-health document from one legacy device.
 
@@ -1365,6 +1383,7 @@ def parse_args():
         "network-services",
         "discover-poe-budget",
         "poe-budget",
+        "gateway-info",
     }
 
     args.extra_values = []
@@ -1472,6 +1491,12 @@ def main():
         legacy_site = args.site_id or "default"
         payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
         print_json(network_services(find_legacy_device(payload, args.object_id)))
+        return
+
+    if command == "gateway-info":
+        legacy_site = args.site_id or "default"
+        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
+        print_json(gateway_info(find_legacy_device(payload, args.object_id)))
         return
 
     if command == "discover-poe-budget":

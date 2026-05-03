@@ -172,7 +172,7 @@ Processo recomendado:
 Versão atual do projeto:
 
 ```text
-0.6.5
+0.6.6
 ```
 
 O template importável para Zabbix 7.0 é:
@@ -232,6 +232,9 @@ O template inicial inclui:
 - Descoberta de rádios com protótipos para canal, largura de canal, frequência e padrão WLAN.
 - Saúde do sistema via `/proxy/network/api/s/default/stat/device`: CPU, memória,
   load average, storage agregado, uptime e temperatura de CPU.
+- Identidade e firmware do gateway pelo endpoint da Network API: modelo, versão
+  de firmware, versão exibida, versão do kernel, arquitetura e disponibilidade
+  de atualização de firmware.
 - Descoberta de storage pelo endpoint da Network API com uso, livre, total, utilização,
   protótipos de trigger e protótipos de gráfico por volume.
 - Saúde WAN pelo endpoint da Network API: latência, perda de pacote, disponibilidade,
@@ -255,9 +258,9 @@ O template inicial inclui:
 - Valores de radio satisfaction abaixo de zero são normalizados para `0`, pois
   alguns controllers UniFi retornam `-1` até a métrica estar disponível.
 - Itens de saúde do coletor para Integration API, sistema via Network API, WAN
-  via Network API, serviços de rede, orçamento PoE, portas e rádios. Eles
-  indicam se o script retornou JSON utilizável e expõem o último erro da
-  API/script em texto.
+  via Network API, informações do gateway, serviços de rede, orçamento PoE,
+  portas e rádios. Eles indicam se o script retornou JSON utilizável e expõem o
+  último erro da API/script em texto.
 - Filtros de descoberta de baixo nível controlados por macros de host. O padrão
   é `.*`, então nada é excluído até que você altere as macros.
 - Um dashboard chamado `UniFi Controller Overview` com gráficos clássicos de
@@ -266,11 +269,12 @@ O template inicial inclui:
   versão e gauges de CPU/memória.
 - Triggers para dispositivos offline, atualizações de firmware, redes
   desabilitadas, mudança de versão da aplicação, falhas do coletor, CPU alta,
-  memória alta, storage alto, temperatura alta de CPU, latência WAN, perda WAN,
-  baixa disponibilidade WAN, speedtest desatualizado, WAN primária inativa em
-  failover, túneis VPN down, assinaturas IDS/IPS desatualizadas, alta utilização
-  de orçamento PoE, estado PoE near-limit, alta utilização de rádio, retries
-  altos e baixa satisfaction de rádio.
+  memória alta, storage alto, temperatura alta de CPU, atualização de firmware
+  do gateway disponível, mudança de versão de firmware do gateway, latência WAN,
+  perda WAN, baixa disponibilidade WAN, speedtest desatualizado, WAN primária
+  inativa em failover, túneis VPN down, assinaturas IDS/IPS desatualizadas,
+  alta utilização de orçamento PoE, estado PoE near-limit, alta utilização de
+  rádio, retries altos e baixa satisfaction de rádio.
 
 ### Macros Úteis de Ajuste
 
@@ -398,6 +402,7 @@ checks do Zabbix:
 ./unifi_udm_pro_api.py summary-clients
 ./unifi_udm_pro_api.py summary-networks
 ./unifi_udm_pro_api.py system-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
+./unifi_udm_pro_api.py gateway-info "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py wan-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py network-services "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py poe-budget "$UNIFI_API_URL" "$UNIFI_API_KEY" default
@@ -406,7 +411,9 @@ checks do Zabbix:
 ```
 
 `system-health` usa o endpoint da Network API do UniFi Network e retorna CPU, memória,
-load, storage agregado, uptime e temperatura do UDM Pro. `wan-health` usa o
+load, storage agregado, uptime e temperatura do UDM Pro. `gateway-info` retorna
+identidade, firmware, kernel, arquitetura e disponibilidade de upgrade do
+gateway. `wan-health` usa o
 mesmo endpoint e retorna latência WAN, perda de pacotes, disponibilidade,
 taxas de upload/download e dados de speedtest. `network-services` usa o mesmo
 payload e retorna contadores resumidos de DHCP, VPN e IDS/IPS. `poe-budget`
@@ -446,8 +453,6 @@ Você ainda pode testar um único dispositivo manualmente:
 O payload da Network API `stat/device` contém vários campos de alto valor para futuras
 expansões do template:
 
-- Identidade e firmware do gateway: `model`, `version`, `displayable_version`,
-  `kernel_version`, `architecture` e `upgradable`.
 - Saúde WAN: `last_wan_status`, `last_wan_interfaces`, `wan1`, `wan2`,
   `uplink`, `uptime_stats` e `speedtest-status`.
 - Tráfego e portas: `port_table`, `uplink`, `downlink_table` e contadores por

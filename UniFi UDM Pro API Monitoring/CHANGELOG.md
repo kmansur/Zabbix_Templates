@@ -7,6 +7,23 @@ All notable changes to this project are documented here.
 Documentation maintenance: when this English changelog is updated, update
 `CHANGELOG.pt-BR.md` in the same change.
 
+## 0.6.6 - Unreleased
+
+### Added
+
+- Added `gateway-info` collection from the Network API device payload for
+  gateway identity and firmware metadata.
+- Added gateway model, firmware version, displayable version, kernel version,
+  architecture, and firmware upgrade availability items.
+- Added gateway info collector health items.
+- Added informational triggers for gateway firmware update availability and
+  firmware version changes.
+
+### Changed
+
+- Updated script version to `0.6.6`.
+- Updated template vendor version to `0.6-6`.
+
 ## 0.6.5 - Unreleased
 
 ### Added

@@ -7,6 +7,23 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 Manutenção da documentação: quando o `CHANGELOG.md` em inglês for atualizado,
 atualize este `CHANGELOG.pt-BR.md` na mesma alteração.
 
+## 0.6.6 - Não Lançado
+
+### Adicionado
+
+- Adicionada coleta `gateway-info` a partir do payload de dispositivo da
+  Network API para metadados de identidade e firmware do gateway.
+- Adicionados itens de modelo, versão de firmware, versão exibida, versão do
+  kernel, arquitetura e disponibilidade de upgrade de firmware do gateway.
+- Adicionados itens de saúde do coletor para informações do gateway.
+- Adicionadas triggers informativas para disponibilidade de atualização de
+  firmware do gateway e mudança de versão de firmware.
+
+### Alterado
+
+- Atualizada a versão do script para `0.6.6`.
+- Atualizada a versão do vendor do template para `0.6-6`.
+
 ## 0.6.5 - Não Lançado
 
 ### Adicionado

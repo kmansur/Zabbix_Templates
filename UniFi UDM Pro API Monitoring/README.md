@@ -169,7 +169,7 @@ Recommended process:
 Current project version:
 
 ```text
-0.6.5
+0.6.6
 ```
 
 The importable Zabbix 7.0 template is:
@@ -231,6 +231,9 @@ The initial template includes:
   and WLAN standard.
 - System health from `/proxy/network/api/s/default/stat/device`: CPU, memory,
   load average, aggregate storage, uptime, and CPU temperature.
+- Gateway identity and firmware information from the Network API endpoint:
+  model, firmware version, displayable version, kernel version, architecture,
+  and firmware update availability.
 - Storage discovery from the Network API endpoint with per-volume used, free, total,
   utilization, trigger prototypes, and graph prototypes.
 - WAN health from the Network API endpoint: latency, packet loss, availability,
@@ -253,9 +256,9 @@ The initial template includes:
 - Radio satisfaction values below zero are normalized to `0`, because some
   UniFi controllers return `-1` until that metric is available.
 - Collector health items for Integration API, Network API system, Network API
-  WAN, network services, PoE budget, port, and radio master items. These show
-  whether the script returned usable JSON and expose the last API/script error
-  as text.
+  WAN, gateway info, network services, PoE budget, port, and radio master
+  items. These show whether the script returned usable JSON and expose the last
+  API/script error as text.
 - Low-level discovery include filters controlled by host macros. They default
   to `.*`, so nothing is excluded unless you change the macros.
 - A dashboard named `UniFi Controller Overview` with classic graphs for
@@ -264,7 +267,8 @@ The initial template includes:
   and CPU/memory gauges.
 - Triggers for offline devices, firmware updates, disabled networks, and
   application version changes, collector failures, high CPU, high memory, high
-  storage usage, high CPU temperature, WAN latency, WAN packet loss, low WAN
+  storage usage, high CPU temperature, gateway firmware update available,
+  gateway firmware version change, WAN latency, WAN packet loss, low WAN
   availability, stale speedtest results, primary WAN not active during failover,
   VPN tunnels down, stale IDS/IPS signatures, high PoE budget utilization, PoE
   near-limit state, high radio utilization, high radio retries, and low radio
@@ -395,6 +399,7 @@ Zabbix external checks:
 ./unifi_udm_pro_api.py summary-clients
 ./unifi_udm_pro_api.py summary-networks
 ./unifi_udm_pro_api.py system-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
+./unifi_udm_pro_api.py gateway-info "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py wan-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py network-services "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py poe-budget "$UNIFI_API_URL" "$UNIFI_API_KEY" default
@@ -404,6 +409,8 @@ Zabbix external checks:
 
 `system-health` uses the Network API endpoint and returns CPU, memory,
 load, aggregate storage, uptime, and temperature metrics for the UDM Pro.
+`gateway-info` returns gateway identity, firmware, kernel, architecture, and
+upgrade availability fields.
 `wan-health` uses the same endpoint and returns WAN latency, packet loss,
 availability, upload/download rates, and speedtest data.
 `network-services` uses the same payload and returns DHCP, VPN, and IDS/IPS
@@ -444,8 +451,6 @@ You can still test a single device manually:
 The Network API `stat/device` payload contains several high-value fields that are
 good candidates for future template expansion:
 
-- Gateway identity and firmware: `model`, `version`, `displayable_version`,
-  `kernel_version`, `architecture`, and `upgradable`.
 - WAN health: `last_wan_status`, `last_wan_interfaces`, `wan1`, `wan2`,
   `uplink`, `uptime_stats`, and `speedtest-status`.
 - Traffic and switch ports: `port_table`, `uplink`, `downlink_table`, and
