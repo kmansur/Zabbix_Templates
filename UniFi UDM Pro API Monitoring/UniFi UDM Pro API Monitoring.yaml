@@ -15,7 +15,7 @@ zabbix_export:
         or proxy external scripts directory.
       vendor:
         name: 'Net Tech'
-        version: 0.6-3
+        version: 0.6-4
       groups:
         - name: Templates/Network devices
       items:
@@ -924,6 +924,243 @@ zabbix_export:
           tags:
             - tag: component
               value: internet
+        - uuid: cc49b1a6fe1043d98b2523236fc30800
+          name: 'UniFi network services raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          delay: 5m
+          history: 7d
+          value_type: TEXT
+          trends: '0'
+          timeout: 60s
+          description: 'Master item for VPN, DHCP, and IDS/IPS telemetry from the UniFi Network API device payload.'
+          tags:
+            - tag: component
+              value: network-services
+        - uuid: 06378ca1acd94b8a932f9fae956ce528
+          name: 'UniFi Network API services collection available'
+          type: DEPENDENT
+          key: unifi.collector.network.services.available
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
+          triggers:
+            - uuid: 645ea35f0af041b69e962fd1b99b2139
+              expression: 'max(/UniFi UDM Pro API Monitoring/unifi.collector.network.services.available,15m)=0'
+              name: 'UniFi Network API services collection is failing'
+              priority: WARNING
+              description: 'The network-services master item is returning an error or invalid JSON.'
+        - uuid: 5513f49480074a45b47765ded4a39c74
+          name: 'UniFi Network API services last error'
+          type: DEPENDENT
+          key: unifi.collector.network.services.error
+          delay: '0'
+          history: 30d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
+        - uuid: eebe804ba8f04e228735476efbe604b2
+          name: 'UniFi DHCP networks'
+          type: DEPENDENT
+          key: unifi.dhcp.networks
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.dhcp_networks_total
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: dhcp
+        - uuid: 1d30b066b84547dcae8ac569ac28c359
+          name: 'UniFi DHCP active leases'
+          type: DEPENDENT
+          key: unifi.dhcp.active_leases
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.dhcp_active_leases
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: dhcp
+        - uuid: 5d689f53220848f49e49802bb51b2ede
+          name: 'UniFi VPN tunnels'
+          type: DEPENDENT
+          key: unifi.vpn.total
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.vpn_total
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: vpn
+        - uuid: bcb1e2913d014456902bfe2f288f8b78
+          name: 'UniFi VPN enabled tunnels'
+          type: DEPENDENT
+          key: unifi.vpn.enabled
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.vpn_enabled
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: vpn
+        - uuid: 72e1d1090d46468e998f499c55b896d1
+          name: 'UniFi VPN up tunnels'
+          type: DEPENDENT
+          key: unifi.vpn.up
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.vpn_up
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: vpn
+          triggers:
+            - uuid: 29d90f51d5d14b66b8e8548a085c4669
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.vpn.enabled)>0 and last(/UniFi UDM Pro API Monitoring/unifi.vpn.up)<last(/UniFi UDM Pro API Monitoring/unifi.vpn.enabled)'
+              name: 'One or more UniFi VPN tunnels are down'
+              opdata: 'Up: {ITEM.LASTVALUE1}'
+              priority: WARNING
+        - uuid: 9dbe7cf052b4475d98d88586421b5b36
+          name: 'UniFi IDS/IPS enabled'
+          type: DEPENDENT
+          key: unifi.ids.enabled
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ids_enabled
+            - type: JAVASCRIPT
+              parameters:
+                - 'return value === true || value === "true" ? 1 : 0;'
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: security
+        - uuid: df0f64b50c7a464f8a7efb1a55d02cbb
+          name: 'UniFi IDS/IPS mode'
+          type: DEPENDENT
+          key: unifi.ids.mode
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ids_mode
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: security
+        - uuid: e126d65317e04ed3b110fba8b6ead092
+          name: 'UniFi IDS/IPS signature rules'
+          type: DEPENDENT
+          key: unifi.ids.signature.rules
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ids_signature_rules
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: security
+        - uuid: 8eda0a205a1a4aeeaf1d5bb38db3922e
+          name: 'UniFi IDS/IPS signature version'
+          type: DEPENDENT
+          key: unifi.ids.signature.version
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ids_signature_version
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: security
+        - uuid: 55acc522928148728a5ecd613e240bfd
+          name: 'UniFi IDS/IPS signature last update'
+          type: DEPENDENT
+          key: unifi.ids.signature.last_update
+          delay: '0'
+          history: 90d
+          units: unixtime
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ids_signature_last_update
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: security
+        - uuid: 72650f33bb8d475eb8d45bd08298149f
+          name: 'UniFi IDS/IPS signature age'
+          type: DEPENDENT
+          key: unifi.ids.signature.age
+          delay: '0'
+          history: 90d
+          units: s
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.ids_signature_age_seconds
+          master_item:
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: security
+          triggers:
+            - uuid: 68548320ae9e478ea49c7bce53b47ba2
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.ids.enabled)=1 and last(/UniFi UDM Pro API Monitoring/unifi.ids.signature.age)>{$UNIFI.IDS.SIGNATURE.MAX_AGE}'
+              name: 'UniFi IDS/IPS signature data is stale'
+              opdata: 'Signature age: {ITEM.LASTVALUE1}'
+              priority: WARNING
         - uuid: 4f2d12c6478c43e5abfbc1aad5d035cb
           name: 'UniFi port telemetry raw'
           type: EXTERNAL
@@ -1980,6 +2217,9 @@ zabbix_export:
         - macro: '{$UNIFI.SPEEDTEST.MAX_AGE}'
           value: '172800'
           description: 'Maximum accepted age for the last WAN speedtest result, in seconds.'
+        - macro: '{$UNIFI.IDS.SIGNATURE.MAX_AGE}'
+          value: '604800'
+          description: 'Maximum accepted age for IDS/IPS signature data, in seconds.'
         - macro: '{$UNIFI.RADIO.UTIL.WARN}'
           value: '80'
           description: 'Radio channel utilization warning threshold in percent.'

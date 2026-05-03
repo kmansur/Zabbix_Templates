@@ -7,6 +7,27 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 Manutenção da documentação: quando o `CHANGELOG.md` em inglês for atualizado,
 atualize este `CHANGELOG.pt-BR.md` na mesma alteração.
 
+## 0.6.4 - Não Lançado
+
+### Adicionado
+
+- Adicionada coleta `network-services` a partir do payload de dispositivo da
+  Network API para telemetria de DHCP, VPN e IDS/IPS.
+- Adicionados contadores de redes com DHCP habilitado e leases ativos.
+- Adicionados contadores de túneis VPN totais, habilitados e up, com trigger de
+  aviso quando túneis VPN habilitados não estão up.
+- Adicionados estado habilitado, modo, quantidade de regras, versão da
+  assinatura, última atualização e idade de assinatura IDS/IPS, com trigger de
+  aviso para assinatura desatualizada.
+- Adicionados itens de saúde do coletor para o item mestre de serviços de rede.
+- Adicionada a macro `{$UNIFI.IDS.SIGNATURE.MAX_AGE}` para ajuste da idade da
+  assinatura IDS/IPS.
+
+### Alterado
+
+- Atualizada a versão do script para `0.6.4`.
+- Atualizada a versão do vendor do template para `0.6-4`.
+
 ## 0.6.3 - Não Lançado
 
 ### Adicionado

@@ -172,7 +172,7 @@ Processo recomendado:
 Versão atual do projeto:
 
 ```text
-0.6.3
+0.6.4
 ```
 
 O template importável para Zabbix 7.0 é:
@@ -242,6 +242,9 @@ O template inicial inclui:
   mas o template inclui protótipos para WAN2 e outros rótulos WAN quando o
   payload da Network API os expõe, incluindo estado ativo, função e estado de
   failover por WAN.
+- Telemetria de serviços de rede pelo endpoint da Network API: redes com DHCP,
+  leases DHCP ativos, totais de túneis VPN/habilitados/up, modo IDS/IPS, regras
+  de assinatura, versão da assinatura e idade da assinatura.
 - Performance de rádio pelo endpoint da Network API: utilização de canal, self RX/TX,
   percentual de retries, estações conectadas e satisfaction.
 - Performance da Network API de rádio usando um único item mestre com itens dependentes,
@@ -249,7 +252,7 @@ O template inicial inclui:
 - Valores de radio satisfaction abaixo de zero são normalizados para `0`, pois
   alguns controllers UniFi retornam `-1` até a métrica estar disponível.
 - Itens de saúde do coletor para Integration API, sistema via Network API, WAN
-  via Network API, portas e rádios. Eles indicam se o script retornou JSON utilizável
+  via Network API, serviços de rede, portas e rádios. Eles indicam se o script retornou JSON utilizável
   e expõem o último erro da API/script em texto.
 - Filtros de descoberta de baixo nível controlados por macros de host. O padrão
   é `.*`, então nada é excluído até que você altere as macros.
@@ -261,7 +264,8 @@ O template inicial inclui:
   desabilitadas, mudança de versão da aplicação, falhas do coletor, CPU alta,
   memória alta, storage alto, temperatura alta de CPU, latência WAN, perda WAN,
   baixa disponibilidade WAN, speedtest desatualizado, WAN primária inativa em
-  failover, alta utilização de rádio, retries altos e baixa satisfaction de rádio.
+  failover, túneis VPN down, assinaturas IDS/IPS desatualizadas, alta utilização
+  de rádio, retries altos e baixa satisfaction de rádio.
 
 ### Macros Úteis de Ajuste
 
@@ -276,6 +280,7 @@ Os limiares operacionais mais comuns ficam expostos como macros de host:
 {$UNIFI.WAN.LOSS.WARN}
 {$UNIFI.WAN.AVAILABILITY.MIN}
 {$UNIFI.SPEEDTEST.MAX_AGE}
+{$UNIFI.IDS.SIGNATURE.MAX_AGE}
 {$UNIFI.RADIO.UTIL.WARN}
 {$UNIFI.RADIO.RETRY.WARN}
 {$UNIFI.RADIO.SATISFACTION.MIN}
@@ -388,6 +393,7 @@ checks do Zabbix:
 ./unifi_udm_pro_api.py summary-networks
 ./unifi_udm_pro_api.py system-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py wan-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
+./unifi_udm_pro_api.py network-services "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py discover-wans "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py wan-field "$UNIFI_API_URL" "$UNIFI_API_KEY" default WAN latency_ms
 ```
@@ -395,7 +401,8 @@ checks do Zabbix:
 `system-health` usa o endpoint da Network API do UniFi Network e retorna CPU, memória,
 load, storage agregado, uptime e temperatura do UDM Pro. `wan-health` usa o
 mesmo endpoint e retorna latência WAN, perda de pacotes, disponibilidade,
-taxas de upload/download e dados de speedtest. `discover-wans` retorna linhas
+taxas de upload/download e dados de speedtest. `network-services` usa o mesmo
+payload e retorna contadores resumidos de DHCP, VPN e IDS/IPS. `discover-wans` retorna linhas
 de descoberta de baixo nível para interfaces WAN, preparado para `WAN`, `WAN2`
 e outros objetos WAN expostos pelo UniFi.
 
@@ -425,9 +432,6 @@ Você ainda pode testar um único dispositivo manualmente:
 ### Próximas Adições Sugeridas
 
 - Orçamento PoE por switch a partir de `total_used_power` e `total_max_power`.
-- Descoberta e status de túneis VPN a partir de `network_table`.
-- Contagem de leases DHCP por VLAN a partir de detalhes de rede da Network API.
-- Status de assinaturas IDS/IPS e contagem de regras.
 
 ### Notas de Revisão da API
 

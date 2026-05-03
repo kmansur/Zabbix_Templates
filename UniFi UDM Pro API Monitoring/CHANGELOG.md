@@ -7,6 +7,25 @@ All notable changes to this project are documented here.
 Documentation maintenance: when this English changelog is updated, update
 `CHANGELOG.pt-BR.md` in the same change.
 
+## 0.6.4 - Unreleased
+
+### Added
+
+- Added `network-services` collection from the Network API device payload for
+  DHCP, VPN, and IDS/IPS telemetry.
+- Added DHCP enabled network and active lease counters.
+- Added VPN total, enabled, and up tunnel counters, with a warning trigger when
+  enabled VPN tunnels are not up.
+- Added IDS/IPS enabled state, mode, signature rule count, signature version,
+  last update, and signature age, with a stale signature warning trigger.
+- Added collector health items for the network services master item.
+- Added `{$UNIFI.IDS.SIGNATURE.MAX_AGE}` for IDS/IPS signature age tuning.
+
+### Changed
+
+- Updated script version to `0.6.4`.
+- Updated template vendor version to `0.6-4`.
+
 ## 0.6.3 - Unreleased
 
 ### Added

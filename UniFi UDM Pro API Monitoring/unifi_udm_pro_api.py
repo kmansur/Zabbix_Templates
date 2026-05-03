@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi UDM Pro API Monitoring
-Version: 0.6.3
+Version: 0.6.4
 
 External script for Zabbix templates.
 
@@ -712,6 +712,12 @@ def legacy_devices(payload):
     return data if isinstance(data, list) else []
 
 
+def network_table(device):
+    """Return the legacy `network_table` list safely."""
+    networks = device.get("network_table") or []
+    return networks if isinstance(networks, list) else []
+
+
 def find_legacy_device(payload, device_id=None):
     """Find a legacy device by common identifiers.
 
@@ -761,6 +767,15 @@ def to_int(value, default=0):
         return default
 
 
+def count_value(value):
+    """Return a count from either a scalar counter or a list-like payload value."""
+    if isinstance(value, list):
+        return len(value)
+    if isinstance(value, dict):
+        return len(value)
+    return to_int(value)
+
+
 def to_bool(value, default=False):
     """Best-effort boolean conversion for inconsistent UniFi status fields."""
     if value is None or value == "":
@@ -784,6 +799,126 @@ def to_bool(value, default=False):
         pass
 
     return default
+
+
+def to_epoch(value):
+    """Best-effort Unix timestamp conversion for UniFi time fields."""
+    timestamp = to_int(value)
+    if timestamp > 9999999999:
+        timestamp = int(timestamp / 1000)
+    return timestamp
+
+
+def text_contains(mapping, *needles):
+    """Return true when any common text field contains one of the needles."""
+    haystack = " ".join(
+        str(mapping.get(key, ""))
+        for key in ("name", "purpose", "type", "site_to_site", "vpn_type", "networkgroup")
+    ).lower()
+    return any(needle in haystack for needle in needles)
+
+
+def dhcp_enabled(network):
+    """Return whether a network row appears to provide DHCP service."""
+    value = first_value(
+        network,
+        "dhcpd_enabled",
+        "dhcp_enabled",
+        "dhcp_enable",
+        "dhcp_server_enabled",
+        "dhcpd",
+    )
+    return to_bool(value)
+
+
+def network_lease_count(network):
+    """Return the active DHCP lease count from known Network API fields."""
+    for key in (
+        "active_dhcp_lease_count",
+        "dhcp_lease_count",
+        "dhcp_leases_count",
+        "num_dhcp_leases",
+        "lease_count",
+        "leases",
+        "dhcp_leases",
+        "ipv4_active_leases",
+        "num_sta",
+    ):
+        value = network.get(key)
+        if value not in (None, ""):
+            return count_value(value)
+    return 0
+
+
+def vpn_enabled(network):
+    """Return whether a network row looks like an enabled VPN object."""
+    if not text_contains(network, "vpn"):
+        return False
+    value = first_value(network, "enabled", "up", "active")
+    return to_bool(value, True)
+
+
+def vpn_up(network):
+    """Return whether a VPN row appears operational."""
+    if not vpn_enabled(network):
+        return False
+    value = first_value(network, "up", "connected", "active", "enabled")
+    return to_bool(value, True)
+
+
+def ids_signature_info(device):
+    """Return the IDS/IPS signature object if present."""
+    for key in ("ids_ips_signature", "ips_signature", "ids_signature"):
+        value = device.get(key)
+        if isinstance(value, dict):
+            return value
+    return {}
+
+
+def network_services(device):
+    """Build a compact VPN, DHCP, and IDS/IPS health document."""
+    networks = network_table(device)
+    dhcp_networks = [network for network in networks if dhcp_enabled(network)]
+    vpn_networks = [network for network in networks if text_contains(network, "vpn")]
+    vpn_enabled_networks = [network for network in vpn_networks if vpn_enabled(network)]
+
+    signature = ids_signature_info(device)
+    ids_mode = first_value(device, "ids_ips_mode", "ips_mode", "ids_mode") or ""
+    ids_enabled = to_bool(
+        first_value(device, "ids_ips_enabled", "ips_enabled", "ids_enabled"),
+        bool(ids_mode or signature),
+    )
+    signature_rules = first_value(
+        signature,
+        "rules_count",
+        "rule_count",
+        "count",
+        "signature_count",
+        "num_rules",
+    )
+    signature_updated = to_epoch(first_value(
+        signature,
+        "last_update",
+        "last_updated",
+        "update_time",
+        "updated_at",
+        "timestamp",
+    ))
+
+    return {
+        "network_count": len(networks),
+        "dhcp_networks_total": len(dhcp_networks),
+        "dhcp_active_leases": sum(network_lease_count(network) for network in dhcp_networks),
+        "vpn_total": len(vpn_networks),
+        "vpn_enabled": len(vpn_enabled_networks),
+        "vpn_up": sum(1 for network in vpn_enabled_networks if vpn_up(network)),
+        "ids_enabled": ids_enabled,
+        "ids_mode": ids_mode,
+        "ids_signature_rules": count_value(signature_rules),
+        "ids_signature_version": first_value(signature, "version", "signature_version", "ruleset_version") or "",
+        "ids_signature_last_update": signature_updated,
+        "ids_signature_age_seconds": int(time.time()) - signature_updated if signature_updated else 0,
+    }
 
 
 def system_health(device):
@@ -1131,7 +1266,7 @@ def parse_args():
     args.object_id = None
 
     object_commands = {"device", "client", "discover-ports", "discover-radios"}
-    optional_legacy_device_commands = {"system-health", "wan-health", "discover-wans", "discover-storage"}
+    optional_legacy_device_commands = {"system-health", "wan-health", "discover-wans", "discover-storage", "network-services"}
 
     args.extra_values = []
 
@@ -1232,6 +1367,12 @@ def main():
         legacy_site = args.site_id or "default"
         payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
         print_json(discover_storage(find_legacy_device(payload, args.object_id)))
+        return
+
+    if command == "network-services":
+        legacy_site = args.site_id or "default"
+        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
+        print_json(network_services(find_legacy_device(payload, args.object_id)))
         return
 
     if command == "legacy-discover-radios":
