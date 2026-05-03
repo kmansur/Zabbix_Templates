@@ -7,6 +7,18 @@ All notable changes to this project are documented here.
 Documentation maintenance: when this English changelog is updated, update
 `CHANGELOG.pt-BR.md` in the same change.
 
+## 0.6.1 - Unreleased
+
+### Fixed
+
+- Increased the `UniFi Clients` dashboard widget legend from two lines to three
+  lines so all three client series are visible in the `Unifi Controller`
+  dashboard.
+
+### Changed
+
+- Updated template vendor version to `0.6-1`.
+
 ## 0.6.0 - Unreleased
 
 ### Added

@@ -169,7 +169,7 @@ Recommended process:
 Current project version:
 
 ```text
-0.6.0
+0.6.1
 ```
 
 The importable Zabbix 7.0 template is:

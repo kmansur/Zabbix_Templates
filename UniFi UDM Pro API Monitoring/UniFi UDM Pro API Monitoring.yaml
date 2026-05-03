@@ -15,7 +15,7 @@ zabbix_export:
         or proxy external scripts directory.
       vendor:
         name: 'Net Tech'
-        version: 0.6-0
+        version: 0.6-1
       groups:
         - name: Templates/Network devices
       items:
@@ -2103,7 +2103,7 @@ zabbix_export:
                       value: '2'
                     - type: INTEGER
                       name: legend_lines
-                      value: '2'
+                      value: '3'
                     - type: INTEGER
                       name: legend_statistic
                       value: '1'

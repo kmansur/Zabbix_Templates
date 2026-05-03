@@ -7,6 +7,18 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 Manutenção da documentação: quando o `CHANGELOG.md` em inglês for atualizado,
 atualize este `CHANGELOG.pt-BR.md` na mesma alteração.
 
+## 0.6.1 - Não Lançado
+
+### Corrigido
+
+- Aumentada a legenda do widget `UniFi Clients` no dashboard de duas para três
+  linhas, para que as três séries de clientes fiquem visíveis no dashboard
+  `Unifi Controller`.
+
+### Alterado
+
+- Atualizada a versão do vendor do template para `0.6-1`.
+
 ## 0.6.0 - Não Lançado
 
 ### Adicionado
