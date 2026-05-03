@@ -172,7 +172,7 @@ Processo recomendado:
 Versão atual do projeto:
 
 ```text
-0.6.4
+0.6.5
 ```
 
 O template importável para Zabbix 7.0 é:
@@ -226,6 +226,9 @@ O template inicial inclui:
   API como `false`, `0` e `down` são tratadas como inativas.
 - Telemetria da Network API de portas usando um único item mestre com itens dependentes,
   evitando uma chamada à API por métrica em ambientes grandes.
+- Descoberta de orçamento PoE pelo endpoint da Network API com uso, máximo,
+  livre, utilização, estado near-limit, protótipos de trigger e protótipos de
+  gráfico por dispositivo.
 - Descoberta de rádios com protótipos para canal, largura de canal, frequência e padrão WLAN.
 - Saúde do sistema via `/proxy/network/api/s/default/stat/device`: CPU, memória,
   load average, storage agregado, uptime e temperatura de CPU.
@@ -252,8 +255,9 @@ O template inicial inclui:
 - Valores de radio satisfaction abaixo de zero são normalizados para `0`, pois
   alguns controllers UniFi retornam `-1` até a métrica estar disponível.
 - Itens de saúde do coletor para Integration API, sistema via Network API, WAN
-  via Network API, serviços de rede, portas e rádios. Eles indicam se o script retornou JSON utilizável
-  e expõem o último erro da API/script em texto.
+  via Network API, serviços de rede, orçamento PoE, portas e rádios. Eles
+  indicam se o script retornou JSON utilizável e expõem o último erro da
+  API/script em texto.
 - Filtros de descoberta de baixo nível controlados por macros de host. O padrão
   é `.*`, então nada é excluído até que você altere as macros.
 - Um dashboard chamado `UniFi Controller Overview` com gráficos clássicos de
@@ -265,7 +269,8 @@ O template inicial inclui:
   memória alta, storage alto, temperatura alta de CPU, latência WAN, perda WAN,
   baixa disponibilidade WAN, speedtest desatualizado, WAN primária inativa em
   failover, túneis VPN down, assinaturas IDS/IPS desatualizadas, alta utilização
-  de rádio, retries altos e baixa satisfaction de rádio.
+  de orçamento PoE, estado PoE near-limit, alta utilização de rádio, retries
+  altos e baixa satisfaction de rádio.
 
 ### Macros Úteis de Ajuste
 
@@ -281,6 +286,7 @@ Os limiares operacionais mais comuns ficam expostos como macros de host:
 {$UNIFI.WAN.AVAILABILITY.MIN}
 {$UNIFI.SPEEDTEST.MAX_AGE}
 {$UNIFI.IDS.SIGNATURE.MAX_AGE}
+{$UNIFI.POE.BUDGET.WARN}
 {$UNIFI.RADIO.UTIL.WARN}
 {$UNIFI.RADIO.RETRY.WARN}
 {$UNIFI.RADIO.SATISFACTION.MIN}
@@ -394,6 +400,7 @@ checks do Zabbix:
 ./unifi_udm_pro_api.py system-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py wan-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py network-services "$UNIFI_API_URL" "$UNIFI_API_KEY" default
+./unifi_udm_pro_api.py poe-budget "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py discover-wans "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ./unifi_udm_pro_api.py wan-field "$UNIFI_API_URL" "$UNIFI_API_KEY" default WAN latency_ms
 ```
@@ -402,7 +409,10 @@ checks do Zabbix:
 load, storage agregado, uptime e temperatura do UDM Pro. `wan-health` usa o
 mesmo endpoint e retorna latência WAN, perda de pacotes, disponibilidade,
 taxas de upload/download e dados de speedtest. `network-services` usa o mesmo
-payload e retorna contadores resumidos de DHCP, VPN e IDS/IPS. `discover-wans` retorna linhas
+payload e retorna contadores resumidos de DHCP, VPN e IDS/IPS. `poe-budget`
+retorna resumos de orçamento PoE por dispositivo para equipamentos que expõem
+dados de orçamento PoE ou portas com capacidade PoE.
+`discover-wans` retorna linhas
 de descoberta de baixo nível para interfaces WAN, preparado para `WAN`, `WAN2`
 e outros objetos WAN expostos pelo UniFi.
 
@@ -430,8 +440,6 @@ Você ainda pode testar um único dispositivo manualmente:
 ```
 
 ### Próximas Adições Sugeridas
-
-- Orçamento PoE por switch a partir de `total_used_power` e `total_max_power`.
 
 ### Notas de Revisão da API
 

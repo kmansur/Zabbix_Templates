@@ -7,6 +7,27 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 Manutenção da documentação: quando o `CHANGELOG.md` em inglês for atualizado,
 atualize este `CHANGELOG.pt-BR.md` na mesma alteração.
 
+## 0.6.5 - Não Lançado
+
+### Adicionado
+
+- Adicionada coleta de orçamento PoE por dispositivo a partir dos campos de
+  energia da Network API e dos dados de portas com capacidade PoE.
+- Adicionada descoberta de baixo nível de orçamento PoE com protótipos para
+  usado, máximo, disponível, utilização, quantidade de portas PoE e estado
+  near-limit.
+- Adicionados protótipos de trigger de aviso para alta utilização de orçamento
+  PoE e flags explícitas de PoE near-limit.
+- Adicionados protótipos de gráfico de orçamento PoE e itens de saúde do
+  coletor.
+- Adicionada a macro `{$UNIFI.POE.BUDGET.WARN}` para ajuste da utilização do
+  orçamento PoE.
+
+### Alterado
+
+- Atualizada a versão do script para `0.6.5`.
+- Atualizada a versão do vendor do template para `0.6-5`.
+
 ## 0.6.4 - Não Lançado
 
 ### Adicionado

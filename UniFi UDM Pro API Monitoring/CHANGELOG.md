@@ -7,6 +7,24 @@ All notable changes to this project are documented here.
 Documentation maintenance: when this English changelog is updated, update
 `CHANGELOG.pt-BR.md` in the same change.
 
+## 0.6.5 - Unreleased
+
+### Added
+
+- Added device-level PoE budget collection from Network API power fields and
+  PoE-capable port data.
+- Added PoE budget low-level discovery with used, maximum, available,
+  utilization, PoE-capable port count, and near-limit item prototypes.
+- Added warning trigger prototypes for high PoE budget utilization and explicit
+  PoE near-limit flags.
+- Added PoE budget graph prototypes and collector health items.
+- Added `{$UNIFI.POE.BUDGET.WARN}` for PoE budget utilization tuning.
+
+### Changed
+
+- Updated script version to `0.6.5`.
+- Updated template vendor version to `0.6-5`.
+
 ## 0.6.4 - Unreleased
 
 ### Added

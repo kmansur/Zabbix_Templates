@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi UDM Pro API Monitoring
-Version: 0.6.4
+Version: 0.6.5
 
 External script for Zabbix templates.
 
@@ -701,6 +701,97 @@ def legacy_ports_document(payload):
     return document
 
 
+def poe_budget_value(device, field):
+    """Return normalized device-level PoE budget values."""
+    max_power = to_float(first_value(
+        device,
+        "total_max_power",
+        "total_poe_power",
+        "poe_power_budget",
+        "poe_budget",
+        "max_poe_power",
+    ))
+    used_power = to_float(first_value(
+        device,
+        "total_used_power",
+        "poe_power",
+        "poe_power_used",
+        "used_poe_power",
+    ))
+    available_power = max(0.0, max_power - used_power) if max_power else 0.0
+    used_percent = round(used_power / max_power * 100, 2) if max_power else 0.0
+    ports = legacy_ports(device)
+    poe_ports = sum(1 for port in ports if first_value(port, "poe_mode", "poe_caps", "poe_power", "poe_good") not in (None, ""))
+
+    if field == "used_power_w":
+        return round(used_power, 2)
+    if field == "max_power_w":
+        return round(max_power, 2)
+    if field == "available_power_w":
+        return round(available_power, 2)
+    if field == "used_percent":
+        return used_percent
+    if field == "poe_ports":
+        return poe_ports
+    if field == "near_limit":
+        return to_bool(first_value(device, "poe_near_limit", "poe_power_near_limit", "power_near_limit"))
+    return device.get(field)
+
+
+def has_poe_budget(device):
+    """Return true when a device exposes PoE budget or PoE-capable ports."""
+    return (
+        poe_budget_value(device, "max_power_w") > 0
+        or poe_budget_value(device, "used_power_w") > 0
+        or poe_budget_value(device, "poe_ports") > 0
+    )
+
+
+def poe_budget_document(payload):
+    """Build a compact device map for PoE budget dependent item prototypes."""
+    document = {}
+    fields = (
+        "used_power_w",
+        "max_power_w",
+        "available_power_w",
+        "used_percent",
+        "poe_ports",
+        "near_limit",
+    )
+
+    for device in legacy_devices(payload):
+        if not has_poe_budget(device):
+            continue
+
+        device_id = str(device.get("external_id") or device.get("_id") or device.get("device_id") or device.get("mac") or "")
+        if not device_id:
+            continue
+
+        item = {
+            "device_name": device.get("name") or "",
+            "device_model": device.get("model") or "",
+        }
+        for field in fields:
+            item[field] = poe_budget_value(device, field)
+        document[device_id] = item
+
+    return document
+
+
+def discover_poe_budget(payload):
+    """Discover devices with PoE budget data."""
+    return {
+        "data": [
+            lld_item({
+                "{#UNIFI.DEVICE.ID}": device_id,
+                "{#UNIFI.DEVICE.NAME}": device.get("device_name"),
+                "{#UNIFI.DEVICE.MODEL}": device.get("device_model"),
+            })
+            for device_id, device in poe_budget_document(payload).items()
+        ]
+    }
+
+
 def legacy_stat_devices(base_url, api_key, legacy_site, insecure=True, timeout=20):
     """Fetch the legacy stat/device payload for the selected site."""
     return request_legacy_json(base_url, api_key, legacy_site, "stat/device", insecure=insecure, timeout=timeout)
@@ -1266,7 +1357,15 @@ def parse_args():
     args.object_id = None
 
     object_commands = {"device", "client", "discover-ports", "discover-radios"}
-    optional_legacy_device_commands = {"system-health", "wan-health", "discover-wans", "discover-storage", "network-services"}
+    optional_legacy_device_commands = {
+        "system-health",
+        "wan-health",
+        "discover-wans",
+        "discover-storage",
+        "network-services",
+        "discover-poe-budget",
+        "poe-budget",
+    }
 
     args.extra_values = []
 
@@ -1373,6 +1472,18 @@ def main():
         legacy_site = args.site_id or "default"
         payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
         print_json(network_services(find_legacy_device(payload, args.object_id)))
+        return
+
+    if command == "discover-poe-budget":
+        legacy_site = args.site_id or "default"
+        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
+        print_json(discover_poe_budget(payload))
+        return
+
+    if command == "poe-budget":
+        legacy_site = args.site_id or "default"
+        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
+        print_json(poe_budget_document(payload))
         return
 
     if command == "legacy-discover-radios":

@@ -15,7 +15,7 @@ zabbix_export:
         or proxy external scripts directory.
       vendor:
         name: 'Net Tech'
-        version: 0.6-4
+        version: 0.6-5
       groups:
         - name: Templates/Network devices
       items:
@@ -1161,6 +1161,57 @@ zabbix_export:
               name: 'UniFi IDS/IPS signature data is stale'
               opdata: 'Signature age: {ITEM.LASTVALUE1}'
               priority: WARNING
+        - uuid: 24b68df79fb8488baeb8b0948f0583ae
+          name: 'UniFi PoE budget raw'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          delay: 5m
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          timeout: 60s
+          description: 'Master item for device-level PoE budget telemetry from total_used_power, total_max_power, and PoE-capable port data.'
+          tags:
+            - tag: component
+              value: poe
+        - uuid: 477cfcc1f04546669f27a5165ff997a3
+          name: 'UniFi PoE budget collection available'
+          type: DEPENDENT
+          key: unifi.collector.network.poe_budget.available
+          delay: '0'
+          history: 90d
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
+          triggers:
+            - uuid: d8604caadb9a4e7d8e85a6d89b42ffe8
+              expression: 'max(/UniFi UDM Pro API Monitoring/unifi.collector.network.poe_budget.available,15m)=0'
+              name: 'UniFi PoE budget collection is failing'
+              priority: WARNING
+              description: 'The PoE budget master item is returning an error or invalid JSON.'
+        - uuid: 77ae10e2c6a84cbbad6e8fe9b9585580
+          name: 'UniFi PoE budget last error'
+          type: DEPENDENT
+          key: unifi.collector.network.poe_budget.error
+          delay: '0'
+          history: 30d
+          value_type: TEXT
+          trends: '0'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
+          master_item:
+            key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: collector
         - uuid: 4f2d12c6478c43e5abfbc1aad5d035cb
           name: 'UniFi port telemetry raw'
           type: EXTERNAL
@@ -1395,6 +1446,160 @@ zabbix_export:
                   value: ports
                 - tag: device
                   value: '{#UNIFI.DEVICE.NAME}'
+        - uuid: b53bba5f3fbf43b58625d2af0901a674
+          name: 'UniFi PoE budget discovery'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["discover-poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          delay: 1h
+          lifetime: 30d
+          timeout: 60s
+          description: 'Discovers UniFi devices that expose device-level PoE budget data or PoE-capable ports.'
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#UNIFI.DEVICE.NAME}'
+                value: '{$UNIFI.LLD.DEVICE.NAME.MATCHES}'
+                formulaid: A
+              - macro: '{#UNIFI.DEVICE.MODEL}'
+                value: '{$UNIFI.LLD.DEVICE.MODEL.MATCHES}'
+                formulaid: B
+          item_prototypes:
+            - uuid: 507620f90e8447a58fde4e916c84af67
+              name: 'PoE used power on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.network.poe_budget.used_power_w[{#UNIFI.DEVICE.ID}]'
+              delay: '0'
+              history: 90d
+              value_type: FLOAT
+              units: W
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"].used_power_w'
+              master_item:
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+              tags:
+                - tag: component
+                  value: poe
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 9a9465789bea454d9da9bdee96382456
+              name: 'PoE max power on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.network.poe_budget.max_power_w[{#UNIFI.DEVICE.ID}]'
+              delay: '0'
+              history: 90d
+              value_type: FLOAT
+              units: W
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"].max_power_w'
+              master_item:
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+              tags:
+                - tag: component
+                  value: poe
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: cf3c1ecf91734e1b9009427f1b6573a2
+              name: 'PoE available power on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.network.poe_budget.available_power_w[{#UNIFI.DEVICE.ID}]'
+              delay: '0'
+              history: 90d
+              value_type: FLOAT
+              units: W
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"].available_power_w'
+              master_item:
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+              tags:
+                - tag: component
+                  value: poe
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 17f7017444f042e89a5ed88faed57dda
+              name: 'PoE budget utilization on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.network.poe_budget.used_percent[{#UNIFI.DEVICE.ID}]'
+              delay: '0'
+              history: 90d
+              value_type: FLOAT
+              units: '%'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"].used_percent'
+              master_item:
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+              tags:
+                - tag: component
+                  value: poe
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: aef9e29cae1949cd965c78361e48801e
+              name: 'PoE-capable ports on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.network.poe_budget.ports[{#UNIFI.DEVICE.ID}]'
+              delay: '0'
+              history: 90d
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"].poe_ports'
+              master_item:
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+              tags:
+                - tag: component
+                  value: poe
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: 1f78ab895fe44636aec66116ff12e4d4
+              name: 'PoE near limit on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.network.poe_budget.near_limit[{#UNIFI.DEVICE.ID}]'
+              delay: '0'
+              history: 90d
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#UNIFI.DEVICE.ID}"].near_limit'
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'return value === true || value === "true" ? 1 : 0;'
+              master_item:
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+              tags:
+                - tag: component
+                  value: poe
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+          trigger_prototypes:
+            - uuid: bfaa03eb2f29429aaf64706e99c66af6
+              expression: 'avg(/UniFi UDM Pro API Monitoring/unifi.network.poe_budget.used_percent[{#UNIFI.DEVICE.ID}],10m)>{$UNIFI.POE.BUDGET.WARN}'
+              name: 'High PoE budget utilization on {#UNIFI.DEVICE.NAME}'
+              opdata: 'PoE budget: {ITEM.LASTVALUE1}'
+              priority: WARNING
+            - uuid: b3d34cc33df340a99802c7663716bbbc
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.network.poe_budget.near_limit[{#UNIFI.DEVICE.ID}])=1'
+              name: 'PoE budget is near limit on {#UNIFI.DEVICE.NAME}'
+              priority: WARNING
+          graph_prototypes:
+            - uuid: c13b421698064c6b81b39db81f7509ba
+              name: 'PoE budget on {#UNIFI.DEVICE.NAME}'
+              graph_items:
+                - color: FF7043
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi.network.poe_budget.used_power_w[{#UNIFI.DEVICE.ID}]'
+                - sortorder: '1'
+                  color: 66BB6A
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi.network.poe_budget.available_power_w[{#UNIFI.DEVICE.ID}]'
         - uuid: 6d9f504290a34f87b3fa4adaf6fbeab4
           name: 'UniFi port telemetry discovery'
           type: EXTERNAL
@@ -2220,6 +2425,9 @@ zabbix_export:
         - macro: '{$UNIFI.IDS.SIGNATURE.MAX_AGE}'
           value: '604800'
           description: 'Maximum accepted age for IDS/IPS signature data, in seconds.'
+        - macro: '{$UNIFI.POE.BUDGET.WARN}'
+          value: '80'
+          description: 'Device-level PoE budget utilization warning threshold in percent.'
         - macro: '{$UNIFI.RADIO.UTIL.WARN}'
           value: '80'
           description: 'Radio channel utilization warning threshold in percent.'
