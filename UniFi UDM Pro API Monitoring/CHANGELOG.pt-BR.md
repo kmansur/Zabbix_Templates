@@ -27,6 +27,15 @@ atualize este `CHANGELOG.pt-BR.md` na mesma alteração.
 - Substituído o dashboard `Unifi Controller` por um layout separado com tráfego
   WAN, qualidade WAN, clientes e gauges de sistema.
 
+### Corrigido
+
+- Corrigida a montagem da URL da API legada quando `{$UNIFI.API.URL}` é
+  configurada com o caminho completo `/proxy/network/integration/v1` em vez de
+  apenas a raiz do UDM Pro.
+- Corrigida a normalização booleana de campos legados de porta, PoE e estado
+  WAN para que strings como `false`, `0` e `down` não sejam tratadas como
+  ativas.
+
 ## 0.5.3 - Não Lançado Anterior
 
 ### Corrigido

@@ -27,6 +27,14 @@ Documentation maintenance: when this English changelog is updated, update
 - Replaced the `Unifi Controller` dashboard with a split WAN traffic, WAN
   quality, clients, and system gauge layout.
 
+### Fixed
+
+- Fixed legacy API URL construction when `{$UNIFI.API.URL}` is configured with
+  the full `/proxy/network/integration/v1` path instead of only the UDM Pro root
+  URL.
+- Fixed boolean normalization for legacy port, PoE, and WAN status fields so
+  string values such as `false`, `0`, and `down` are not treated as active.
+
 ## 0.5.3 - Previous Unreleased
 
 ### Fixed

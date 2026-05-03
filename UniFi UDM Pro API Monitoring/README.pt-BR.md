@@ -195,6 +195,12 @@ Antes de importar ou habilitar o template:
    {$UNIFI.LEGACY.SITE} = default
    ```
 
+`{$UNIFI.API.URL}` pode ser a URL raiz do UDM Pro
+(`https://xxx.xxx.xxx.xxx`) ou o prefixo completo da Integration API
+(`https://xxx.xxx.xxx.xxx/proxy/network/integration/v1`). O script normaliza o
+valor corretamente tanto para chamadas da Integration API quanto para chamadas
+legadas da Network API.
+
 `{$UNIFI.SITE.ID}` pode ficar vazio quando o controller possui apenas um site.
 O script descobrirá o site automaticamente. Itens fixos de sistema e WAN
 selecionam automaticamente o dispositivo UDM a partir do payload legado. Não
@@ -217,6 +223,8 @@ O template inicial inclui:
 - Descoberta de telemetria legada de portas em `port_table`, com estado do link,
   velocidade negociada, upload/download, erros RX/TX, descartes RX/TX, potência
   PoE, tensão PoE, estado PoE good, modo PoE e protótipos de gráfico.
+- Valores booleanos legados são normalizados explicitamente, então strings da
+  API como `false`, `0` e `down` são tratadas como inativas.
 - Telemetria legada de portas usando um único item mestre com itens dependentes,
   evitando uma chamada à API por métrica em ambientes grandes.
 - Descoberta de rádios com protótipos para canal, largura de canal, frequência e padrão WLAN.

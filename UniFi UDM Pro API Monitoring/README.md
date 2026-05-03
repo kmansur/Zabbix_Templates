@@ -192,6 +192,11 @@ Before importing or enabling the template:
    {$UNIFI.LEGACY.SITE} = default
    ```
 
+`{$UNIFI.API.URL}` may be either the UDM Pro root URL
+(`https://xxx.xxx.xxx.xxx`) or the full Integration API prefix
+(`https://xxx.xxx.xxx.xxx/proxy/network/integration/v1`). The script normalizes
+the value correctly for both Integration API and legacy Network API calls.
+
 `{$UNIFI.SITE.ID}` can be left empty when the controller has only one site. The
 script will discover it automatically.
 Fixed system and WAN items auto-select the UDM device from the legacy payload.
@@ -215,6 +220,8 @@ The initial template includes:
   negotiated speed, upload/download rate, RX/TX errors, RX/TX drops, PoE power,
   PoE voltage, PoE good state, PoE mode, and graph prototypes for traffic,
   errors/drops, and PoE.
+- Legacy boolean values are normalized explicitly, so API strings such as
+  `false`, `0`, and `down` are treated as inactive.
 - Legacy port telemetry uses one master item with dependent item prototypes, so
   large switch/AP environments do not call the UniFi API once per metric.
 - Radio discovery with item prototypes for channel, channel width, frequency,

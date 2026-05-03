@@ -92,6 +92,19 @@ def normalize_base_url(base_url):
     return base_url + "/proxy/network/integration/v1"
 
 
+def normalize_root_url(base_url):
+    """Normalize the UDM Pro root URL for non-Integration API paths."""
+    if is_blank_arg(base_url):
+        fail("missing UniFi API URL")
+
+    base_url = base_url.rstrip("/")
+    integration_suffix = "/proxy/network/integration/v1"
+    if base_url.endswith(integration_suffix):
+        return base_url[: -len(integration_suffix)]
+
+    return base_url
+
+
 def build_url(base_url, path, query=None):
     """Build a URL for the documented Integration API."""
     url = normalize_base_url(base_url) + "/" + path.lstrip("/")
@@ -111,7 +124,7 @@ def build_legacy_url(base_url, legacy_site, path, query=None):
         fail("missing UniFi API URL")
 
     legacy_site = "default" if is_blank_arg(legacy_site) else legacy_site
-    base_url = base_url.rstrip("/")
+    base_url = normalize_root_url(base_url)
     path = path.lstrip("/")
     url = f"{base_url}/proxy/network/api/s/{urllib.parse.quote(legacy_site)}/{path}"
     if query:
@@ -598,7 +611,7 @@ def legacy_discover_ports(payload):
 def legacy_port_value(port, field):
     """Return normalized legacy port metrics for Zabbix items."""
     if field == "up":
-        return bool(first_value(port, "up", "link", "link_up"))
+        return to_bool(first_value(port, "up", "link", "link_up"))
     if field == "speed_mbps":
         return to_float(first_value(port, "speed", "speedMbps", "speed_mbps"))
     if field == "rx_bps":
@@ -618,7 +631,7 @@ def legacy_port_value(port, field):
     if field == "poe_voltage_v":
         return to_float(first_value(port, "poe_voltage", "poe_voltage_v"))
     if field == "poe_good":
-        return bool(first_value(port, "poe_good", "poe_enable", "poe_power"))
+        return to_bool(first_value(port, "poe_good", "poe_enable", "poe_power"))
     if field == "poe_mode":
         return first_value(port, "poe_mode", "poe_caps")
     if field == "name":
@@ -736,6 +749,31 @@ def to_int(value, default=0):
         return int(float(value))
     except (TypeError, ValueError):
         return default
+
+
+def to_bool(value, default=False):
+    """Best-effort boolean conversion for inconsistent UniFi status fields."""
+    if value is None or value == "":
+        return default
+
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, (int, float)):
+        return value != 0
+
+    text = str(value).strip().lower()
+    if text in {"1", "true", "yes", "y", "on", "up", "enabled", "enable", "good", "ok"}:
+        return True
+    if text in {"0", "false", "no", "n", "off", "down", "disabled", "disable", "bad"}:
+        return False
+
+    try:
+        return float(text) != 0
+    except ValueError:
+        pass
+
+    return default
 
 
 def system_health(device):
@@ -891,12 +929,15 @@ def wan_health(device, wan_name="WAN"):
     availability = to_float(uptime_stats.get("availability"), 0.0)
     rx_bps = to_float(uplink.get("rx_bytes-r")) * 8
     tx_bps = to_float(uplink.get("tx_bytes-r")) * 8
+    alive = interface_state.get("alive")
+    if alive is None:
+        alive = uplink.get("up", False)
 
     return {
         "name": (wan_name or "WAN").upper(),
         "ifname": uplink.get("name") or wan_table.get("ifname") or wan_table.get("name") or "",
         "ip": interface_state.get("ip") or uplink.get("ip") or wan_table.get("ip") or "",
-        "alive": bool(interface_state.get("alive", uplink.get("up", False))),
+        "alive": to_bool(alive),
         "availability_percent": availability,
         "packet_loss_percent": round(max(0.0, 100.0 - availability), 4),
         "latency_ms": to_float(uptime_stats.get("latency_average") or uplink.get("latency")),
