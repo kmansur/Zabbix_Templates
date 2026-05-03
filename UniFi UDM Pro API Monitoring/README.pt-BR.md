@@ -172,7 +172,7 @@ Processo recomendado:
 Versão atual do projeto:
 
 ```text
-0.6.1
+0.6.3
 ```
 
 O template importável para Zabbix 7.0 é:
@@ -192,20 +192,19 @@ Antes de importar ou habilitar o template:
    {$UNIFI.API.URL} = https://xxx.xxx.xxx.xxx
    {$UNIFI.API.KEY} = sua chave local da API UniFi Network
    {$UNIFI.SITE.ID} = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-   {$UNIFI.LEGACY.SITE} = default
+   {$UNIFI.NETWORK.SITE} = default
    ```
 
 `{$UNIFI.API.URL}` pode ser a URL raiz do UDM Pro
 (`https://xxx.xxx.xxx.xxx`) ou o prefixo completo da Integration API
 (`https://xxx.xxx.xxx.xxx/proxy/network/integration/v1`). O script normaliza o
 valor corretamente tanto para chamadas da Integration API quanto para chamadas
-legadas da Network API.
+da Network API.
 
 `{$UNIFI.SITE.ID}` pode ficar vazio quando o controller possui apenas um site.
-O script descobrirá o site automaticamente. Itens fixos de sistema e WAN
-selecionam automaticamente o dispositivo UDM a partir do payload legado. Não
+O script descobrirá o site automaticamente. Itens fixos de sistema e WAN selecionam automaticamente o dispositivo UDM a partir do payload da Network API. Não
 defina uma macro de device ID para uso normal do template; IDs explícitos de
-dispositivo legado são necessários apenas para testes manuais do script.
+dispositivo da Network API são necessários apenas para testes manuais do script.
 
 O template inicial inclui:
 
@@ -220,32 +219,37 @@ O template inicial inclui:
   velocidade máxima e tipo de conector.
 - Velocidades vazias de porta são normalizadas para `0` Mbps, evitando erros de
   item numérico em portas desconectadas ou inativas.
-- Descoberta de telemetria legada de portas em `port_table`, com estado do link,
+- Descoberta de telemetria da Network API de portas em `port_table`, com estado do link,
   velocidade negociada, upload/download, erros RX/TX, descartes RX/TX, potência
   PoE, tensão PoE, estado PoE good, modo PoE e protótipos de gráfico.
-- Valores booleanos legados são normalizados explicitamente, então strings da
+- Valores booleanos da Network API são normalizados explicitamente, então strings da
   API como `false`, `0` e `down` são tratadas como inativas.
-- Telemetria legada de portas usando um único item mestre com itens dependentes,
+- Telemetria da Network API de portas usando um único item mestre com itens dependentes,
   evitando uma chamada à API por métrica em ambientes grandes.
 - Descoberta de rádios com protótipos para canal, largura de canal, frequência e padrão WLAN.
 - Saúde do sistema via `/proxy/network/api/s/default/stat/device`: CPU, memória,
   load average, storage agregado, uptime e temperatura de CPU.
-- Descoberta de storage pelo endpoint legado com uso, livre, total, utilização,
+- Descoberta de storage pelo endpoint da Network API com uso, livre, total, utilização,
   protótipos de trigger e protótipos de gráfico por volume.
-- Saúde WAN pelo endpoint legado: latência, perda de pacote, disponibilidade,
+- Saúde WAN pelo endpoint da Network API: latência, perda de pacote, disponibilidade,
   estado alive, IP WAN, upload/download e status, latência, última execução,
   idade, download e upload do speedtest.
+- Visibilidade de failover WAN: WAN ativa, quantidade de WANs, estado de
+  failover habilitado, estado de WAN primária ativa e estado de failover. Os
+  itens WAN fixos de nível controller acompanham o uplink ativo quando o
+  failover multi-WAN entra em ação.
 - Descoberta WAN para ambientes multi-WAN. O ambiente testado possui uma WAN,
   mas o template inclui protótipos para WAN2 e outros rótulos WAN quando o
-  payload legado os expõe.
-- Performance de rádio pelo endpoint legado: utilização de canal, self RX/TX,
+  payload da Network API os expõe, incluindo estado ativo, função e estado de
+  failover por WAN.
+- Performance de rádio pelo endpoint da Network API: utilização de canal, self RX/TX,
   percentual de retries, estações conectadas e satisfaction.
-- Performance legada de rádio usando um único item mestre com itens dependentes,
+- Performance da Network API de rádio usando um único item mestre com itens dependentes,
   evitando uma chamada à API por rádio/métrica em ambientes com muitos APs.
 - Valores de radio satisfaction abaixo de zero são normalizados para `0`, pois
   alguns controllers UniFi retornam `-1` até a métrica estar disponível.
-- Itens de saúde do coletor para Integration API, legacy system, legacy WAN,
-  legacy port e legacy radio. Eles indicam se o script retornou JSON utilizável
+- Itens de saúde do coletor para Integration API, sistema via Network API, WAN
+  via Network API, portas e rádios. Eles indicam se o script retornou JSON utilizável
   e expõem o último erro da API/script em texto.
 - Filtros de descoberta de baixo nível controlados por macros de host. O padrão
   é `.*`, então nada é excluído até que você altere as macros.
@@ -256,8 +260,8 @@ O template inicial inclui:
 - Triggers para dispositivos offline, atualizações de firmware, redes
   desabilitadas, mudança de versão da aplicação, falhas do coletor, CPU alta,
   memória alta, storage alto, temperatura alta de CPU, latência WAN, perda WAN,
-  baixa disponibilidade WAN, speedtest desatualizado, alta utilização de rádio,
-  retries altos e baixa satisfaction de rádio.
+  baixa disponibilidade WAN, speedtest desatualizado, WAN primária inativa em
+  failover, alta utilização de rádio, retries altos e baixa satisfaction de rádio.
 
 ### Macros Úteis de Ajuste
 
@@ -304,18 +308,18 @@ do controller:
 ```text
 UniFi Integration API collection available
 UniFi Integration API last error
-UniFi legacy system collection available
-UniFi legacy system last error
-UniFi legacy WAN collection available
-UniFi legacy WAN last error
-UniFi legacy port collection available
-UniFi legacy port last error
-UniFi legacy radio collection available
-UniFi legacy radio last error
+UniFi Network API system collection available
+UniFi Network API system last error
+UniFi Network API WAN collection available
+UniFi Network API WAN last error
+UniFi port collection available
+UniFi port last error
+UniFi radio collection available
+UniFi radio last error
 ```
 
 Se um item de disponibilidade estiver `0`, o item `last error` correspondente
-normalmente aponta para TLS, chave de API, firewall, site ID, legacy site ou
+normalmente aponta para TLS, chave de API, firewall, site ID, Network API site ou
 mudanças de endpoint.
 
 ## Script Externo
@@ -388,7 +392,7 @@ checks do Zabbix:
 ./unifi_udm_pro_api.py wan-field "$UNIFI_API_URL" "$UNIFI_API_KEY" default WAN latency_ms
 ```
 
-`system-health` usa o endpoint legado do UniFi Network e retorna CPU, memória,
+`system-health` usa o endpoint da Network API do UniFi Network e retorna CPU, memória,
 load, storage agregado, uptime e temperatura do UDM Pro. `wan-health` usa o
 mesmo endpoint e retorna latência WAN, perda de pacotes, disponibilidade,
 taxas de upload/download e dados de speedtest. `discover-wans` retorna linhas
@@ -403,7 +407,7 @@ e outros objetos WAN expostos pelo UniFi.
 ./unifi_udm_pro_api.py discover-networks
 ./unifi_udm_pro_api.py discover-ports
 ./unifi_udm_pro_api.py discover-radios
-./unifi_udm_pro_api.py legacy-discover-radios "$UNIFI_API_URL" "$UNIFI_API_KEY" default
+./unifi_udm_pro_api.py discover-radio-performance "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ```
 
 O script trata automaticamente endpoints paginados como `clients`. Quando
@@ -422,13 +426,12 @@ Você ainda pode testar um único dispositivo manualmente:
 
 - Orçamento PoE por switch a partir de `total_used_power` e `total_max_power`.
 - Descoberta e status de túneis VPN a partir de `network_table`.
-- Contagem de leases DHCP por VLAN a partir de detalhes legados de rede.
+- Contagem de leases DHCP por VLAN a partir de detalhes de rede da Network API.
 - Status de assinaturas IDS/IPS e contagem de regras.
-- Estado de failover WAN e detecção de WAN ativa em ambientes multi-WAN.
 
 ### Notas de Revisão da API
 
-O payload legado `stat/device` contém vários campos de alto valor para futuras
+O payload da Network API `stat/device` contém vários campos de alto valor para futuras
 expansões do template:
 
 - Identidade e firmware do gateway: `model`, `version`, `displayable_version`,

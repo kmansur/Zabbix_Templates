@@ -7,6 +7,37 @@ All notable changes to this project are documented here.
 Documentation maintenance: when this English changelog is updated, update
 `CHANGELOG.pt-BR.md` in the same change.
 
+## 0.6.3 - Unreleased
+
+### Added
+
+- Added WAN failover visibility for multi-WAN deployments: active WAN, WAN
+  count, failover enabled state, primary-WAN-active state, and failover state.
+- Added per-WAN discovery metadata for role, active state, and failover state.
+- Added a warning trigger when multi-WAN/failover is available but the primary
+  WAN is no longer the active uplink.
+- Controller-level fixed WAN items now follow the active uplink when no WAN
+  label is passed, while per-WAN prototypes keep explicit labels.
+
+### Changed
+
+- Updated script version to `0.6.3`.
+- Updated template vendor version to `0.6-3`.
+
+## 0.6.2 - Unreleased
+
+### Changed
+
+- Removed `legacy` from visible template item names, trigger names, graph names,
+  and item keys. The template now uses Network API wording for those metrics.
+- Renamed the Network API site macro from `{$UNIFI.LEGACY.SITE}` to
+  `{$UNIFI.NETWORK.SITE}`.
+- Added script command aliases such as `port-telemetry`,
+  `discover-port-telemetry`, `radio-performance`, and
+  `discover-radio-performance` while keeping the previous command names for
+  manual compatibility.
+- Updated template vendor version to `0.6-2`.
+
 ## 0.6.1 - Unreleased
 
 ### Fixed

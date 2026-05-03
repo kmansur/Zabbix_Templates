@@ -169,7 +169,7 @@ Recommended process:
 Current project version:
 
 ```text
-0.6.1
+0.6.3
 ```
 
 The importable Zabbix 7.0 template is:
@@ -189,19 +189,19 @@ Before importing or enabling the template:
    {$UNIFI.API.URL} = https://xxx.xxx.xxx.xxx
    {$UNIFI.API.KEY} = your local UniFi Network API key
    {$UNIFI.SITE.ID} = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-   {$UNIFI.LEGACY.SITE} = default
+   {$UNIFI.NETWORK.SITE} = default
    ```
 
 `{$UNIFI.API.URL}` may be either the UDM Pro root URL
 (`https://xxx.xxx.xxx.xxx`) or the full Integration API prefix
 (`https://xxx.xxx.xxx.xxx/proxy/network/integration/v1`). The script normalizes
-the value correctly for both Integration API and legacy Network API calls.
+the value correctly for both Integration API and Network API calls.
 
 `{$UNIFI.SITE.ID}` can be left empty when the controller has only one site. The
 script will discover it automatically.
-Fixed system and WAN items auto-select the UDM device from the legacy payload.
-Do not set a device ID macro for normal template use; explicit legacy device
-IDs are only needed for manual script tests.
+Fixed system and WAN items auto-select the UDM device from the Network API payload.
+Do not set a device ID macro for normal template use; explicit Network API
+device IDs are only needed for manual script tests.
 
 The initial template includes:
 
@@ -216,34 +216,38 @@ The initial template includes:
   and connector type.
 - Empty port speed values are normalized to `0` Mbps, which avoids numeric item
   errors on disconnected or inactive ports.
-- Legacy port telemetry discovery from `port_table`, with link state,
+- port telemetry discovery from `port_table`, with link state,
   negotiated speed, upload/download rate, RX/TX errors, RX/TX drops, PoE power,
   PoE voltage, PoE good state, PoE mode, and graph prototypes for traffic,
   errors/drops, and PoE.
-- Legacy boolean values are normalized explicitly, so API strings such as
+- Boolean values are normalized explicitly, so API strings such as
   `false`, `0`, and `down` are treated as inactive.
-- Legacy port telemetry uses one master item with dependent item prototypes, so
+- port telemetry uses one master item with dependent item prototypes, so
   large switch/AP environments do not call the UniFi API once per metric.
 - Radio discovery with item prototypes for channel, channel width, frequency,
   and WLAN standard.
 - System health from `/proxy/network/api/s/default/stat/device`: CPU, memory,
   load average, aggregate storage, uptime, and CPU temperature.
-- Storage discovery from the legacy endpoint with per-volume used, free, total,
+- Storage discovery from the Network API endpoint with per-volume used, free, total,
   utilization, trigger prototypes, and graph prototypes.
-- WAN health from the legacy endpoint: latency, packet loss, availability,
+- WAN health from the Network API endpoint: latency, packet loss, availability,
   alive state, WAN IP, upload/download rate, and speedtest status, latency,
   last run, age, download, and upload results.
+- WAN failover visibility: active WAN, WAN count, failover enabled state,
+  primary-WAN-active state, and failover state. Controller-level fixed WAN
+  items follow the active uplink when multi-WAN failover is in effect.
 - WAN discovery for multi-WAN environments. The current test environment has
   one WAN, but the template includes WAN item prototypes for WAN2 and additional
-  discovered WAN labels when the legacy payload exposes them.
-- Radio performance from the legacy endpoint: channel utilization, self RX/TX
+  discovered WAN labels when the Network API payload exposes them, including
+  per-WAN active state, role, and failover state.
+- Radio performance from the Network API endpoint: channel utilization, self RX/TX
   utilization, retry percentage, connected stations, and satisfaction.
-- Legacy radio performance uses one master item with dependent item prototypes,
+- Radio performance uses one master item with dependent item prototypes,
   so AP-heavy environments do not call the UniFi API once per radio metric.
 - Radio satisfaction values below zero are normalized to `0`, because some
   UniFi controllers return `-1` until that metric is available.
-- Collector health items for Integration API, legacy system, legacy WAN, legacy
-  port, and legacy radio master items. These show whether the script returned
+- Collector health items for Integration API, Network API system, Network API
+  WAN, port, and radio master items. These show whether the script returned
   usable JSON and expose the last API/script error as text.
 - Low-level discovery include filters controlled by host macros. They default
   to `.*`, so nothing is excluded unless you change the macros.
@@ -254,8 +258,8 @@ The initial template includes:
 - Triggers for offline devices, firmware updates, disabled networks, and
   application version changes, collector failures, high CPU, high memory, high
   storage usage, high CPU temperature, WAN latency, WAN packet loss, low WAN
-  availability, stale speedtest results, high radio utilization, high radio
-  retries, and low radio satisfaction.
+  availability, stale speedtest results, primary WAN not active during failover,
+  high radio utilization, high radio retries, and low radio satisfaction.
 
 ### Useful Tuning Macros
 
@@ -302,18 +306,18 @@ host:
 ```text
 UniFi Integration API collection available
 UniFi Integration API last error
-UniFi legacy system collection available
-UniFi legacy system last error
-UniFi legacy WAN collection available
-UniFi legacy WAN last error
-UniFi legacy port collection available
-UniFi legacy port last error
-UniFi legacy radio collection available
-UniFi legacy radio last error
+UniFi Network API system collection available
+UniFi Network API system last error
+UniFi Network API WAN collection available
+UniFi Network API WAN last error
+UniFi port collection available
+UniFi port last error
+UniFi radio collection available
+UniFi radio last error
 ```
 
 If an availability item is `0`, the matching `last error` item usually points to
-TLS, API key, firewall, site ID, legacy site, or endpoint changes.
+TLS, API key, firewall, site ID, Network API site, or endpoint changes.
 
 ## External Script
 
@@ -385,7 +389,7 @@ Zabbix external checks:
 ./unifi_udm_pro_api.py wan-field "$UNIFI_API_URL" "$UNIFI_API_KEY" default WAN latency_ms
 ```
 
-`system-health` uses the legacy UniFi Network endpoint and returns CPU, memory,
+`system-health` uses the Network API endpoint and returns CPU, memory,
 load, aggregate storage, uptime, and temperature metrics for the UDM Pro.
 `wan-health` uses the same endpoint and returns WAN latency, packet loss,
 availability, upload/download rates, and speedtest data.
@@ -401,7 +405,7 @@ UniFi.
 ./unifi_udm_pro_api.py discover-networks
 ./unifi_udm_pro_api.py discover-ports
 ./unifi_udm_pro_api.py discover-radios
-./unifi_udm_pro_api.py legacy-discover-radios "$UNIFI_API_URL" "$UNIFI_API_KEY" default
+./unifi_udm_pro_api.py discover-radio-performance "$UNIFI_API_URL" "$UNIFI_API_KEY" default
 ```
 
 The script automatically handles paginated endpoints such as `clients`.
@@ -419,14 +423,13 @@ You can still test a single device manually:
 ### Suggested Next Additions
 
 - Switch-level PoE budget from `total_used_power` and `total_max_power`.
-- VPN tunnel discovery and status from the legacy `network_table`.
-- DHCP lease count per VLAN from legacy network details.
+- VPN tunnel discovery and status from the Network API `network_table`.
+- DHCP lease count per VLAN from Network API network details.
 - IDS/IPS signature status and rule count.
-- WAN failover state and active WAN detection for multi-WAN environments.
 
 ### API Review Notes
 
-The legacy `stat/device` payload contains several high-value fields that are
+The Network API `stat/device` payload contains several high-value fields that are
 good candidates for future template expansion:
 
 - Gateway identity and firmware: `model`, `version`, `displayable_version`,

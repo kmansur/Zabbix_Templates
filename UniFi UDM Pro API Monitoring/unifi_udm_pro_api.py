@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi UDM Pro API Monitoring
-Version: 0.6.0
+Version: 0.6.3
 
 External script for Zabbix templates.
 
@@ -42,6 +42,16 @@ import urllib.request
 
 
 DEFAULT_LIMIT = 200
+
+COMMAND_ALIASES = {
+    "network-devices": "legacy-devices",
+    "port-telemetry": "legacy-ports",
+    "radio-performance": "legacy-radios",
+    "discover-port-telemetry": "legacy-discover-ports",
+    "discover-radio-performance": "legacy-discover-radios",
+    "port-telemetry-field": "legacy-port-field",
+    "radio-performance-field": "legacy-radio-field",
+}
 
 
 def is_blank_arg(value):
@@ -892,35 +902,140 @@ def wan_source(device, wan_name):
     interface_state = ((device.get("last_wan_interfaces") or {}).get(wan_name) or {})
     wan_table = device.get(f"wan{wan_number}") or {}
     uplink = device.get("uplink") or {}
+    multi_wan = len(wan_candidates(device)) > 1
 
     # On single-WAN systems, the `uplink` object is the most complete active WAN
-    # representation. For WAN2+, prefer the numbered `wanN` object when present.
-    if wan_name != "WAN" and wan_table:
+    # representation. For multi-WAN explicit labels, prefer the matching `wanN`
+    # object when the active uplink appears to point at a different WAN.
+    if wan_table and wan_name != "WAN":
         uplink = wan_table
+    elif wan_table and multi_wan:
+        active_values = {
+            str(value).strip().lower()
+            for value in (uplink.get("name"), uplink.get("ifname"), uplink.get("ip"), uplink.get("mac"))
+            if value not in (None, "")
+        }
+        wan_values = {
+            str(value).strip().lower()
+            for value in (
+                wan_table.get("name"),
+                wan_table.get("ifname"),
+                wan_table.get("ip"),
+                wan_table.get("mac"),
+                interface_state.get("name"),
+                interface_state.get("ifname"),
+                interface_state.get("ip"),
+                interface_state.get("mac"),
+            )
+            if value not in (None, "")
+        }
+        if active_values and not active_values.intersection(wan_values):
+            uplink = wan_table
 
     return uptime_stats, interface_state, wan_table, uplink
+
+
+def wan_role(wan_name):
+    """Return the logical failover role for a WAN label."""
+    return "primary" if (wan_name or "WAN").upper() == "WAN" else "backup"
+
+
+def wan_alive(interface_state, uplink):
+    """Return whether one WAN source is considered alive."""
+    alive = interface_state.get("alive")
+    if alive is None:
+        alive = uplink.get("up", False)
+    return to_bool(alive)
+
+
+def wan_active_name(device, candidates=None):
+    """Best-effort active WAN detection from the UDM uplink object."""
+    candidates = candidates or wan_candidates(device)
+    if not candidates:
+        return ""
+    if len(candidates) == 1:
+        return candidates[0]
+
+    active_uplink = device.get("uplink") or {}
+    active_values = {
+        str(value).strip().lower()
+        for value in (
+            active_uplink.get("name"),
+            active_uplink.get("ifname"),
+            active_uplink.get("ip"),
+            active_uplink.get("mac"),
+        )
+        if value not in (None, "")
+    }
+
+    for wan_name in candidates:
+        _, interface_state, wan_table, _ = wan_source(device, wan_name)
+        wan_values = {
+            str(value).strip().lower()
+            for value in (
+                wan_name,
+                wan_table.get("name"),
+                wan_table.get("ifname"),
+                wan_table.get("ip"),
+                wan_table.get("mac"),
+                interface_state.get("name"),
+                interface_state.get("ifname"),
+                interface_state.get("ip"),
+                interface_state.get("mac"),
+            )
+            if value not in (None, "")
+        }
+        if active_values and active_values.intersection(wan_values):
+            return wan_name
+
+    alive_wans = []
+    for wan_name in candidates:
+        _, interface_state, _, uplink = wan_source(device, wan_name)
+        if wan_alive(interface_state, uplink):
+            alive_wans.append(wan_name)
+
+    if len(alive_wans) == 1:
+        return alive_wans[0]
+    if "WAN" in alive_wans:
+        return "WAN"
+    if alive_wans:
+        return alive_wans[0]
+
+    return candidates[0]
 
 
 def discover_wans(device):
     """Discover WAN links from the legacy UDM payload."""
     discovered = []
-    for wan_name in wan_candidates(device):
+    candidates = wan_candidates(device)
+    active_name = wan_active_name(device, candidates)
+    for wan_name in candidates:
         _, interface_state, wan_table, uplink = wan_source(device, wan_name)
+        alive = wan_alive(interface_state, uplink)
+        active = wan_name == active_name
         discovered.append(lld_item({
             "{#UNIFI.WAN.NAME}": wan_name,
             "{#UNIFI.WAN.IFNAME}": uplink.get("name") or wan_table.get("ifname") or wan_table.get("name"),
             "{#UNIFI.WAN.IP}": interface_state.get("ip") or uplink.get("ip") or wan_table.get("ip"),
-            "{#UNIFI.WAN.ALIVE}": interface_state.get("alive"),
+            "{#UNIFI.WAN.ALIVE}": alive,
+            "{#UNIFI.WAN.ROLE}": wan_role(wan_name),
+            "{#UNIFI.WAN.ACTIVE}": active,
+            "{#UNIFI.WAN.FAILOVER_STATE}": "active" if active else ("standby" if alive else "down"),
         }))
     return {"data": discovered}
 
 
-def wan_health(device, wan_name="WAN"):
+def wan_health(device, wan_name=None):
     """Return WAN health for one WAN label.
 
-    The default remains `WAN` so existing single-WAN template items keep working.
-    Multi-WAN item prototypes call the same function through `wan_field`.
+    When no label is provided, the active WAN is selected. Single-WAN systems
+    still resolve to `WAN`, while multi-WAN controller-level graphs follow the
+    uplink currently carrying traffic. Multi-WAN item prototypes call the same
+    function through `wan_field` with an explicit label.
     """
+    candidates = wan_candidates(device)
+    active_name = wan_active_name(device, candidates)
+    wan_name = (wan_name or active_name or "WAN").upper()
     uptime_stats, interface_state, wan_table, uplink = wan_source(device, wan_name)
     speedtest = device.get("speedtest-status") or {}
     speedtest_last_run = to_int(speedtest.get("rundate") or uplink.get("speedtest_lastrun"))
@@ -929,15 +1044,22 @@ def wan_health(device, wan_name="WAN"):
     availability = to_float(uptime_stats.get("availability"), 0.0)
     rx_bps = to_float(uplink.get("rx_bytes-r")) * 8
     tx_bps = to_float(uplink.get("tx_bytes-r")) * 8
-    alive = interface_state.get("alive")
-    if alive is None:
-        alive = uplink.get("up", False)
+    alive = wan_alive(interface_state, uplink)
+    active = wan_name == active_name
+    failover_enabled = len(candidates) > 1
 
     return {
-        "name": (wan_name or "WAN").upper(),
+        "name": wan_name,
         "ifname": uplink.get("name") or wan_table.get("ifname") or wan_table.get("name") or "",
         "ip": interface_state.get("ip") or uplink.get("ip") or wan_table.get("ip") or "",
-        "alive": to_bool(alive),
+        "alive": alive,
+        "active": active,
+        "active_wan": active_name,
+        "failover_enabled": failover_enabled,
+        "failover_state": "active" if active else ("standby" if alive else "down"),
+        "primary_active": active_name == "WAN",
+        "role": wan_role(wan_name),
+        "wan_count": len(candidates),
         "availability_percent": availability,
         "packet_loss_percent": round(max(0.0, 100.0 - availability), 4),
         "latency_ms": to_float(uptime_stats.get("latency_average") or uplink.get("latency")),
@@ -1001,6 +1123,7 @@ def parse_args():
     parser.add_argument("--timeout", type=int, default=20)
     parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT)
     args = parser.parse_args()
+    args.command = COMMAND_ALIASES.get(args.command, args.command)
 
     args.base_url = os.getenv("UNIFI_API_URL")
     args.api_key = os.getenv("UNIFI_API_KEY")
@@ -1095,7 +1218,7 @@ def main():
     if command == "wan-health":
         legacy_site = args.site_id or "default"
         payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        wan_name = args.extra_values[0] if args.extra_values else "WAN"
+        wan_name = args.extra_values[0] if args.extra_values else None
         print_json(wan_health(find_legacy_device(payload, args.object_id), wan_name))
         return
 

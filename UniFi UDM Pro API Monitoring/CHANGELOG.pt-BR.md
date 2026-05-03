@@ -7,6 +7,40 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 Manutenção da documentação: quando o `CHANGELOG.md` em inglês for atualizado,
 atualize este `CHANGELOG.pt-BR.md` na mesma alteração.
 
+## 0.6.3 - Não Lançado
+
+### Adicionado
+
+- Adicionada visibilidade de failover WAN para ambientes multi-WAN: WAN ativa,
+  quantidade de WANs, estado de failover habilitado, estado de WAN primária
+  ativa e estado de failover.
+- Adicionados metadados por WAN na descoberta: função, estado ativo e estado
+  de failover.
+- Adicionada trigger de aviso quando multi-WAN/failover está disponível, mas a
+  WAN primária não é mais o uplink ativo.
+- Itens WAN fixos de nível controller agora acompanham o uplink ativo quando
+  nenhum rótulo WAN é passado, enquanto os protótipos por WAN mantêm rótulos
+  explícitos.
+
+### Alterado
+
+- Atualizada a versão do script para `0.6.3`.
+- Atualizada a versão do vendor do template para `0.6-3`.
+
+## 0.6.2 - Não Lançado
+
+### Alterado
+
+- Removido `legacy` dos nomes visíveis de itens, triggers, gráficos e keys do
+  template. O template agora usa a nomenclatura Network API para essas métricas.
+- Renomeada a macro de site da Network API de `{$UNIFI.LEGACY.SITE}` para
+  `{$UNIFI.NETWORK.SITE}`.
+- Adicionados aliases de comandos no script, como `port-telemetry`,
+  `discover-port-telemetry`, `radio-performance` e
+  `discover-radio-performance`, mantendo os nomes anteriores para
+  compatibilidade em testes manuais.
+- Atualizada a versão do vendor do template para `0.6-2`.
+
 ## 0.6.1 - Não Lançado
 
 ### Corrigido
