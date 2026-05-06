@@ -25,6 +25,7 @@ Documentation maintenance: when this English changelog is updated, update `CHANG
 - Added validation documentation and local parser tests.
 - Added contribution, security, and license files.
 - Added versioned template directories for Zabbix 6.0, 7.0, and 8.0.
+- Added `templates/8.0/Template_Dovecot_8.0.yaml` for Zabbix 8.0 import testing.
 
 ### Changed
 

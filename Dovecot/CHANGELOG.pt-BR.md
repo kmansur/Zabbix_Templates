@@ -25,6 +25,7 @@ Manutencao da documentacao: quando este changelog em portugues for atualizado, a
 - Adicionada documentacao de validacao e testes locais do parser.
 - Adicionados arquivos de contribuicao, seguranca e licenca.
 - Adicionados diretorios versionados de template para Zabbix 6.0, 7.0 e 8.0.
+- Adicionado `templates/8.0/Template_Dovecot_8.0.yaml` para teste de importacao no Zabbix 8.0.
 
 ### Alterado
 

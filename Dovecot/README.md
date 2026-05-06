@@ -12,7 +12,7 @@ Zabbix template project for monitoring Dovecot through Zabbix agent UserParamete
 
 - `templates/7.0/Template_Dovecot_7.0.yaml`: current Zabbix 7.0 template export for version 2.0.0.
 - `templates/6.0/`: reserved for a future Zabbix 6.0-compatible export.
-- `templates/8.0/`: reserved for a future Zabbix 8.0-compatible export.
+- `templates/8.0/Template_Dovecot_8.0.yaml`: Zabbix 8.0 template export, statically validated and ready for import testing.
 - `dovecot_stats.sh`: JSON master collection script for Dovecot sessions.
 - `userparameter_dovecot.conf`: Zabbix agent UserParameter definitions.
 - `legacy/zabbix-5.0/`: legacy Zabbix 5.0 XML template, legacy IMAP/POP3 counters, and matching UserParameter file.
@@ -140,7 +140,8 @@ This avoids undercounting when `doveadm who` groups several connections from the
 ## Compatibility Notes
 
 - `templates/7.0/Template_Dovecot_7.0.yaml` is the main template for version 2.0.0.
-- `templates/6.0/` and `templates/8.0/` are placeholders until those exports are validated in matching Zabbix versions.
+- `templates/6.0/` is a placeholder until a Zabbix 6.0 export is validated.
+- `templates/8.0/Template_Dovecot_8.0.yaml` is available for Zabbix 8.0 import testing; validate in homologation before production use.
 - `legacy/zabbix-5.0/Template_App_Dovecot.xml` is kept as the version 1.0.0 legacy template.
 - `legacy/zabbix-5.0/dovecot_num_imap.sh`, `legacy/zabbix-5.0/dovecot_num_pop.sh`, and `legacy/zabbix-5.0/userparameter_dovecot_legacy.conf` preserve the `dovecot.imap` and `dovecot.pop` keys for Zabbix 5.0 deployments.
 - IMAPS and POP3S checks validate TCP connectivity only. They do not validate TLS negotiation or authentication.

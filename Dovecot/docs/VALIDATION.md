@@ -12,6 +12,8 @@ python3 - <<'PYCODE'
 import yaml
 with open('templates/7.0/Template_Dovecot_7.0.yaml', 'r', encoding='utf-8') as f:
     yaml.safe_load(f)
+with open('templates/8.0/Template_Dovecot_8.0.yaml', 'r', encoding='utf-8') as f:
+    yaml.safe_load(f)
 print('YAML syntax OK')
 PYCODE
 ```
@@ -40,7 +42,7 @@ sudo -u zabbix /usr/local/sbin/zabbix_agentd -t dovecot.version
 
 ## Zabbix import checks
 
-1. Import `templates/7.0/Template_Dovecot_7.0.yaml` in homologation first.
+1. Import the matching export in homologation first: `templates/7.0/Template_Dovecot_7.0.yaml` for Zabbix 7.0 or `templates/8.0/Template_Dovecot_8.0.yaml` for Zabbix 8.0.
 2. Link the template to one Dovecot host.
 3. Check Latest data for `dovecot.stats`, collector items, connection items, process item, service availability items, and service response-time items.
 4. Confirm that TCP service items return `Up`.

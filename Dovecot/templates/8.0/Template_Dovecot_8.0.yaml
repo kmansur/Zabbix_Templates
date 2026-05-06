@@ -1,0 +1,621 @@
+zabbix_export:
+  version: '8.0'
+  template_groups:
+    - uuid: 7b4796ed81674845bf9cfe841f5a37e0
+      name: Templates/Applications
+  templates:
+    - uuid: a46637264254413e838cc95b1cacb91d
+      template: 'Template App Dovecot'
+      name: 'Template App Dovecot'
+      description: |
+        Template for monitoring Dovecot through Zabbix agent UserParameters.
+        
+        Version: 2.0.0
+        Date: 2026-05-04
+        Vendor: Net Tech
+        Author: Karim Mansur
+        
+        This version uses a JSON master item with dependent items for connection counters.
+        The collector uses doveadm who -1 so every Dovecot connection is counted individually.
+        
+        Main changes in 2.0.0:
+        - Added Zabbix 8.0 YAML template export.
+        - Added JSON master item dovecot.stats.
+        - Added dependent items for collector status, IMAP, POP3, and total connections.
+        - Added service availability checks for IMAP, IMAPS, POP3, and POP3S.
+        - Added Dovecot process count monitoring.
+        - Added service state value map.
+        - Added recovery macros for connection thresholds.
+        - Added graph for Dovecot connections.
+        - Added graph for Dovecot service response time.
+      vendor:
+        name: 'Net Tech'
+        version: 2.0.0
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: fead92fc42674f8da9d1efe411bf2d10
+          name: 'Dovecot collector available'
+          type: DEPENDENT
+          key: dovecot.collector.available
+          history: 90d
+          valuemap:
+            name: 'Service state'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.status
+          master_item:
+            key: dovecot.stats
+          tags:
+            - tag: component
+              value: collector
+          triggers:
+            - uuid: d5e2ad8667234759a3701c7d4c52b074
+              expression: 'max(/Template App Dovecot/dovecot.collector.available,5m)=0'
+              name: 'PROBLEM - Dovecot collector is failing'
+              priority: HIGH
+              description: 'The Dovecot stats master item returned status 0 for the whole evaluation window.'
+              tags:
+                - tag: component
+                  value: collector
+                - tag: scope
+                  value: availability
+        - uuid: 30311908d39342fba9948dd3975d84ac
+          name: 'Dovecot collector last error'
+          type: DEPENDENT
+          key: dovecot.collector.error
+          history: 30d
+          value_type: CHAR
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.error
+          master_item:
+            key: dovecot.stats
+          tags:
+            - tag: component
+              value: collector
+        - uuid: 584b1ab3dfa04afebf9e4de9608fa6ce
+          name: 'Dovecot IMAP connections'
+          type: DEPENDENT
+          key: dovecot.connections.imap
+          history: 90d
+          units: '#'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.imap
+          master_item:
+            key: dovecot.stats
+          tags:
+            - tag: component
+              value: connections
+            - tag: protocol
+              value: imap
+          triggers:
+            - uuid: c4351721cded4b729d74959321f3050a
+              expression: 'avg(/Template App Dovecot/dovecot.connections.imap,5m)>{$DOVECOT.IMAP.CONN.HIGH}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Template App Dovecot/dovecot.connections.imap,5m)<{$DOVECOT.IMAP.CONN.HIGH.RECOVERY}'
+              name: 'PROBLEM - Dovecot IMAP connections above high threshold'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: HIGH
+              description: 'Average active IMAP connections exceeded the high threshold.'
+              tags:
+                - tag: protocol
+                  value: imap
+                - tag: scope
+                  value: capacity
+            - uuid: 2aea299ce2e54a1a9f692036747e0fca
+              expression: 'avg(/Template App Dovecot/dovecot.connections.imap,5m)>{$DOVECOT.IMAP.CONN.WARN} and avg(/Template App Dovecot/dovecot.connections.imap,5m)<={$DOVECOT.IMAP.CONN.HIGH}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Template App Dovecot/dovecot.connections.imap,5m)<{$DOVECOT.IMAP.CONN.WARN.RECOVERY} or avg(/Template App Dovecot/dovecot.connections.imap,5m)>{$DOVECOT.IMAP.CONN.HIGH}'
+              name: 'WARNING - Dovecot IMAP connections above warning threshold'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: WARNING
+              description: 'Average active IMAP connections exceeded the warning threshold.'
+              tags:
+                - tag: protocol
+                  value: imap
+                - tag: scope
+                  value: capacity
+        - uuid: c8db11afcba54c6ebc117b9645a2fa32
+          name: 'Dovecot POP3 connections'
+          type: DEPENDENT
+          key: dovecot.connections.pop3
+          history: 90d
+          units: '#'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.pop3
+          master_item:
+            key: dovecot.stats
+          tags:
+            - tag: component
+              value: connections
+            - tag: protocol
+              value: pop3
+          triggers:
+            - uuid: 0902ccd90f504d7f843dbb31e349129e
+              expression: 'avg(/Template App Dovecot/dovecot.connections.pop3,5m)>{$DOVECOT.POP3.CONN.HIGH}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Template App Dovecot/dovecot.connections.pop3,5m)<{$DOVECOT.POP3.CONN.HIGH.RECOVERY}'
+              name: 'PROBLEM - Dovecot POP3 connections above high threshold'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: HIGH
+              description: 'Average active POP3 connections exceeded the high threshold.'
+              tags:
+                - tag: protocol
+                  value: pop3
+                - tag: scope
+                  value: capacity
+            - uuid: 316216958694403e9e037312b8178fe0
+              expression: 'avg(/Template App Dovecot/dovecot.connections.pop3,5m)>{$DOVECOT.POP3.CONN.WARN} and avg(/Template App Dovecot/dovecot.connections.pop3,5m)<={$DOVECOT.POP3.CONN.HIGH}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Template App Dovecot/dovecot.connections.pop3,5m)<{$DOVECOT.POP3.CONN.WARN.RECOVERY} or avg(/Template App Dovecot/dovecot.connections.pop3,5m)>{$DOVECOT.POP3.CONN.HIGH}'
+              name: 'WARNING - Dovecot POP3 connections above warning threshold'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: WARNING
+              description: 'Average active POP3 connections exceeded the warning threshold.'
+              tags:
+                - tag: protocol
+                  value: pop3
+                - tag: scope
+                  value: capacity
+        - uuid: 73001e9ee16f4a3587bcbe9533d39d0b
+          name: 'Dovecot total connections'
+          type: DEPENDENT
+          key: dovecot.connections.total
+          history: 90d
+          units: '#'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.total
+          master_item:
+            key: dovecot.stats
+          tags:
+            - tag: component
+              value: connections
+          triggers:
+            - uuid: b6e2b79c580a4f718818e50507fa5eba
+              expression: 'avg(/Template App Dovecot/dovecot.connections.total,5m)>{$DOVECOT.TOTAL.CONN.HIGH}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Template App Dovecot/dovecot.connections.total,5m)<{$DOVECOT.TOTAL.CONN.HIGH.RECOVERY}'
+              name: 'PROBLEM - Dovecot total connections above high threshold'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: HIGH
+              description: 'Average active IMAP and POP3 connections exceeded the high threshold.'
+              tags:
+                - tag: scope
+                  value: capacity
+            - uuid: 2367c1a7a19c468f863112346532a4f8
+              expression: 'avg(/Template App Dovecot/dovecot.connections.total,5m)>{$DOVECOT.TOTAL.CONN.WARN} and avg(/Template App Dovecot/dovecot.connections.total,5m)<={$DOVECOT.TOTAL.CONN.HIGH}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Template App Dovecot/dovecot.connections.total,5m)<{$DOVECOT.TOTAL.CONN.WARN.RECOVERY} or avg(/Template App Dovecot/dovecot.connections.total,5m)>{$DOVECOT.TOTAL.CONN.HIGH}'
+              name: 'WARNING - Dovecot total connections above warning threshold'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: WARNING
+              description: 'Average active IMAP and POP3 connections exceeded the warning threshold.'
+              tags:
+                - tag: scope
+                  value: capacity
+        - uuid: dfe360d0946145b3a583ad80897a8b43
+          name: 'Dovecot stats raw'
+          key: dovecot.stats
+          delay: 30s
+          history: 7d
+          value_type: TEXT
+          tags:
+            - tag: component
+              value: collector
+          triggers:
+            - uuid: 75572581e1ff4824a62838fe1eaae644
+              expression: 'nodata(/Template App Dovecot/dovecot.stats,5m)=1'
+              name: 'PROBLEM - Dovecot collector returned no data'
+              priority: HIGH
+              description: 'The Dovecot stats master item did not return data during the evaluation window. Check the Zabbix agent, sudoers permissions, script path, and script execution time.'
+              tags:
+                - tag: component
+                  value: collector
+                - tag: scope
+                  value: availability
+        - uuid: ca1619612a6b4306b6f2c59690d45e82
+          name: 'Dovecot version'
+          key: dovecot.version
+          delay: 1h
+          history: 90d
+          value_type: CHAR
+          tags:
+            - tag: component
+              value: application
+          triggers:
+            - uuid: 3916095d7dc841288cd3a643d3be17bd
+              expression: 'last(/Template App Dovecot/dovecot.version,#1)<>last(/Template App Dovecot/dovecot.version,#2)'
+              name: 'INFO - Dovecot version changed'
+              priority: INFO
+              description: 'Dovecot version reported by the monitored host changed.'
+              manual_close: 'YES'
+              tags:
+                - tag: component
+                  value: application
+                - tag: scope
+                  value: change
+        - uuid: bb1e9d2df4cc40babb1fce85d32b5fe0
+          name: 'Dovecot IMAP service response time'
+          key: 'net.tcp.service.perf[tcp,,{$DOVECOT.IMAP.PORT}]'
+          history: 90d
+          value_type: FLOAT
+          units: s
+          tags:
+            - tag: component
+              value: service
+            - tag: protocol
+              value: imap
+          triggers:
+            - uuid: 3d1d441933c849f8a03bc58ca143e1a6
+              expression: 'avg(/Template App Dovecot/net.tcp.service.perf[tcp,,{$DOVECOT.IMAP.PORT}],5m)>{$DOVECOT.SERVICE.RESPONSE.WARN} and {$DOVECOT.IMAP.ENABLED}=1'
+              name: 'WARNING - Dovecot IMAP service response time is high'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: WARNING
+              description: 'Average IMAP TCP connection response time exceeded the warning threshold.'
+              tags:
+                - tag: protocol
+                  value: imap
+                - tag: scope
+                  value: performance
+        - uuid: 8fcd81bbbc994b86bc0bd8c814859122
+          name: 'Dovecot IMAPS service response time'
+          key: 'net.tcp.service.perf[tcp,,{$DOVECOT.IMAPS.PORT}]'
+          history: 90d
+          value_type: FLOAT
+          units: s
+          tags:
+            - tag: component
+              value: service
+            - tag: protocol
+              value: imaps
+          triggers:
+            - uuid: 1b9cb4a69dc048d6a1058054331db54b
+              expression: 'avg(/Template App Dovecot/net.tcp.service.perf[tcp,,{$DOVECOT.IMAPS.PORT}],5m)>{$DOVECOT.SERVICE.RESPONSE.WARN} and {$DOVECOT.IMAPS.ENABLED}=1'
+              name: 'WARNING - Dovecot IMAPS service response time is high'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: WARNING
+              description: 'Average IMAPS TCP connection response time exceeded the warning threshold.'
+              tags:
+                - tag: protocol
+                  value: imaps
+                - tag: scope
+                  value: performance
+        - uuid: f473e3119959403e9f65baa711a46da2
+          name: 'Dovecot POP3 service response time'
+          key: 'net.tcp.service.perf[tcp,,{$DOVECOT.POP3.PORT}]'
+          history: 90d
+          value_type: FLOAT
+          units: s
+          tags:
+            - tag: component
+              value: service
+            - tag: protocol
+              value: pop3
+          triggers:
+            - uuid: 948c186f284b4f4482cf2fb3ccbf0a2c
+              expression: 'avg(/Template App Dovecot/net.tcp.service.perf[tcp,,{$DOVECOT.POP3.PORT}],5m)>{$DOVECOT.SERVICE.RESPONSE.WARN} and {$DOVECOT.POP3.ENABLED}=1'
+              name: 'WARNING - Dovecot POP3 service response time is high'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: WARNING
+              description: 'Average POP3 TCP connection response time exceeded the warning threshold.'
+              tags:
+                - tag: protocol
+                  value: pop3
+                - tag: scope
+                  value: performance
+        - uuid: 383f68481989486db917be0cebee32b0
+          name: 'Dovecot POP3S service response time'
+          key: 'net.tcp.service.perf[tcp,,{$DOVECOT.POP3S.PORT}]'
+          history: 90d
+          value_type: FLOAT
+          units: s
+          tags:
+            - tag: component
+              value: service
+            - tag: protocol
+              value: pop3s
+          triggers:
+            - uuid: b87a23d22d1747c385af920a1972317d
+              expression: 'avg(/Template App Dovecot/net.tcp.service.perf[tcp,,{$DOVECOT.POP3S.PORT}],5m)>{$DOVECOT.SERVICE.RESPONSE.WARN} and {$DOVECOT.POP3S.ENABLED}=1'
+              name: 'WARNING - Dovecot POP3S service response time is high'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: WARNING
+              description: 'Average POP3S TCP connection response time exceeded the warning threshold.'
+              tags:
+                - tag: protocol
+                  value: pop3s
+                - tag: scope
+                  value: performance
+        - uuid: 1521026587694b47a2fb9b02a13ef87f
+          name: 'Dovecot IMAP service is running'
+          key: 'net.tcp.service[tcp,,{$DOVECOT.IMAP.PORT}]'
+          delay: 30s
+          history: 90d
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: component
+              value: service
+            - tag: protocol
+              value: imap
+          triggers:
+            - uuid: 4e69b892fe7748f99acca812d7e291ed
+              expression: 'max(/Template App Dovecot/net.tcp.service[tcp,,{$DOVECOT.IMAP.PORT}],3m)=0 and {$DOVECOT.IMAP.ENABLED}=1'
+              name: 'PROBLEM - Dovecot IMAP service is down'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: HIGH
+              description: 'IMAP TCP service check failed for the full evaluation window. For TLS ports, this validates TCP connectivity only.'
+              tags:
+                - tag: protocol
+                  value: imap
+                - tag: scope
+                  value: availability
+        - uuid: 3ddf9a5bba8f4f1fb4cb55a9ced9d4ff
+          name: 'Dovecot IMAPS service is running'
+          key: 'net.tcp.service[tcp,,{$DOVECOT.IMAPS.PORT}]'
+          delay: 30s
+          history: 90d
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: component
+              value: service
+            - tag: protocol
+              value: imaps
+          triggers:
+            - uuid: fdf375701b9045528392ef79fe5c6607
+              expression: 'max(/Template App Dovecot/net.tcp.service[tcp,,{$DOVECOT.IMAPS.PORT}],3m)=0 and {$DOVECOT.IMAPS.ENABLED}=1'
+              name: 'PROBLEM - Dovecot IMAPS service is down'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: HIGH
+              description: 'IMAPS TCP service check failed for the full evaluation window. For TLS ports, this validates TCP connectivity only.'
+              tags:
+                - tag: protocol
+                  value: imaps
+                - tag: scope
+                  value: availability
+        - uuid: 481a6de1eaff472b991ce1d30168058a
+          name: 'Dovecot POP3 service is running'
+          key: 'net.tcp.service[tcp,,{$DOVECOT.POP3.PORT}]'
+          delay: 30s
+          history: 90d
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: component
+              value: service
+            - tag: protocol
+              value: pop3
+          triggers:
+            - uuid: 2f6fee30f7944d4ca5657d59416f8f89
+              expression: 'max(/Template App Dovecot/net.tcp.service[tcp,,{$DOVECOT.POP3.PORT}],3m)=0 and {$DOVECOT.POP3.ENABLED}=1'
+              name: 'PROBLEM - Dovecot POP3 service is down'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: HIGH
+              description: 'POP3 TCP service check failed for the full evaluation window. For TLS ports, this validates TCP connectivity only.'
+              tags:
+                - tag: protocol
+                  value: pop3
+                - tag: scope
+                  value: availability
+        - uuid: 5479197507984ce6884346ab7d6425c2
+          name: 'Dovecot POP3S service is running'
+          key: 'net.tcp.service[tcp,,{$DOVECOT.POP3S.PORT}]'
+          delay: 30s
+          history: 90d
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: component
+              value: service
+            - tag: protocol
+              value: pop3s
+          triggers:
+            - uuid: 5887ac121b9b4fc38dfe7ab50db8875c
+              expression: 'max(/Template App Dovecot/net.tcp.service[tcp,,{$DOVECOT.POP3S.PORT}],3m)=0 and {$DOVECOT.POP3S.ENABLED}=1'
+              name: 'PROBLEM - Dovecot POP3S service is down'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: HIGH
+              description: 'POP3S TCP service check failed for the full evaluation window. For TLS ports, this validates TCP connectivity only.'
+              tags:
+                - tag: protocol
+                  value: pop3s
+                - tag: scope
+                  value: availability
+        - uuid: e73e978f872c4077988275781eb2b7a7
+          name: 'Dovecot master process count'
+          key: 'proc.num[{$DOVECOT.PROCESS.NAME}]'
+          history: 90d
+          units: '#'
+          tags:
+            - tag: component
+              value: process
+          triggers:
+            - uuid: 1f161aa8a4dc49a4b8b835886a475d96
+              expression: 'max(/Template App Dovecot/proc.num[{$DOVECOT.PROCESS.NAME}],3m)=0'
+              name: 'PROBLEM - Dovecot master process is not running'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: HIGH
+              description: 'No Dovecot master process was found during the full evaluation window.'
+              tags:
+                - tag: component
+                  value: process
+                - tag: scope
+                  value: availability
+        - uuid: c9c537f118c14fb289c7d57c1ad6c9d1
+          name: 'Dovecot main configuration checksum'
+          key: 'vfs.file.cksum[{$DOVECOT.CONF.FILE}]'
+          delay: 30m
+          history: 90d
+          tags:
+            - tag: component
+              value: configuration
+          triggers:
+            - uuid: db65a81674494eecbe31eeccf4cef9b0
+              expression: 'last(/Template App Dovecot/vfs.file.cksum[{$DOVECOT.CONF.FILE}],#1)<>last(/Template App Dovecot/vfs.file.cksum[{$DOVECOT.CONF.FILE}],#2)'
+              name: 'INFO - Dovecot main configuration file changed'
+              priority: INFO
+              description: 'The Dovecot main configuration file checksum changed. Review the configuration change.'
+              manual_close: 'YES'
+              tags:
+                - tag: component
+                  value: configuration
+                - tag: scope
+                  value: change
+        - uuid: 96847729cf23453cbb6ac4cab38aa63c
+          name: 'Dovecot SQL configuration checksum'
+          key: 'vfs.file.cksum[{$DOVECOT.SQL.CONF.FILE}]'
+          delay: 30m
+          history: 90d
+          tags:
+            - tag: component
+              value: configuration
+          triggers:
+            - uuid: 55ee107ae04e421184cd8792dba31d23
+              expression: 'last(/Template App Dovecot/vfs.file.cksum[{$DOVECOT.SQL.CONF.FILE}],#1)<>last(/Template App Dovecot/vfs.file.cksum[{$DOVECOT.SQL.CONF.FILE}],#2)'
+              name: 'INFO - Dovecot SQL configuration file changed'
+              priority: INFO
+              description: 'The Dovecot SQL configuration file checksum changed. Review the configuration change.'
+              manual_close: 'YES'
+              tags:
+                - tag: component
+                  value: configuration
+                - tag: scope
+                  value: change
+      tags:
+        - tag: class
+          value: software
+        - tag: target
+          value: dovecot
+      macros:
+        - macro: '{$DOVECOT.CONF.FILE}'
+          value: /usr/local/etc/dovecot/dovecot.conf
+          description: 'Main Dovecot configuration file to checksum.'
+        - macro: '{$DOVECOT.IMAP.CONN.HIGH}'
+          value: '350'
+          description: 'High threshold for average active IMAP connections.'
+        - macro: '{$DOVECOT.IMAP.CONN.HIGH.RECOVERY}'
+          value: '320'
+          description: 'Recovery threshold for IMAP high connection trigger.'
+        - macro: '{$DOVECOT.IMAP.CONN.WARN}'
+          value: '200'
+          description: 'Warning threshold for average active IMAP connections.'
+        - macro: '{$DOVECOT.IMAP.CONN.WARN.RECOVERY}'
+          value: '180'
+          description: 'Recovery threshold for IMAP warning connection trigger.'
+        - macro: '{$DOVECOT.IMAP.ENABLED}'
+          value: '1'
+          description: 'Set to 0 to disable IMAP service availability triggers.'
+        - macro: '{$DOVECOT.IMAP.PORT}'
+          value: '143'
+          description: 'IMAP TCP port.'
+        - macro: '{$DOVECOT.IMAPS.ENABLED}'
+          value: '1'
+          description: 'Set to 0 to disable IMAPS service availability triggers.'
+        - macro: '{$DOVECOT.IMAPS.PORT}'
+          value: '993'
+          description: 'IMAPS TCP port.'
+        - macro: '{$DOVECOT.POP3.CONN.HIGH}'
+          value: '350'
+          description: 'High threshold for average active POP3 connections.'
+        - macro: '{$DOVECOT.POP3.CONN.HIGH.RECOVERY}'
+          value: '320'
+          description: 'Recovery threshold for POP3 high connection trigger.'
+        - macro: '{$DOVECOT.POP3.CONN.WARN}'
+          value: '200'
+          description: 'Warning threshold for average active POP3 connections.'
+        - macro: '{$DOVECOT.POP3.CONN.WARN.RECOVERY}'
+          value: '180'
+          description: 'Recovery threshold for POP3 warning connection trigger.'
+        - macro: '{$DOVECOT.POP3.ENABLED}'
+          value: '1'
+          description: 'Set to 0 to disable POP3 service availability triggers.'
+        - macro: '{$DOVECOT.POP3.PORT}'
+          value: '110'
+          description: 'POP3 TCP port.'
+        - macro: '{$DOVECOT.POP3S.ENABLED}'
+          value: '1'
+          description: 'Set to 0 to disable POP3S service availability triggers.'
+        - macro: '{$DOVECOT.POP3S.PORT}'
+          value: '995'
+          description: 'POP3S TCP port.'
+        - macro: '{$DOVECOT.PROCESS.NAME}'
+          value: dovecot
+          description: 'Dovecot master process name used by proc.num[].'
+        - macro: '{$DOVECOT.SERVICE.RESPONSE.WARN}'
+          value: '2'
+          description: 'Warning threshold in seconds for TCP service response time.'
+        - macro: '{$DOVECOT.SQL.CONF.FILE}'
+          value: /usr/local/etc/dovecot/dovecot-mysql.conf
+          description: 'SQL authentication configuration file to checksum.'
+        - macro: '{$DOVECOT.TOTAL.CONN.HIGH}'
+          value: '600'
+          description: 'High threshold for average active IMAP and POP3 connections.'
+        - macro: '{$DOVECOT.TOTAL.CONN.HIGH.RECOVERY}'
+          value: '550'
+          description: 'Recovery threshold for total connection high trigger.'
+        - macro: '{$DOVECOT.TOTAL.CONN.WARN}'
+          value: '350'
+          description: 'Warning threshold for average active IMAP and POP3 connections.'
+        - macro: '{$DOVECOT.TOTAL.CONN.WARN.RECOVERY}'
+          value: '320'
+          description: 'Recovery threshold for total connection warning trigger.'
+      valuemaps:
+        - uuid: 28a8d8c6074a48059c3ed131732d6ce1
+          name: 'Service state'
+          mappings:
+            - value: '0'
+              newvalue: Down
+            - value: '1'
+              newvalue: Up
+  graphs:
+    - uuid: 4575363defb64830a09e8fed351353cf
+      name: 'Dovecot connections'
+      graph_items:
+        - sortorder: '1'
+          color: 199C0D
+          item:
+            host: 'Template App Dovecot'
+            key: dovecot.connections.imap
+        - sortorder: '2'
+          color: F63100
+          item:
+            host: 'Template App Dovecot'
+            key: dovecot.connections.pop3
+        - sortorder: '3'
+          color: 2774A4
+          item:
+            host: 'Template App Dovecot'
+            key: dovecot.connections.total
+    - uuid: 8703031bf5224c21b02fa6f76ddc99a0
+      name: 'Dovecot service response time'
+      graph_items:
+        - sortorder: '1'
+          color: 199C0D
+          item:
+            host: 'Template App Dovecot'
+            key: 'net.tcp.service.perf[tcp,,{$DOVECOT.IMAP.PORT}]'
+        - sortorder: '2'
+          color: F63100
+          item:
+            host: 'Template App Dovecot'
+            key: 'net.tcp.service.perf[tcp,,{$DOVECOT.IMAPS.PORT}]'
+        - sortorder: '3'
+          color: 2774A4
+          item:
+            host: 'Template App Dovecot'
+            key: 'net.tcp.service.perf[tcp,,{$DOVECOT.POP3.PORT}]'
+        - sortorder: '4'
+          color: F7941D
+          item:
+            host: 'Template App Dovecot'
+            key: 'net.tcp.service.perf[tcp,,{$DOVECOT.POP3S.PORT}]'

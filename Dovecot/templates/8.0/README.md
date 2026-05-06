@@ -1,7 +1,7 @@
 # Dovecot Template for Zabbix 8.0
 
-Status: planned, not yet validated.
+Status: export present, statically validated.
 
-This directory is reserved for a Zabbix 8.0-compatible Dovecot template export.
-Do not treat the Zabbix 7.0 template as Zabbix 8.0-ready until it has been imported and validated in a Zabbix 8.0 test environment.
+Import `Template_Dovecot_8.0.yaml` into Zabbix 8.0 and use the root `dovecot_stats.sh` and `userparameter_dovecot.conf` files on monitored Dovecot hosts.
 
+This export has been checked for YAML syntax, duplicate UUIDs, missing macros, and parity with the Zabbix 7.0 monitored item/macro/graph surface. Validate the import in a Zabbix 8.0 homologation environment before production use.
