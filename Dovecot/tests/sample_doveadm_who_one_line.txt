@@ -1,0 +1,6 @@
+username                      proto pid ip
+user1@example.com              imap 111 10.0.0.10
+user1@example.com              imap 112 10.0.0.10
+user1@example.com              imap 113 10.0.0.10
+user1@example.com              imap 114 10.0.0.10
+user2@example.com              pop3 115 10.0.0.11

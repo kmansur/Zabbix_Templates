@@ -1,4 +1,11 @@
 #!/bin/sh
+# Script: dovecot_stats.sh
+# Version: 2.0.0
+# Purpose: Collect Dovecot session counters for Zabbix as JSON.
+# Author: Karim Mansur / Net Tech
+# Notes:
+# - Uses "doveadm who -1" so each connection is returned on a separate line.
+# - Returns valid JSON even when collection fails.
 
 DOVEADM="${DOVECOT_DOVEADM:-/usr/local/bin/doveadm}"
 
@@ -11,7 +18,7 @@ if [ ! -x "$DOVEADM" ]; then
     exit 0
 fi
 
-WHO_OUTPUT="$("$DOVEADM" who 2>/dev/null)"
+WHO_OUTPUT="$("$DOVEADM" who -1 2>/dev/null)"
 WHO_STATUS=$?
 
 if [ "$WHO_STATUS" -ne 0 ]; then
@@ -24,13 +31,23 @@ BEGIN {
     imap = 0
     pop3 = 0
 }
+function clean_token(value) {
+    gsub(/^[^a-z0-9_]+/, "", value)
+    gsub(/[^a-z0-9_]+$/, "", value)
+    return value
+}
 {
-    line = tolower($0)
-    if (line ~ /(^|[^a-z0-9_])imap([^a-z0-9_]|$)/) {
-        imap++
-    }
-    if (line ~ /(^|[^a-z0-9_])pop3?([^a-z0-9_]|$)/) {
-        pop3++
+    # Skip the first field because it is normally the username.
+    for (i = 2; i <= NF; i++) {
+        token = clean_token(tolower($i))
+        if (token == "imap") {
+            imap++
+            next
+        }
+        if (token == "pop3" || token == "pop") {
+            pop3++
+            next
+        }
     }
 }
 END {
