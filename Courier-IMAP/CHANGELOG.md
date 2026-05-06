@@ -6,6 +6,7 @@
 - Added Zabbix 7.0 template documentation.
 - Updated README and validation docs to treat the Zabbix 7.0 export as the current template.
 - Kept the Zabbix 3.2 XML export documented as legacy.
+- Documented the project as maintenance-only and no longer under active development.
 
 ## 1.1.0 - 2026-05-06
 

@@ -4,6 +4,8 @@ English version: [README.md](README.md)
 
 > Versao de desenvolvimento: 1.2.0
 >
+> Status do projeto: manutencao apenas. Este template nao esta mais em desenvolvimento ativo.
+>
 > Manutencao da documentacao: quando este README em portugues for atualizado, atualize tambem o `README.md`.
 
 Projeto de template Zabbix para monitorar logins Courier-IMAP e Courier-POP3 em FreeBSD por UserParameters do Zabbix agent. A versao 1.2.0 adiciona o export YAML para Zabbix 7.0 como template atual e mantem o export XML original para Zabbix 3.2 em ambientes legados.

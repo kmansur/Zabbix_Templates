@@ -4,6 +4,8 @@ Portuguese version: [README.pt-BR.md](README.pt-BR.md)
 
 > Development version: 1.2.0
 >
+> Project status: maintenance-only. This template is no longer under active development.
+>
 > Documentation maintenance: when this English README is updated, update `README.pt-BR.md` in the same change.
 
 Zabbix template project for monitoring Courier-IMAP and Courier-POP3 logins on FreeBSD through Zabbix agent UserParameters. Version 1.2.0 adds the Zabbix 7.0 YAML export as the current template while keeping the original Zabbix 3.2 XML export available for legacy environments.
