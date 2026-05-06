@@ -24,6 +24,7 @@ Documentation maintenance: when this English changelog is updated, update `CHANG
 - Added `Dovecot connections` and `Dovecot service response time` graphs.
 - Added validation documentation and local parser tests.
 - Added contribution, security, and license files.
+- Added versioned template directories for Zabbix 6.0, 7.0, and 8.0.
 
 ### Changed
 
@@ -34,6 +35,7 @@ Documentation maintenance: when this English changelog is updated, update `CHANG
 - Updated trigger names to start with `PROBLEM`, `WARNING`, or `INFO`.
 - Updated UserParameters to call session scripts with `sudo -n`.
 - Moved the Zabbix 5.0 XML template, legacy IMAP/POP3 counters, and legacy UserParameter file to `legacy/zabbix-5.0/`.
+- Moved the current Zabbix 7.0 YAML template to `templates/7.0/Template_Dovecot_7.0.yaml`.
 - Reduced the main `userparameter_dovecot.conf` to the Zabbix 7.0 keys used by the current template.
 - Updated English and Portuguese documentation for the 2.0.0 workflow.
 

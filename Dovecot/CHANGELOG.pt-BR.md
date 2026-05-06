@@ -24,6 +24,7 @@ Manutencao da documentacao: quando este changelog em portugues for atualizado, a
 - Adicionados graficos `Dovecot connections` e `Dovecot service response time`.
 - Adicionada documentacao de validacao e testes locais do parser.
 - Adicionados arquivos de contribuicao, seguranca e licenca.
+- Adicionados diretorios versionados de template para Zabbix 6.0, 7.0 e 8.0.
 
 ### Alterado
 
@@ -34,6 +35,7 @@ Manutencao da documentacao: quando este changelog em portugues for atualizado, a
 - Atualizados nomes das triggers para iniciar com `PROBLEM`, `WARNING` ou `INFO`.
 - Atualizados UserParameters para chamar scripts com `sudo -n`.
 - Movidos o template XML Zabbix 5.0, contadores IMAP/POP3 legados e UserParameter legado para `legacy/zabbix-5.0/`.
+- Movido o template YAML atual do Zabbix 7.0 para `templates/7.0/Template_Dovecot_7.0.yaml`.
 - Reduzido o `userparameter_dovecot.conf` principal para as chaves Zabbix 7.0 usadas pelo template atual.
 - Atualizada documentacao em ingles e portugues para o fluxo 2.0.0.
 
