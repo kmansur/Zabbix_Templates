@@ -7,6 +7,7 @@
 - Moved Courier collection scripts to `scripts/` and UserParameters to `agent/`.
 - Updated UserParameters to use `/usr/local/scripts/`.
 - Added English and Portuguese README files.
+- Added the MIT license.
 - Added validation documentation.
 - Fixed minor legacy XML text issues in graph names, trigger descriptions, and displayed configuration paths.
 - Avoided double-counting SSL logins in the plain IMAP and POP3 scripts.

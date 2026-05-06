@@ -7,6 +7,7 @@
 - Movidos os scripts de coleta Courier para `scripts/` e os UserParameters para `agent/`.
 - Atualizados os UserParameters para usar `/usr/local/scripts/`.
 - Adicionados READMEs em ingles e portugues.
+- Adicionada a licenca MIT.
 - Adicionada documentacao de validacao.
 - Corrigidos pequenos problemas de texto no XML legado em nomes de graficos, descricoes de triggers e caminhos de configuracao exibidos.
 - Evitada contagem duplicada de logins SSL nos scripts IMAP e POP3 sem TLS.

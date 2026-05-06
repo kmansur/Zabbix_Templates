@@ -17,6 +17,7 @@ Projeto de template Zabbix para monitorar logins Courier-IMAP e Courier-POP3 em 
 - `scripts/courier_pop3d-ssl.sh`: conta eventos de login POP3S do minuto anterior.
 - `agent/userparameter_courier.conf`: UserParameters do Zabbix agent.
 - `docs/VALIDATION.md`: checklist de validacao.
+- `LICENSE`: licenca MIT.
 - `CHANGELOG.md`: changelog em ingles.
 - `CHANGELOG.pt-BR.md`: changelog em portugues.
 
@@ -92,3 +93,7 @@ Os quatro scripts contam registros `LOGIN` em `/var/log/maillog` que batem com o
 - As chaves dos itens continuam `imapd`, `imapd-ssl`, `pop3d` e `pop3d-ssl` para nao quebrar hosts existentes.
 - As triggers de log continuam usando `/var/log/maillog` diretamente no template Zabbix.
 - Os scripts sao orientados a FreeBSD porque dependem da sintaxe do `date` do FreeBSD. Valide antes de adaptar para Linux.
+
+## Licenca
+
+Este projeto e licenciado sob a MIT License. Veja `LICENSE`.
