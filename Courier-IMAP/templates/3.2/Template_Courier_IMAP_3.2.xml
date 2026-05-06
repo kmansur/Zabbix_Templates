@@ -554,7 +554,7 @@
             <expression>{Template App MAIL Courier-IMAP:vfs.file.cksum[/usr/local/etc/courier-imap/imapd-ssl].diff(0)}&gt;0</expression>
             <recovery_mode>0</recovery_mode>
             <recovery_expression/>
-            <name>{HOST.NAME} - /etc/courier-imap/imapd-ssl has been changed</name>
+            <name>{HOST.NAME} - /usr/local/etc/courier-imap/imapd-ssl has been changed</name>
             <correlation_mode>0</correlation_mode>
             <correlation_tag/>
             <url/>
@@ -570,7 +570,7 @@
             <expression>{Template App MAIL Courier-IMAP:vfs.file.cksum[/usr/local/etc/courier-imap/imapd].diff(0)}&gt;0</expression>
             <recovery_mode>0</recovery_mode>
             <recovery_expression/>
-            <name>{HOST.NAME} - /etc/courier-imap/imapd has been changed</name>
+            <name>{HOST.NAME} - /usr/local/etc/courier-imap/imapd has been changed</name>
             <correlation_mode>0</correlation_mode>
             <correlation_tag/>
             <url/>
@@ -586,7 +586,7 @@
             <expression>{Template App MAIL Courier-IMAP:vfs.file.cksum[/usr/local/etc/courier-imap/pop3d-ssl].diff(0)}&gt;0</expression>
             <recovery_mode>0</recovery_mode>
             <recovery_expression/>
-            <name>{HOST.NAME} - /etc/courier-imap/pop3d-ssl has been changed</name>
+            <name>{HOST.NAME} - /usr/local/etc/courier-imap/pop3d-ssl has been changed</name>
             <correlation_mode>0</correlation_mode>
             <correlation_tag/>
             <url/>
@@ -602,7 +602,7 @@
             <expression>{Template App MAIL Courier-IMAP:vfs.file.cksum[/usr/local/etc/courier-imap/pop3d].diff(0)}&gt;0</expression>
             <recovery_mode>0</recovery_mode>
             <recovery_expression/>
-            <name>{HOST.NAME} - /etc/courier-imap/pop3d has been changed</name>
+            <name>{HOST.NAME} - /usr/local/etc/courier-imap/pop3d has been changed</name>
             <correlation_mode>0</correlation_mode>
             <correlation_tag/>
             <url/>
@@ -618,7 +618,7 @@
             <expression>{Template App MAIL Courier-IMAP:vfs.file.cksum[/usr/local/etc/maildroprc].diff(0)}&gt;0</expression>
             <recovery_mode>0</recovery_mode>
             <recovery_expression/>
-            <name>{HOST.NAME} - /etc/courier/maildrop/maildroprc has been changed</name>
+            <name>{HOST.NAME} - /usr/local/etc/maildroprc has been changed</name>
             <correlation_mode>0</correlation_mode>
             <correlation_tag/>
             <url/>
@@ -640,7 +640,7 @@
             <url/>
             <status>0</status>
             <priority>2</priority>
-            <description>Исчерпаны коннекты сервера.</description>
+            <description>Courier-IMAP reported that the maximum active connection limit was reached.</description>
             <type>1</type>
             <manual_close>0</manual_close>
             <dependencies/>
@@ -656,7 +656,7 @@
             <url/>
             <status>0</status>
             <priority>2</priority>
-            <description>Какой-то юзер забрал все коннекты.</description>
+            <description>Courier-IMAP reported that the maximum connection limit was reached for a client IP.</description>
             <type>1</type>
             <manual_close>0</manual_close>
             <dependencies/>
@@ -665,7 +665,7 @@
     </triggers>
     <graphs>
         <graph>
-            <name>IMAPD/IMAPD-SSL Connecrions</name>
+            <name>IMAPD/IMAPD-SSL Connections</name>
             <width>900</width>
             <height>200</height>
             <yaxismin>0.0000</yaxismin>
@@ -709,7 +709,7 @@
             </graph_items>
         </graph>
         <graph>
-            <name>POP3D/POP3D-SSL Connecrions</name>
+            <name>POP3D/POP3D-SSL Connections</name>
             <width>900</width>
             <height>200</height>
             <yaxismin>0.0000</yaxismin>
