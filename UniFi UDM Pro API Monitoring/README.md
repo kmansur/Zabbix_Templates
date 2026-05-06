@@ -12,6 +12,10 @@ Zabbix template project for monitoring a Ubiquiti UniFi Dream Machine Pro
 through the UniFi Network API, Site Manager API, CEF/syslog events, and
 optional NetFlow/IPFIX data.
 
+## Author
+
+- Karim Mansur (Net Tech)
+
 ## Files
 
 - `7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml`: current Zabbix 7.0 template export.

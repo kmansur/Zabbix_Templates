@@ -2,6 +2,7 @@
 """
 UniFi UDM Pro API Monitoring
 Version: 0.6.10
+Author: Karim Mansur (Net Tech)
 
 External script for Zabbix templates.
 
