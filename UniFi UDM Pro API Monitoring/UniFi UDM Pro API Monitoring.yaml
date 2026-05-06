@@ -15,7 +15,7 @@ zabbix_export:
         or proxy external scripts directory.
       vendor:
         name: 'Net Tech'
-        version: 0.6-6
+        version: 0.6-10
       groups:
         - name: Templates/Network devices
       items:
@@ -371,6 +371,57 @@ zabbix_export:
             - type: JSONPATH
               parameters:
                 - $.model
+          master_item:
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: gateway
+        - uuid: 81ccd16ecfd94022aeb0e8e9fb4b5b36
+          name: 'UniFi gateway name'
+          type: DEPENDENT
+          key: unifi.gateway.name
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.name
+          master_item:
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: gateway
+        - uuid: 89fc25f432d34dcd8b02f59ccd13350a
+          name: 'UniFi gateway type'
+          type: DEPENDENT
+          key: unifi.gateway.type
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.type
+          master_item:
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          tags:
+            - tag: component
+              value: gateway
+        - uuid: 56ad95f43eb04a868236465cb4c305cd
+          name: 'UniFi gateway MAC address'
+          type: DEPENDENT
+          key: unifi.gateway.mac
+          delay: '0'
+          history: 90d
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.mac
           master_item:
             key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
           tags:
@@ -1495,6 +1546,13 @@ zabbix_export:
           tags:
             - tag: component
               value: system
+          triggers:
+            - uuid: ee4ac663d31e44d6b94840f7aa13fb43
+              expression: 'last(/UniFi UDM Pro API Monitoring/unifi.system.uptime)<{$UNIFI.UPTIME.REBOOT.WINDOW}'
+              name: 'UniFi gateway rebooted recently'
+              opdata: 'Uptime: {ITEM.LASTVALUE1}'
+              priority: INFO
+              manual_close: 'YES'
       discovery_rules:
         - uuid: 850053dae79e41778cb024190992ac40
           name: 'UniFi device discovery'
@@ -2587,6 +2645,9 @@ zabbix_export:
         - macro: '{$UNIFI.SPEEDTEST.MAX_AGE}'
           value: '172800'
           description: 'Maximum accepted age for the last WAN speedtest result, in seconds.'
+        - macro: '{$UNIFI.UPTIME.REBOOT.WINDOW}'
+          value: 10m
+          description: 'Window used to detect recent gateway reboot from uptime.'
         - macro: '{$UNIFI.IDS.SIGNATURE.MAX_AGE}'
           value: '604800'
           description: 'Maximum accepted age for IDS/IPS signature data, in seconds.'

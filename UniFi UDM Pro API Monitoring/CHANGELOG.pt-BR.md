@@ -7,6 +7,25 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 Manutenção da documentação: quando o `CHANGELOG.md` em inglês for atualizado,
 atualize este `CHANGELOG.pt-BR.md` na mesma alteração.
 
+## 0.6.10 - Não Lançado
+
+### Adicionado
+
+- Adicionados itens dependentes de identidade do gateway a partir de
+  `gateway-info` para:
+  - Nome do gateway
+  - Tipo do gateway
+  - Endereço MAC do gateway
+- Adicionada trigger informativa para reboot recente do gateway usando
+  `unifi.system.uptime` e `{$UNIFI.UPTIME.REBOOT.WINDOW}`.
+- Adicionado `docs/VALIDATION.md` com validações de script, API e template.
+
+### Alterado
+
+- Atualizada a versão do vendor do template para `0.6-10`.
+- Atualizados README e README.pt-BR para a versão atual do projeto e padrão de
+  organização usado nos templates mais recentes.
+
 ## 0.6.6 - Não Lançado
 
 ### Adicionado

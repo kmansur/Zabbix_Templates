@@ -7,6 +7,24 @@ All notable changes to this project are documented here.
 Documentation maintenance: when this English changelog is updated, update
 `CHANGELOG.pt-BR.md` in the same change.
 
+## 0.6.10 - Unreleased
+
+### Added
+
+- Added gateway identity dependent items from `gateway-info` for:
+  - Gateway name
+  - Gateway type
+  - Gateway MAC address
+- Added informational trigger for recent gateway reboot using
+  `unifi.system.uptime` and `{$UNIFI.UPTIME.REBOOT.WINDOW}`.
+- Added `docs/VALIDATION.md` with script, API, and template checks.
+
+### Changed
+
+- Updated template vendor version to `0.6-10`.
+- Updated README and README.pt-BR to the current project version and layout
+  standard used in recent template projects.
+
 ## 0.6.6 - Unreleased
 
 ### Added

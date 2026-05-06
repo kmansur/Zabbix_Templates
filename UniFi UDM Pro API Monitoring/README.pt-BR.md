@@ -12,6 +12,14 @@ Projeto de template Zabbix para monitorar um Ubiquiti UniFi Dream Machine Pro
 pela API do UniFi Network, API do Site Manager, eventos CEF/syslog e dados
 opcionais de NetFlow/IPFIX.
 
+## Arquivos
+
+- `UniFi UDM Pro API Monitoring.yaml`: export atual do template Zabbix 7.0.
+- `unifi_udm_pro_api.py`: script coletor externo para telemetria da Integration API e Network API.
+- `CHANGELOG.md`: changelog em inglês.
+- `CHANGELOG.pt-BR.md`: changelog em português.
+- `docs/VALIDATION.md`: checklist de validação e pré-produção.
+
 ## Objetivos
 
 - Descobrir sites, dispositivos, redes, clientes, links WAN e dados do gateway UniFi.
@@ -172,7 +180,7 @@ Processo recomendado:
 Versão atual do projeto:
 
 ```text
-0.6.6
+0.6.10
 ```
 
 O template importável para Zabbix 7.0 é:
@@ -235,6 +243,8 @@ O template inicial inclui:
 - Identidade e firmware do gateway pelo endpoint da Network API: modelo, versão
   de firmware, versão exibida, versão do kernel, arquitetura e disponibilidade
   de atualização de firmware.
+- Campos de identidade do gateway agora incluem nome, tipo e endereço MAC a
+  partir do mesmo payload `gateway-info`.
 - Descoberta de storage pelo endpoint da Network API com uso, livre, total, utilização,
   protótipos de trigger e protótipos de gráfico por volume.
 - Saúde WAN pelo endpoint da Network API: latência, perda de pacote, disponibilidade,
@@ -275,6 +285,21 @@ O template inicial inclui:
   inativa em failover, túneis VPN down, assinaturas IDS/IPS desatualizadas,
   alta utilização de orçamento PoE, estado PoE near-limit, alta utilização de
   rádio, retries altos e baixa satisfaction de rádio.
+- Trigger para reboot recente do gateway usando a métrica de uptime de
+  `system-health`.
+
+## Validação
+
+Execute estas validações antes de colocar em produção:
+
+```bash
+python3 -m py_compile unifi_udm_pro_api.py
+python3 unifi_udm_pro_api.py info "$UNIFI_API_URL" "$UNIFI_API_KEY"
+python3 unifi_udm_pro_api.py system-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
+python3 unifi_udm_pro_api.py gateway-info "$UNIFI_API_URL" "$UNIFI_API_KEY" default
+```
+
+Para um checklist mais completo, veja `docs/VALIDATION.md`.
 
 ### Macros Úteis de Ajuste
 

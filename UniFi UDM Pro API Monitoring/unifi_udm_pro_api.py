@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi UDM Pro API Monitoring
-Version: 0.6.6
+Version: 0.6.10
 
 External script for Zabbix templates.
 

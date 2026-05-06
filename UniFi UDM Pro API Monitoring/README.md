@@ -12,6 +12,14 @@ Zabbix template project for monitoring a Ubiquiti UniFi Dream Machine Pro
 through the UniFi Network API, Site Manager API, CEF/syslog events, and
 optional NetFlow/IPFIX data.
 
+## Files
+
+- `UniFi UDM Pro API Monitoring.yaml`: current Zabbix 7.0 template export.
+- `unifi_udm_pro_api.py`: external collector script for Integration API and Network API telemetry.
+- `CHANGELOG.md`: English changelog.
+- `CHANGELOG.pt-BR.md`: Portuguese changelog.
+- `docs/VALIDATION.md`: validation and pre-production checklist.
+
 ## Goals
 
 - Discover UniFi sites, devices, networks, clients, WAN links, and gateway data.
@@ -169,7 +177,7 @@ Recommended process:
 Current project version:
 
 ```text
-0.6.6
+0.6.10
 ```
 
 The importable Zabbix 7.0 template is:
@@ -234,6 +242,8 @@ The initial template includes:
 - Gateway identity and firmware information from the Network API endpoint:
   model, firmware version, displayable version, kernel version, architecture,
   and firmware update availability.
+- Gateway identity fields now include gateway name, type, and MAC address from
+  the same `gateway-info` payload.
 - Storage discovery from the Network API endpoint with per-volume used, free, total,
   utilization, trigger prototypes, and graph prototypes.
 - WAN health from the Network API endpoint: latency, packet loss, availability,
@@ -273,6 +283,20 @@ The initial template includes:
   VPN tunnels down, stale IDS/IPS signatures, high PoE budget utilization, PoE
   near-limit state, high radio utilization, high radio retries, and low radio
   satisfaction.
+- Trigger for recent gateway reboot using the `system-health` uptime metric.
+
+## Validation
+
+Run these checks before production rollout:
+
+```bash
+python3 -m py_compile unifi_udm_pro_api.py
+python3 unifi_udm_pro_api.py info "$UNIFI_API_URL" "$UNIFI_API_KEY"
+python3 unifi_udm_pro_api.py system-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
+python3 unifi_udm_pro_api.py gateway-info "$UNIFI_API_URL" "$UNIFI_API_KEY" default
+```
+
+For a broader validation checklist, see `docs/VALIDATION.md`.
 
 ### Useful Tuning Macros
 
