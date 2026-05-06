@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 - 2026-05-06
+
+- Adicionado o export YAML Zabbix 7.0 em `templates/7.0/Template_Courier_IMAP_7.0.yaml`.
+- Adicionada documentacao do template Zabbix 7.0.
+- Atualizados README e validacao para tratar o export Zabbix 7.0 como template atual.
+- Mantido o export XML Zabbix 3.2 documentado como legado.
+
 ## 1.1.0 - 2026-05-06
 
 - Reorganizado o projeto nos diretorios atuais do repositorio: `templates/3.2`, `scripts`, `agent` e `docs`.

@@ -2,14 +2,15 @@
 
 Portuguese version: [README.pt-BR.md](README.pt-BR.md)
 
-> Development version: 1.1.0
+> Development version: 1.2.0
 >
 > Documentation maintenance: when this English README is updated, update `README.pt-BR.md` in the same change.
 
-Zabbix template project for monitoring Courier-IMAP and Courier-POP3 logins on FreeBSD through Zabbix agent UserParameters. This repository keeps the original Zabbix 3.2 XML export available in a versioned template directory and organizes scripts, agent configuration, validation notes, and changelog files using the current repository layout.
+Zabbix template project for monitoring Courier-IMAP and Courier-POP3 logins on FreeBSD through Zabbix agent UserParameters. Version 1.2.0 adds the Zabbix 7.0 YAML export as the current template while keeping the original Zabbix 3.2 XML export available for legacy environments.
 
 ## Files
 
+- `templates/7.0/Template_Courier_IMAP_7.0.yaml`: current Zabbix 7.0 template export.
 - `templates/3.2/Template_Courier_IMAP_3.2.xml`: legacy Zabbix 3.2 XML template export.
 - `scripts/courier_imapd.sh`: counts IMAP login events from the previous minute.
 - `scripts/courier_imapd-ssl.sh`: counts IMAPS login events from the previous minute.
@@ -33,7 +34,7 @@ Zabbix template project for monitoring Courier-IMAP and Courier-POP3 logins on F
 
 ## Requirements
 
-- Zabbix server compatible with template export version 3.2.
+- Zabbix server compatible with template export version 7.0.
 - Zabbix agent installed on the Courier-IMAP host.
 - FreeBSD host with Courier-IMAP/Courier-POP3 logging to `/var/log/maillog`.
 - Zabbix agent user with read access to `/var/log/maillog`.
@@ -65,7 +66,7 @@ The scripts support `COURIER_MAILLOG` as an environment override for the mail lo
 3. Copy `agent/userparameter_courier.conf` to the Zabbix agent include directory.
 4. Make sure the Zabbix agent can read `/var/log/maillog`.
 5. Restart the Zabbix agent.
-6. Import `templates/3.2/Template_Courier_IMAP_3.2.xml` into Zabbix.
+6. Import `templates/7.0/Template_Courier_IMAP_7.0.yaml` into Zabbix 7.0.
 7. Link `Template App MAIL Courier-IMAP` to the Courier-IMAP host.
 
 ## Validation
@@ -89,7 +90,8 @@ The four scripts count `LOGIN` records in `/var/log/maillog` that match the prev
 
 ## Compatibility Notes
 
-- `templates/3.2/Template_Courier_IMAP_3.2.xml` is the preserved legacy export for this project.
+- `templates/7.0/Template_Courier_IMAP_7.0.yaml` is the current template for Zabbix 7.0.
+- `templates/3.2/Template_Courier_IMAP_3.2.xml` is preserved as the legacy export for Zabbix 3.2 environments.
 - The item keys remain `imapd`, `imapd-ssl`, `pop3d`, and `pop3d-ssl` to avoid breaking existing hosts.
 - Log trigger checks still use `/var/log/maillog` directly in the Zabbix template.
 - The scripts are FreeBSD-oriented because they depend on FreeBSD `date` syntax. Validate before adapting them to Linux.

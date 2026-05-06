@@ -17,6 +17,12 @@ Confirm that the XML export is well formed:
 xmllint --noout templates/3.2/Template_Courier_IMAP_3.2.xml
 ```
 
+Confirm that the YAML export can be parsed before import:
+
+```bash
+python3 -c 'import yaml,sys; yaml.safe_load(open(sys.argv[1]))' templates/7.0/Template_Courier_IMAP_7.0.yaml
+```
+
 ## Host Checks
 
 1. Confirm that Courier writes login events to `/var/log/maillog`.
@@ -38,8 +44,10 @@ Each key should return an unsigned integer. During quiet periods, `0` is valid.
 
 ## Import Checks
 
-1. Import `templates/3.2/Template_Courier_IMAP_3.2.xml`.
+1. Import `templates/7.0/Template_Courier_IMAP_7.0.yaml`.
 2. Link `Template App MAIL Courier-IMAP` to a test host first.
 3. Verify that all four UserParameter items become supported.
 4. Verify graph rendering for IMAP and POP3 connection counters.
 5. Review checksum triggers for the paths used by your Courier-IMAP installation.
+
+For legacy Zabbix 3.2 environments, import `templates/3.2/Template_Courier_IMAP_3.2.xml` instead.

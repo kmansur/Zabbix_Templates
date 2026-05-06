@@ -1,0 +1,198 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: ee81ff5fafe142d68dace3cbd3cb6569
+      template: 'Template App MAIL Courier-IMAP'
+      name: 'Template App MAIL Courier-IMAP'
+      groups:
+        - name: Templates
+      items:
+        - uuid: 40a836741f004b0eb016707f2f4833f6
+          name: 'Imapd Connections per minute'
+          key: imapd
+          delay: '60'
+          history: 7d
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: connections
+        - uuid: 161d6e88cc5b4d03a97bcb80654b108b
+          name: 'Imapd-ssl Connections per minute'
+          key: imapd-ssl
+          delay: '60'
+          history: 7d
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: connections
+        - uuid: 78391c88df0343dca7c635096b6d46b6
+          name: 'maximum active connections.'
+          type: ZABBIX_ACTIVE
+          key: 'log[/var/log/maillog,"maximum active connections."]'
+          delay: '300'
+          history: 7d
+          value_type: LOG
+          trends: '0'
+          tags:
+            - tag: Application
+              value: courier-imap
+            - tag: Application
+              value: mail
+          triggers:
+            - uuid: 835ef89fd64543aeb94985c0f2a70bdb
+              expression: '((find(/Template App MAIL Courier-IMAP/log[/var/log/maillog,"maximum active connections."],,"regexp","maximum active connections."))<>0)'
+              name: '{HOST.NAME} - maximum active connections'
+              priority: WARNING
+              description: 'Courier-IMAP reported that the maximum active connection limit was reached.'
+              type: MULTIPLE
+        - uuid: f057033aa5eb45cdad3e80311169c245
+          name: 'Maximum connection limit reached for IP'
+          type: ZABBIX_ACTIVE
+          key: 'log[/var/log/maillog,"Maximum connection limit reached for"]'
+          delay: '300'
+          history: 7d
+          value_type: LOG
+          trends: '0'
+          tags:
+            - tag: Application
+              value: courier-imap
+            - tag: Application
+              value: mail
+          triggers:
+            - uuid: 684f6e6466ab41c7bdc5ab9c3bb9449b
+              expression: '((find(/Template App MAIL Courier-IMAP/log[/var/log/maillog,"Maximum connection limit reached for"],,"regexp","Maximum connection limit reached for"))<>0)'
+              name: '{HOST.NAME} - Maximum connection limit reached for IP'
+              priority: WARNING
+              description: 'Courier-IMAP reported that the maximum connection limit was reached for a client IP.'
+              type: MULTIPLE
+        - uuid: bd445a54bb1843c494b0e60c500ae8ad
+          name: 'Pop3d Connections per minute'
+          key: pop3d
+          delay: '60'
+          history: 7d
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: connections
+        - uuid: 621ee9f748c9472c8ba5c80d1abf20c1
+          name: 'Pop3d-ssl Connections per minute'
+          key: pop3d-ssl
+          delay: '60'
+          history: 7d
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: connections
+        - uuid: 366877a7af1b40e088638ef6645852ad
+          name: 'Checksum of $1'
+          key: 'vfs.file.cksum[/usr/local/etc/courier-imap/imapd-ssl]'
+          delay: '3600'
+          history: 7d
+          tags:
+            - tag: Application
+              value: courier-imap
+            - tag: Application
+              value: mail
+            - tag: Application
+              value: mail-security
+          triggers:
+            - uuid: 5858b890bd504c64892deed1a214a9de
+              expression: '(last(/Template App MAIL Courier-IMAP/vfs.file.cksum[/usr/local/etc/courier-imap/imapd-ssl],#1)<>last(/Template App MAIL Courier-IMAP/vfs.file.cksum[/usr/local/etc/courier-imap/imapd-ssl],#2))>0'
+              name: '{HOST.NAME} - /usr/local/etc/courier-imap/imapd-ssl has been changed'
+              priority: HIGH
+        - uuid: 2124117557904430913bc274970af634
+          name: 'Checksum of $1'
+          key: 'vfs.file.cksum[/usr/local/etc/courier-imap/imapd]'
+          delay: '3600'
+          history: 7d
+          tags:
+            - tag: Application
+              value: courier-imap
+            - tag: Application
+              value: mail
+            - tag: Application
+              value: mail-security
+          triggers:
+            - uuid: ec762496196b47ca8f53dce6da609195
+              expression: '(last(/Template App MAIL Courier-IMAP/vfs.file.cksum[/usr/local/etc/courier-imap/imapd],#1)<>last(/Template App MAIL Courier-IMAP/vfs.file.cksum[/usr/local/etc/courier-imap/imapd],#2))>0'
+              name: '{HOST.NAME} - /usr/local/etc/courier-imap/imapd has been changed'
+              priority: HIGH
+        - uuid: 2fa6e67f0f724330be44addf55b6f5c7
+          name: 'Checksum of $1'
+          key: 'vfs.file.cksum[/usr/local/etc/courier-imap/pop3d-ssl]'
+          delay: '3600'
+          history: 7d
+          tags:
+            - tag: Application
+              value: courier-imap
+            - tag: Application
+              value: mail
+            - tag: Application
+              value: mail-security
+          triggers:
+            - uuid: 384237bd95c44422b7a5839719aee1fd
+              expression: '(last(/Template App MAIL Courier-IMAP/vfs.file.cksum[/usr/local/etc/courier-imap/pop3d-ssl],#1)<>last(/Template App MAIL Courier-IMAP/vfs.file.cksum[/usr/local/etc/courier-imap/pop3d-ssl],#2))>0'
+              name: '{HOST.NAME} - /usr/local/etc/courier-imap/pop3d-ssl has been changed'
+              priority: HIGH
+        - uuid: 1894bfe99031451c8c18fa1f892dca15
+          name: 'Checksum of $1'
+          key: 'vfs.file.cksum[/usr/local/etc/courier-imap/pop3d]'
+          delay: '3600'
+          history: 7d
+          tags:
+            - tag: Application
+              value: courier-imap
+            - tag: Application
+              value: mail
+            - tag: Application
+              value: mail-security
+          triggers:
+            - uuid: fd4d90b880b24e019c5e5cc5f0e095a2
+              expression: '(last(/Template App MAIL Courier-IMAP/vfs.file.cksum[/usr/local/etc/courier-imap/pop3d],#1)<>last(/Template App MAIL Courier-IMAP/vfs.file.cksum[/usr/local/etc/courier-imap/pop3d],#2))>0'
+              name: '{HOST.NAME} - /usr/local/etc/courier-imap/pop3d has been changed'
+              priority: HIGH
+        - uuid: 75e20c8a1a584265872dd9f691133921
+          name: 'Checksum of $1'
+          key: 'vfs.file.cksum[/usr/local/etc/maildroprc]'
+          delay: '3600'
+          history: 7d
+          tags:
+            - tag: Application
+              value: courier-imap
+            - tag: Application
+              value: mail
+            - tag: Application
+              value: mail-security
+          triggers:
+            - uuid: 5d541fb9440948e789a10e137b51d68d
+              expression: '(last(/Template App MAIL Courier-IMAP/vfs.file.cksum[/usr/local/etc/maildroprc],#1)<>last(/Template App MAIL Courier-IMAP/vfs.file.cksum[/usr/local/etc/maildroprc],#2))>0'
+              name: '{HOST.NAME} - /usr/local/etc/maildroprc has been changed'
+              priority: HIGH
+  graphs:
+    - uuid: f8c309f4d0cd47c382c1888e5f96d1fa
+      name: 'IMAPD/IMAPD-SSL Connections'
+      graph_items:
+        - color: EE0000
+          item:
+            host: 'Template App MAIL Courier-IMAP'
+            key: imapd-ssl
+        - sortorder: '1'
+          color: 00BB00
+          item:
+            host: 'Template App MAIL Courier-IMAP'
+            key: imapd
+    - uuid: b28eb77901b443adb661ad4c682c8de0
+      name: 'POP3D/POP3D-SSL Connections'
+      graph_items:
+        - color: EE0000
+          item:
+            host: 'Template App MAIL Courier-IMAP'
+            key: pop3d-ssl
+        - sortorder: '1'
+          color: 00BB00
+          item:
+            host: 'Template App MAIL Courier-IMAP'
+            key: pop3d
