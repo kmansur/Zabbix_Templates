@@ -21,6 +21,10 @@ Documentation maintenance: when this English changelog is updated, update
 
 ### Changed
 
+- Moved template exports into versioned folders:
+  - `7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml`
+  - `8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml`
+- Updated README and validation docs to reference the 7.0 and 8.0 export paths.
 - Updated template vendor version to `0.6-10`.
 - Updated README and README.pt-BR to the current project version and layout
   standard used in recent template projects.

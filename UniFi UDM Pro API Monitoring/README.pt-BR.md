@@ -14,7 +14,8 @@ opcionais de NetFlow/IPFIX.
 
 ## Arquivos
 
-- `UniFi UDM Pro API Monitoring.yaml`: export atual do template Zabbix 7.0.
+- `7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml`: export atual do template Zabbix 7.0.
+- `8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml`: export para Zabbix 8.0 gerado a partir do template base 7.0.
 - `unifi_udm_pro_api.py`: script coletor externo para telemetria da Integration API e Network API.
 - `CHANGELOG.md`: changelog em inglês.
 - `CHANGELOG.pt-BR.md`: changelog em português.
@@ -186,13 +187,20 @@ Versão atual do projeto:
 O template importável para Zabbix 7.0 é:
 
 ```text
-UniFi UDM Pro API Monitoring.yaml
+7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml
+```
+
+O template importável para Zabbix 8.0 é:
+
+```text
+8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml
 ```
 
 Antes de importar ou habilitar o template:
 
 1. Instale `unifi_udm_pro_api.py` no servidor ou proxy Zabbix.
-2. Importe `UniFi UDM Pro API Monitoring.yaml`.
+2. Importe `7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml` (Zabbix 7.0) ou
+   `8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml` (Zabbix 8.0).
 3. Vincule o template ao host do UDM Pro.
 4. Configure as macros do host:
 

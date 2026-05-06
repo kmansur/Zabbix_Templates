@@ -22,6 +22,10 @@ atualize este `CHANGELOG.pt-BR.md` na mesma alteração.
 
 ### Alterado
 
+- Movidos os exports do template para pastas versionadas:
+  - `7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml`
+  - `8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml`
+- Atualizados README e documentação de validação para referenciar os paths de export 7.0 e 8.0.
 - Atualizada a versão do vendor do template para `0.6-10`.
 - Atualizados README e README.pt-BR para a versão atual do projeto e padrão de
   organização usado nos templates mais recentes.

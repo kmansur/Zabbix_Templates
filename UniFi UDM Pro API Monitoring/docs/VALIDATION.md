@@ -33,7 +33,8 @@ Expected: valid JSON payloads; numeric fields should be numeric.
 
 ## 4. Zabbix Template Checks
 
-1. Import `UniFi UDM Pro API Monitoring.yaml`.
+1. Import `7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml` for Zabbix 7.0
+   or `8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml` for Zabbix 8.0.
 2. Link template to a test UDM Pro host.
 3. Set macros:
    - `{$UNIFI.API.URL}`
@@ -47,4 +48,3 @@ Expected: valid JSON payloads; numeric fields should be numeric.
 1. Confirm informational firmware/reboot triggers stay stable.
 2. Confirm WAN/radio/PoE threshold triggers recover after values normalize.
 3. Confirm `gateway-info` dependent items (`name`, `type`, `mac`, `model`, `version`) are populated.
-
