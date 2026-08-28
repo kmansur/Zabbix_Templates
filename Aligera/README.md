@@ -149,3 +149,11 @@ The initial work was based on the AG562 Zabbix template by Douglas Boldrini:
 - Original template: `TEMPLATE_TELEFONIA_AG562_E1_LLD_SNMP_ZBX-5.0.xml`
 
 The AG561 adaptation, Zabbix 7.0 modernization, expanded MIB coverage, dashboards, triggers, capacity metrics, IF-MIB monitoring and SNMP trap support were developed and validated for the Net Tech environment.
+
+## License
+
+The AG561 template and the documentation maintained in this directory are released under the **MIT License**. See [LICENSE](LICENSE).
+
+Copyright (c) 2026 Net Tech.
+
+This license applies to the implementation and documentation maintained in this directory. It does not relicense third-party projects, vendor MIBs, trademarks, or other material owned by their respective authors or vendors. The original AG562 project referenced in the Credits section remains subject to the rights of its original author.
