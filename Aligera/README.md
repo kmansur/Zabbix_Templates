@@ -1,5 +1,7 @@
 # Aligera Zabbix Templates
 
+**English** | [Português (Brasil)](README.pt-BR.md)
+
 This directory contains Zabbix templates for monitoring Aligera telecom gateways.
 
 ## Aligera AG561 E1 by SNMP
