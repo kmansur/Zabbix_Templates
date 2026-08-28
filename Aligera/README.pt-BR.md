@@ -2,11 +2,15 @@
 
 [English](README.md) | **Português (Brasil)**
 
+Instalação: [English](INSTALL.md) | **[Português (Brasil)](INSTALL.pt-BR.md)**
+
 Este diretório contém templates Zabbix para monitoramento de gateways de telecomunicações Aligera.
 
 ## Aligera AG561 E1 by SNMP
 
 O template do AG561 foi adaptado e expandido para o Zabbix 7.0 utilizando a MIB enterprise da Aligera (`1.3.6.1.4.1.41933`), SNMPv2-MIB e IF-MIB, e foi validado em equipamentos Aligera AG561 reais.
+
+Arquivo do template: [`7.0/template_aligera_ag561_e1_snmp.yaml`](7.0/template_aligera_ag561_e1_snmp.yaml)
 
 ### Ambiente validado
 
@@ -14,12 +18,11 @@ O template do AG561 foi adaptado e expandido para o Zabbix 7.0 utilizando a MIB 
 - Firmware testado: 8.16
 - Zabbix: 7.0
 - SNMP: v2c
+- Versão do template: 3.0.0
 - Vendor do template: Net Tech
 - Grupo do template: `Templates/Network devices`
 
 ## Cobertura de monitoramento
-
-O template inclui monitoramento das seguintes áreas.
 
 ### Equipamento e SNMP
 
@@ -54,127 +57,89 @@ O template inclui monitoramento das seguintes áreas.
 
 ### Canais de voz
 
-A descoberta de canais utiliza a tabela de canais da Aligera e exclui entradas `SIG(6)` do monitoramento de voz.
+A descoberta de canais utiliza a tabela da Aligera e exclui entradas `SIG(6)` do monitoramento de voz.
 
-Na configuração do AG561 validada:
+Na configuração validada:
 
 - Entradas na tabela de canais: 31
 - Canais de voz: 30
 - Entrada de sinalização: TS16 / `SIG(6)`
 
-O template monitora:
-
-- Tipo do canal
-- Estado do canal: BLOCKED, IDLE, BUSY, N/A
-- Canais livres
-- Canais ocupados
-- Canais bloqueados
-- Canais em N/A
-- Percentual de utilização dos canais
-- Pico de canais ocupados nas últimas 24 horas
-- Pico de utilização nas últimas 24 horas
+O template monitora tipo/estado do canal, canais livres/ocupados/bloqueados/N/A, utilização e picos de ocupação/utilização em 24 horas.
 
 ### SIP
 
-A descoberta de peers SIP inclui:
-
-- Nome do peer
-- Host/IP
-- Porta
-- Estado de Keepalive
-- Estado de Registry
-
-A MIB da Aligera expõe Keepalive e Registry como strings, e não como estados enumerados. Por esse motivo, o template registra eventos informativos quando esses valores mudam, mas não assume que valores como `Unmonitored` ou `-` representem falha.
+A descoberta de peers SIP inclui nome, host/IP, porta, Keepalive e Registry. Como Keepalive e Registry são strings na MIB, o template registra mudanças informativas sem assumir que `Unmonitored` ou `-` representem falha.
 
 ### Ethernet / IF-MIB
 
-As interfaces Ethernet são descobertas utilizando `ifType=6` (`ethernetCsmacd`).
+As interfaces Ethernet são descobertas por `ifType=6` (`ethernetCsmacd`). O template monitora estado administrativo/operacional, MTU, MAC, tráfego RX/TX de 64 bits, erros, discards e suas taxas de crescimento. Interfaces administrativamente desabilitadas não geram problema de link down.
 
-O template monitora:
+## Macros de usuário
 
-- Estado administrativo
-- Estado operacional
-- MTU
-- Endereço MAC
-- Tráfego RX de 64 bits via `ifHCInOctets`
-- Tráfego TX de 64 bits via `ifHCOutOctets`
-- Erros RX
-- Erros TX
-- Discards RX
-- Discards TX
-- Taxas de crescimento de erros e discards
+Abaixo estão todas as **15 macros** exportadas pela versão 3.0.0 do template. Elas podem ser sobrescritas no nível do host quando um AG561 tiver capacidade ou baseline operacional diferente.
 
-Interfaces administrativamente desabilitadas não geram problemas de link down.
+| Macro | Padrão | Finalidade |
+|---|---:|---|
+| `{$AG561.CHANNEL.NA.WARN}` | `1` | Quantidade mínima de canais de voz em N/A que gera Warning quando persistir por 5 minutos. |
+| `{$AG561.CHANNEL.UTIL.HIGH}` | `90` | Percentual médio de utilização dos canais em 5 minutos para alerta High. |
+| `{$AG561.CHANNEL.UTIL.WARN}` | `80` | Percentual médio de utilização dos canais em 5 minutos para alerta Warning. |
+| `{$AG561.E1.EXPECTED}` | `1` | Quantidade esperada de interfaces E1. Pode ser sobrescrita no host. |
+| `{$AG561.SIG.EXPECTED}` | `1` | Quantidade esperada de entradas SIG. Pode ser sobrescrita no host. |
+| `{$AG561.SIP.EXPECTED}` | `1` | Quantidade esperada de peers SIP. Pode ser sobrescrita no host. |
+| `{$AG561.VOICE.EXPECTED}` | `30` | Quantidade esperada de canais de voz. Pode ser sobrescrita no host. |
+| `{$E1.CODE.RATE.WARN}` | `0` | Taxa de Code Violations/s acima deste valor gera alerta. Zero significa alertar em qualquer aumento. |
+| `{$E1.CRC.RATE.WARN}` | `0` | Taxa de erros CRC/s acima deste valor gera alerta. Zero significa alertar em qualquer aumento. |
+| `{$E1.SLIP.RATE.HIGH}` | `0.1` | Taxa persistente de Slips/s para alerta High após 15 minutos. Ajustar após observar o baseline real. |
+| `{$E1.SLIP.RATE.WARN}` | `0` | Taxa de Slips/s acima deste valor gera alerta. Zero significa alertar em qualquer aumento. |
+| `{$ICMP.LOSS.WARN}` | `20` | Perda média de pacotes ICMP (%) que gera alerta Warning. |
+| `{$ICMP.RESPONSE.WARN}` | `100` | Latência média ICMP em milissegundos que gera alerta Warning. |
+| `{$IF.DISCARD.RATE.WARN}` | `0` | Taxa de discards RX/TX por segundo acima deste valor gera Warning. Zero alerta em qualquer aumento persistente. |
+| `{$IF.ERROR.RATE.WARN}` | `0` | Taxa de erros RX/TX por segundo acima deste valor gera Warning. Zero alerta em qualquer aumento persistente. |
+
+### Observações para ajuste das macros
+
+- As quatro macros `*.EXPECTED` devem refletir a configuração real. O AG561 validado usa 1 E1, 30 canais de voz, 1 entrada SIG e 1 peer SIP.
+- As macros de taxa com padrão `0` alertam intencionalmente em qualquer novo crescimento. Eleve os limites somente depois de observar um baseline saudável.
+- `{$E1.SLIP.RATE.HIGH}` é independente do limite Warning e deve ser calibrada com histórico de produção.
+- Limites de ICMP e utilização de canais são valores operacionais iniciais e podem ser sobrescritos por host.
 
 ## Triggers
 
-O template inclui triggers para, entre outras condições:
-
-- Indisponibilidade ICMP
-- Indisponibilidade SNMP
-- Perda de pacotes
-- Latência ICMP elevada
-- Canal de voz BLOCKED
-- Canal de voz N/A
-- Utilização elevada dos canais
-- E1 LOS
-- E1 AIS
-- E1 BFAE
-- E1 MFAE
-- E1 RAI
-- Crescimento de erros CRC
-- Crescimento de slips
-- Slips persistentes
-- Crescimento de code violations
-- Reset das estatísticas E1
-- Reboot do equipamento
-- Interface Ethernet operacionalmente down enquanto administrativamente up
-- Crescimento de erros/discards Ethernet
-- Divergência de configuração/capacidade
-- Mudanças informativas de configuração/estado SIP
-- Mudanças informativas de firmware/descrição do sistema
-
-Os limites configuráveis são expostos por macros de usuário do Zabbix sempre que apropriado.
+O template inclui triggers para disponibilidade ICMP/SNMP, perda e latência, canais BLOCKED/N/A, utilização dos canais, E1 LOS/AIS/BFAE/MFAE/RAI, crescimento de CRC/slips/code violations, slips persistentes, reset das estatísticas E1, reboot, link Ethernet, erros/discards, divergência de capacidade e mudanças informativas de SIP/firmware.
 
 ## Dashboards
 
-O template inclui dashboards de template para:
+O template inclui:
 
 - Operational view
 - Diagnostics
 - Capacity
 - SIP
 
-O Honeycomb operacional dos canais exibe somente os 30 canais de voz e exclui o timeslot de sinalização.
+O Honeycomb operacional exibe apenas os 30 canais de voz e exclui o timeslot de sinalização.
 
 ## SNMP Traps
 
-A versão 3.x adiciona suporte às notificações Aligera definidas na MIB:
+A versão 3.x suporta:
 
-- `e1AlarmsChange`
-- `chanStatusChange`
-- `sipKeepaliveChange`
+- `e1AlarmsChange` — `1.3.6.1.4.1.41933.1.2.3.1`
+- `chanStatusChange` — `1.3.6.1.4.1.41933.1.3.3.1`
+- `sipKeepaliveChange` — `1.3.6.1.4.1.41933.1.4.3.1`
+- `snmptrap.fallback` para traps não reconhecidas
 
-O template também inclui um item fallback para SNMP traps não reconhecidos, útil para diagnóstico e futuras expansões.
+Os eventos de trap são informativos e complementares; as triggers de polling continuam sendo a referência para o estado persistente da falha.
 
-### Requisitos do receptor de traps no Zabbix
-
-A importação do template não configura automaticamente o receptor de SNMP traps do sistema operacional. O Zabbix Server ou Proxy responsável por receber as traps precisa ter o processamento habilitado, por exemplo:
-
-```ini
-StartSNMPTrapper=1
-SNMPTrapperFile=/var/log/snmptrap/snmptrap.log
-```
-
-O `snmptrapd`, ou outro handler compatível, deve gravar as traps recebidas no formato esperado pelo Zabbix. O AG561 também precisa ser configurado para enviar as traps para o endereço IP do Zabbix Server ou Proxy responsável pelo host monitorado.
+Para instalação completa e configuração do receptor de traps, consulte **[INSTALL.pt-BR.md](INSTALL.pt-BR.md)**.
 
 ## Observações importantes
 
 - Os contadores brutos da E1 são cumulativos desde o último reset das estatísticas E1. Um valor histórico diferente de zero não representa, por si só, uma falha ativa.
-- Itens baseados em taxa e métricas de qualidade recente são utilizados para detectar degradação ativa.
-- Os percentuais de duração de alarmes e de tempo saudável da E1 são indicadores operacionais, não medições contratuais de SLA.
-- O equipamento pode retornar `chanNumber=31`; nos equipamentos validados existem 30 canais de voz MFCR2 e uma entrada de sinalização (`SIG`) no TS16.
-- `ifSpeed` / `ifHighSpeed` não são utilizados porque o firmware AG561 testado retornou valores não confiáveis para as interfaces Ethernet físicas.
+- Itens baseados em taxa e qualidade recente detectam degradação ativa.
+- Percentuais de duração de alarmes e tempo saudável são indicadores operacionais, não medições contratuais de SLA.
+- O equipamento pode retornar `chanNumber=31`; nos equipamentos validados existem 30 canais de voz MFCR2 e uma entrada `SIG` no TS16.
+- `ifSpeed` / `ifHighSpeed` não são utilizados porque o firmware AG561 testado retornou valores não confiáveis nas interfaces Ethernet físicas.
+- SNMPv2c não possui criptografia. Utilize apenas em rede privada/confiável e restrinja UDP/161 e UDP/162 por firewall.
 
 ## Créditos
 
