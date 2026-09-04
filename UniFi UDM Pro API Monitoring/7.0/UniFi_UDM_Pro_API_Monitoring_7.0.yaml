@@ -9,7 +9,9 @@ zabbix_export:
       name: 'UniFi UDM Pro API Monitoring'
       description: |
         Template for monitoring a Ubiquiti UniFi Dream Machine Pro through the
-        local UniFi Network API.
+        local UniFi Network API. Version 0.7.0 adds parallel collection from the
+        documented Integration API statistics/latest endpoint for Network 10.6
+        validation while retaining existing legacy telemetry for compatibility.
 
         Requires the external script unifi_udm_pro_api.py in the Zabbix server
         or proxy external scripts directory.
