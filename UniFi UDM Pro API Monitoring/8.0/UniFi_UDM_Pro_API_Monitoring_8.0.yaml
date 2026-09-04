@@ -9,13 +9,15 @@ zabbix_export:
       name: 'UniFi UDM Pro API Monitoring'
       description: |
         Template for monitoring a Ubiquiti UniFi Dream Machine Pro through the
-        local UniFi Network API.
+        local UniFi Network API. Version 0.7.0 adds parallel collection from the
+        documented Integration API statistics/latest endpoint for Network 10.6
+        validation while retaining existing legacy telemetry for compatibility.
         
         Requires the external script unifi_udm_pro_api.py in the Zabbix server
         or proxy external scripts directory.
       vendor:
         name: 'Net Tech'
-        version: 0.6-10
+        version: 0.7-0
       groups:
         - name: 'Templates/Network devices'
       items:
@@ -30,7 +32,7 @@ zabbix_export:
               parameters:
                 - $.applicationVersion
           master_item:
-            key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}"]'
+            key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: api
@@ -51,7 +53,7 @@ zabbix_export:
               parameters:
                 - $.total
           master_item:
-            key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+            key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: clients
@@ -65,7 +67,7 @@ zabbix_export:
               parameters:
                 - $.wired
           master_item:
-            key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+            key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: clients
@@ -79,7 +81,7 @@ zabbix_export:
               parameters:
                 - $.wireless
           master_item:
-            key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+            key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: clients
@@ -93,7 +95,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}"]'
+            key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -114,7 +116,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}"]'
+            key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -128,7 +130,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -149,7 +151,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -163,7 +165,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -184,7 +186,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -198,7 +200,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -219,7 +221,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -233,7 +235,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -254,7 +256,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -268,7 +270,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -289,7 +291,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -303,7 +305,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -324,7 +326,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -338,7 +340,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -359,7 +361,7 @@ zabbix_export:
               parameters:
                 - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: collector
@@ -373,7 +375,7 @@ zabbix_export:
               parameters:
                 - $.offline
           master_item:
-            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: devices
@@ -393,7 +395,7 @@ zabbix_export:
               parameters:
                 - $.online
           master_item:
-            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: devices
@@ -407,7 +409,7 @@ zabbix_export:
               parameters:
                 - $.total
           master_item:
-            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: devices
@@ -421,7 +423,7 @@ zabbix_export:
               parameters:
                 - $.updatable
           master_item:
-            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+            key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: devices
@@ -441,7 +443,7 @@ zabbix_export:
               parameters:
                 - $.dhcp_active_leases
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: dhcp
@@ -455,7 +457,7 @@ zabbix_export:
               parameters:
                 - $.dhcp_networks_total
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: dhcp
@@ -470,7 +472,7 @@ zabbix_export:
               parameters:
                 - $.architecture
           master_item:
-            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: gateway
@@ -485,7 +487,7 @@ zabbix_export:
               parameters:
                 - $.displayable_version
           master_item:
-            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: gateway
@@ -500,7 +502,7 @@ zabbix_export:
               parameters:
                 - $.kernel_version
           master_item:
-            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: gateway
@@ -515,7 +517,7 @@ zabbix_export:
               parameters:
                 - $.mac
           master_item:
-            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: gateway
@@ -530,7 +532,7 @@ zabbix_export:
               parameters:
                 - $.model
           master_item:
-            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: gateway
@@ -545,7 +547,7 @@ zabbix_export:
               parameters:
                 - $.name
           master_item:
-            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: gateway
@@ -560,7 +562,7 @@ zabbix_export:
               parameters:
                 - $.type
           master_item:
-            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: gateway
@@ -577,7 +579,7 @@ zabbix_export:
               parameters:
                 - 'return value === true || value === "true" ? 1 : 0;'
           master_item:
-            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: gateway
@@ -597,7 +599,7 @@ zabbix_export:
               parameters:
                 - $.version
           master_item:
-            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: gateway
@@ -620,7 +622,7 @@ zabbix_export:
               parameters:
                 - 'return value === true || value === "true" ? 1 : 0;'
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: security
@@ -635,7 +637,7 @@ zabbix_export:
               parameters:
                 - $.ids_mode
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: security
@@ -650,7 +652,7 @@ zabbix_export:
               parameters:
                 - $.ids_signature_age_seconds
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: security
@@ -665,7 +667,7 @@ zabbix_export:
               parameters:
                 - $.ids_signature_last_update
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: security
@@ -679,7 +681,7 @@ zabbix_export:
               parameters:
                 - $.ids_signature_rules
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: security
@@ -694,7 +696,7 @@ zabbix_export:
               parameters:
                 - $.ids_signature_version
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: security
@@ -708,7 +710,7 @@ zabbix_export:
               parameters:
                 - $.disabled
           master_item:
-            key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+            key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: networks
@@ -728,7 +730,7 @@ zabbix_export:
               parameters:
                 - $.enabled
           master_item:
-            key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+            key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: networks
@@ -742,7 +744,7 @@ zabbix_export:
               parameters:
                 - $.total
           master_item:
-            key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+            key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: networks
@@ -758,7 +760,7 @@ zabbix_export:
               parameters:
                 - $.cpu_percent
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: system
@@ -779,7 +781,7 @@ zabbix_export:
               parameters:
                 - $.loadavg_1
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: system
@@ -795,7 +797,7 @@ zabbix_export:
               parameters:
                 - $.memory_percent
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: system
@@ -816,7 +818,7 @@ zabbix_export:
               parameters:
                 - $.memory_total
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: system
@@ -831,7 +833,7 @@ zabbix_export:
               parameters:
                 - $.memory_used
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: system
@@ -846,7 +848,7 @@ zabbix_export:
               parameters:
                 - $.storage_free
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: storage
@@ -862,7 +864,7 @@ zabbix_export:
               parameters:
                 - $.storage_used_percent
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: storage
@@ -883,7 +885,7 @@ zabbix_export:
               parameters:
                 - $.storage_total
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: storage
@@ -898,7 +900,7 @@ zabbix_export:
               parameters:
                 - $.storage_used
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: storage
@@ -916,7 +918,7 @@ zabbix_export:
               error_handler: CUSTOM_VALUE
               error_handler_params: '0'
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: temperature
@@ -937,7 +939,7 @@ zabbix_export:
               parameters:
                 - $.uptime
           master_item:
-            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: system
@@ -958,7 +960,7 @@ zabbix_export:
               parameters:
                 - $.vpn_enabled
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: vpn
@@ -972,7 +974,7 @@ zabbix_export:
               parameters:
                 - $.vpn_total
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: vpn
@@ -986,7 +988,7 @@ zabbix_export:
               parameters:
                 - $.vpn_up
           master_item:
-            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: vpn
@@ -1001,7 +1003,7 @@ zabbix_export:
               parameters:
                 - $.active_wan
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1018,7 +1020,7 @@ zabbix_export:
               parameters:
                 - 'return value === true || value === "true" ? 1 : 0;'
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1039,7 +1041,7 @@ zabbix_export:
               parameters:
                 - $.availability_percent
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1059,7 +1061,7 @@ zabbix_export:
               parameters:
                 - $.wan_count
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1076,7 +1078,7 @@ zabbix_export:
               parameters:
                 - 'return value === true || value === "true" ? 1 : 0;'
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1091,7 +1093,7 @@ zabbix_export:
               parameters:
                 - $.failover_state
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1106,7 +1108,7 @@ zabbix_export:
               parameters:
                 - $.ip
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1122,7 +1124,7 @@ zabbix_export:
               parameters:
                 - $.latency_ms
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1144,7 +1146,7 @@ zabbix_export:
               parameters:
                 - $.packet_loss_percent
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1167,7 +1169,7 @@ zabbix_export:
               parameters:
                 - 'return value === true || value === "true" ? 1 : 0;'
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1182,7 +1184,7 @@ zabbix_export:
               parameters:
                 - $.rx_bps
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1197,7 +1199,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_age_seconds
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1219,7 +1221,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_download_mbps
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1234,7 +1236,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_last_run
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1250,7 +1252,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_latency_ms
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1265,7 +1267,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_status
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1281,7 +1283,7 @@ zabbix_export:
               parameters:
                 - $.speedtest_upload_mbps
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
@@ -1296,14 +1298,14 @@ zabbix_export:
               parameters:
                 - $.tx_bps
           master_item:
-            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+            key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           tags:
             - tag: component
               value: internet
         - uuid: 7c9ef206f7fb4300ad7f4929494d0349
           name: 'UniFi gateway info raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           delay: 15m
           history: 7d
           value_type: TEXT
@@ -1315,7 +1317,7 @@ zabbix_export:
         - uuid: e404f614f7c0453ca21b8a94a2d64a63
           name: 'UniFi API info raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}"]'
+          key: 'unifi_udm_pro_api.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.TLS.ARG}"]'
           delay: 1h
           history: 7d
           value_type: TEXT
@@ -1326,7 +1328,7 @@ zabbix_export:
         - uuid: cc49b1a6fe1043d98b2523236fc30800
           name: 'UniFi network services raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           delay: 5m
           history: 7d
           value_type: TEXT
@@ -1338,7 +1340,7 @@ zabbix_export:
         - uuid: 24b68df79fb8488baeb8b0948f0583ae
           name: 'UniFi PoE budget raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           delay: 5m
           history: '0'
           value_type: TEXT
@@ -1350,7 +1352,7 @@ zabbix_export:
         - uuid: 4f2d12c6478c43e5abfbc1aad5d035cb
           name: 'UniFi port telemetry raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           history: '0'
           value_type: TEXT
           description: 'Master item for Port_table telemetry. Dependent item prototypes read per-port values from this payload to reduce API calls.'
@@ -1361,7 +1363,7 @@ zabbix_export:
         - uuid: 928ff53e228f40c9a52b2f0f2c8c382f
           name: 'UniFi radio performance raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           delay: 2m
           history: '0'
           value_type: TEXT
@@ -1373,7 +1375,7 @@ zabbix_export:
         - uuid: 8b6cbe0a77e145e4bf5136387741e00b
           name: 'UniFi clients summary raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          key: 'unifi_udm_pro_api.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           delay: 2m
           history: 7d
           value_type: TEXT
@@ -1384,7 +1386,7 @@ zabbix_export:
         - uuid: 3dab808867e84e04a4234104afc18a8c
           name: 'UniFi devices summary raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          key: 'unifi_udm_pro_api.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           delay: 2m
           history: 7d
           value_type: TEXT
@@ -1395,7 +1397,7 @@ zabbix_export:
         - uuid: da9692947d1b481aa8458105cc7d3fa0
           name: 'UniFi networks summary raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          key: 'unifi_udm_pro_api.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           delay: 5m
           history: 7d
           value_type: TEXT
@@ -1406,7 +1408,7 @@ zabbix_export:
         - uuid: 51e5f40a88ce4339ba7dd9ccb28738d5
           name: 'UniFi system health raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           history: 7d
           value_type: TEXT
           timeout: 60s
@@ -1416,7 +1418,7 @@ zabbix_export:
         - uuid: b2c1d09c2e6647c88aa4341805ceea4b
           name: 'UniFi WAN health raw'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           history: 7d
           value_type: TEXT
           timeout: 60s
@@ -1424,10 +1426,234 @@ zabbix_export:
             - tag: component
               value: internet
       discovery_rules:
+        - uuid: e86189358b09410cbd3062534c4f1826
+          name: 'UniFi official gateway statistics discovery'
+          type: EXTERNAL
+          key: 'unifi_udm_pro_api.py["discover-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
+          delay: 1h
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#UNIFI.DEVICE.MODEL}'
+                value: '{$UNIFI.LLD.OFFICIAL.STATS.MODEL.MATCHES}'
+          lifetime: 30d
+          description: 'Discovers gateway-class devices for parallel monitoring through the documented Integration API statistics/latest endpoint.'
+          item_prototypes:
+            - uuid: 6b4f2306172147f58ebdfb321ad5279d
+              name: 'Official API statistics raw on {#UNIFI.DEVICE.NAME}'
+              type: EXTERNAL
+              key: 'unifi_udm_pro_api.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]'
+              delay: 2m
+              history: 7d
+              value_type: TEXT
+              description: 'Raw snapshot from the documented /devices/{deviceId}/statistics/latest Integration API endpoint.'
+              timeout: 30s
+              tags:
+                - tag: component
+                  value: official-api
+                - tag: device
+                  value: '{#UNIFI.DEVICE.NAME}'
+            - uuid: e0d412ab49234f98908725467f3ebdeb
+              name: 'Official API statistics available on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.official.stats.available[{#UNIFI.DEVICE.ID}]'
+              history: 90d
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'try { var data = JSON.parse(value); return data.error ? 0 : 1; } catch (e) { return 0; }'
+              master_item:
+                key: 'unifi_udm_pro_api.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]'
+              tags:
+                - tag: component
+                  value: collector
+                - tag: source
+                  value: official-api
+              trigger_prototypes:
+                - uuid: 85b8f6b202324b52a5de1b704b40da1a
+                  expression: 'max(/UniFi UDM Pro API Monitoring/unifi.official.stats.available[{#UNIFI.DEVICE.ID}],10m)=0'
+                  name: 'Official UniFi statistics collection is failing on {#UNIFI.DEVICE.NAME}'
+                  priority: WARNING
+                  description: 'The documented Integration API statistics/latest endpoint is returning an error or invalid JSON.'
+            - uuid: 4bad6b05cce4485ebc33f857757f9455
+              name: 'Official API statistics last error on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.official.stats.error[{#UNIFI.DEVICE.ID}]'
+              history: 30d
+              value_type: TEXT
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - 'try { var data = JSON.parse(value); if (!data.error) { return ""; } return data.error + (data.details ? ": " + data.details : ""); } catch (e) { return "invalid JSON: " + e.message; }'
+              master_item:
+                key: 'unifi_udm_pro_api.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]'
+              tags:
+                - tag: component
+                  value: collector
+                - tag: source
+                  value: official-api
+            - uuid: 77218585aa6349b69f27edf259196fc9
+              name: 'Official CPU utilization on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.official.system.cpu.percent[{#UNIFI.DEVICE.ID}]'
+              history: 90d
+              value_type: FLOAT
+              units: '%'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.cpuUtilizationPct
+              master_item:
+                key: 'unifi_udm_pro_api.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]'
+              tags:
+                - tag: component
+                  value: system
+                - tag: source
+                  value: official-api
+            - uuid: ae5a1820d1744f13849cb17eec8e8ddf
+              name: 'Official memory utilization on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.official.system.memory.percent[{#UNIFI.DEVICE.ID}]'
+              history: 90d
+              value_type: FLOAT
+              units: '%'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.memoryUtilizationPct
+              master_item:
+                key: 'unifi_udm_pro_api.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]'
+              tags:
+                - tag: component
+                  value: system
+                - tag: source
+                  value: official-api
+            - uuid: 7ab2b460e70e4550908530eaa74f293b
+              name: 'Official load average 1m on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.official.system.loadavg_1[{#UNIFI.DEVICE.ID}]'
+              history: 90d
+              value_type: FLOAT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.loadAverage1Min
+              master_item:
+                key: 'unifi_udm_pro_api.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]'
+              tags:
+                - tag: component
+                  value: system
+                - tag: source
+                  value: official-api
+            - uuid: 998c2ccbe48144809c7f907d5439dfc4
+              name: 'Official load average 5m on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.official.system.loadavg_5[{#UNIFI.DEVICE.ID}]'
+              history: 90d
+              value_type: FLOAT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.loadAverage5Min
+              master_item:
+                key: 'unifi_udm_pro_api.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]'
+              tags:
+                - tag: component
+                  value: system
+                - tag: source
+                  value: official-api
+            - uuid: c19f4b566cb841afa9d7ce11403ca5fd
+              name: 'Official load average 15m on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.official.system.loadavg_15[{#UNIFI.DEVICE.ID}]'
+              history: 90d
+              value_type: FLOAT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.loadAverage15Min
+              master_item:
+                key: 'unifi_udm_pro_api.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]'
+              tags:
+                - tag: component
+                  value: system
+                - tag: source
+                  value: official-api
+            - uuid: 77427d98f7ce44cd9984012ff23ea8f6
+              name: 'Official uptime on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.official.system.uptime[{#UNIFI.DEVICE.ID}]'
+              history: 90d
+              units: uptime
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.uptimeSec
+              master_item:
+                key: 'unifi_udm_pro_api.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]'
+              tags:
+                - tag: component
+                  value: system
+                - tag: source
+                  value: official-api
+            - uuid: 9d7eb672d6fd43ccb883c5c78f06420e
+              name: 'Official uplink download rate on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.official.uplink.rx_bps[{#UNIFI.DEVICE.ID}]'
+              history: 90d
+              value_type: FLOAT
+              units: bps
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.uplink.rxRateBps
+                  error_handler: CUSTOM_VALUE
+                  error_handler_params: '0'
+              master_item:
+                key: 'unifi_udm_pro_api.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]'
+              tags:
+                - tag: component
+                  value: internet
+                - tag: source
+                  value: official-api
+            - uuid: 996cec1b652b4068a457a3d2c931f487
+              name: 'Official uplink upload rate on {#UNIFI.DEVICE.NAME}'
+              type: DEPENDENT
+              key: 'unifi.official.uplink.tx_bps[{#UNIFI.DEVICE.ID}]'
+              history: 90d
+              value_type: FLOAT
+              units: bps
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.uplink.txRateBps
+                  error_handler: CUSTOM_VALUE
+                  error_handler_params: '0'
+              master_item:
+                key: 'unifi_udm_pro_api.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]'
+              tags:
+                - tag: component
+                  value: internet
+                - tag: source
+                  value: official-api
+          graph_prototypes:
+            - uuid: 49184ab29ea9448e9fa347f67e85d668
+              name: 'Official system health on {#UNIFI.DEVICE.NAME}'
+              graph_items:
+                - color: FF7043
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi.official.system.cpu.percent[{#UNIFI.DEVICE.ID}]'
+                - sortorder: '1'
+                  color: 7E57C2
+                  item:
+                    host: 'UniFi UDM Pro API Monitoring'
+                    key: 'unifi.official.system.memory.percent[{#UNIFI.DEVICE.ID}]'
+          timeout: 60s
         - uuid: a268db968f864a399eeea0ff3d60235a
           name: 'UniFi client discovery'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["discover-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          key: 'unifi_udm_pro_api.py["discover-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           delay: 15m
           filter:
             evaltype: AND
@@ -1439,7 +1665,7 @@ zabbix_export:
         - uuid: 850053dae79e41778cb024190992ac40
           name: 'UniFi device discovery'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["discover-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          key: 'unifi_udm_pro_api.py["discover-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           delay: 15m
           filter:
             evaltype: AND
@@ -1454,7 +1680,7 @@ zabbix_export:
         - uuid: e09bac0916214333825d7b6e24a00b69
           name: 'UniFi network discovery'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["discover-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          key: 'unifi_udm_pro_api.py["discover-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           delay: 1h
           filter:
             evaltype: AND
@@ -1467,7 +1693,7 @@ zabbix_export:
         - uuid: b53bba5f3fbf43b58625d2af0901a674
           name: 'UniFi PoE budget discovery'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["discover-poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["discover-poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           delay: 1h
           filter:
             evaltype: AND
@@ -1491,7 +1717,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"].available_power_w'
               master_item:
-                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: poe
@@ -1509,7 +1735,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"].max_power_w'
               master_item:
-                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: poe
@@ -1528,7 +1754,7 @@ zabbix_export:
                   parameters:
                     - 'return value === true || value === "true" ? 1 : 0;'
               master_item:
-                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: poe
@@ -1549,7 +1775,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"].poe_ports'
               master_item:
-                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: poe
@@ -1567,7 +1793,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"].used_percent'
               master_item:
-                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: poe
@@ -1591,7 +1817,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"].used_power_w'
               master_item:
-                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: poe
@@ -1614,7 +1840,7 @@ zabbix_export:
         - uuid: 6d9f504290a34f87b3fa4adaf6fbeab4
           name: 'UniFi port telemetry discovery'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["discover-port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["discover-port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           delay: 1h
           filter:
             evaltype: AND
@@ -1639,7 +1865,7 @@ zabbix_export:
                   parameters:
                     - 'return value === true || value === "true" ? 1 : 0;'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: poe
@@ -1656,7 +1882,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].poe_mode'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: poe
@@ -1674,7 +1900,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].poe_power_w'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: poe
@@ -1692,7 +1918,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].poe_voltage_v'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: poe
@@ -1710,7 +1936,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].rx_bps'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: ports
@@ -1726,7 +1952,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].rx_dropped'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: ports
@@ -1742,7 +1968,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].rx_errors'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: ports
@@ -1760,7 +1986,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].speed_mbps'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: ports
@@ -1778,7 +2004,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].tx_bps'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: ports
@@ -1794,7 +2020,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].tx_dropped'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: ports
@@ -1810,7 +2036,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.PORT.IDX}"].tx_errors'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: ports
@@ -1829,7 +2055,7 @@ zabbix_export:
                   parameters:
                     - 'return value === true || value === "true" ? 1 : 0;'
               master_item:
-                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: ports
@@ -1887,7 +2113,7 @@ zabbix_export:
         - uuid: b05ea9168c89446eae28c7fdfd4b52a3
           name: 'UniFi port discovery'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["discover-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          key: 'unifi_udm_pro_api.py["discover-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           delay: 1h
           filter:
             evaltype: AND
@@ -1902,7 +2128,7 @@ zabbix_export:
             - uuid: 3e8eec90550245379c948c5b487add99
               name: 'Port {#UNIFI.PORT.IDX} connector on {#UNIFI.DEVICE.NAME}'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","connector"]'
+              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","connector","{$UNIFI.TLS.ARG}"]'
               delay: 1h
               history: 90d
               value_type: CHAR
@@ -1915,7 +2141,7 @@ zabbix_export:
             - uuid: 3ec9707fec5f4f27ae8d7df599d865a1
               name: 'Port {#UNIFI.PORT.IDX} max speed on {#UNIFI.DEVICE.NAME}'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","maxSpeedMbps"]'
+              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","maxSpeedMbps","{$UNIFI.TLS.ARG}"]'
               delay: 1h
               history: 90d
               units: Mbps
@@ -1928,7 +2154,7 @@ zabbix_export:
             - uuid: 604464bae5404d1eba541436e6b4d565
               name: 'Port {#UNIFI.PORT.IDX} speed on {#UNIFI.DEVICE.NAME}'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","speedMbps"]'
+              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","speedMbps","{$UNIFI.TLS.ARG}"]'
               delay: 2m
               history: 90d
               units: Mbps
@@ -1941,7 +2167,7 @@ zabbix_export:
             - uuid: d7ca3569e4cd4cbcae3097a6421ca12b
               name: 'Port {#UNIFI.PORT.IDX} state on {#UNIFI.DEVICE.NAME}'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","state"]'
+              key: 'unifi_udm_pro_api.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","state","{$UNIFI.TLS.ARG}"]'
               delay: 2m
               history: 90d
               value_type: CHAR
@@ -1955,7 +2181,7 @@ zabbix_export:
         - uuid: 02bea3760966435fa33498040b2b09ce
           name: 'UniFi radio performance discovery'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["discover-radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["discover-radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           delay: 1h
           filter:
             evaltype: AND
@@ -1979,7 +2205,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].cu_self_rx'
               master_item:
-                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: radios
@@ -1997,7 +2223,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].cu_self_tx'
               master_item:
-                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: radios
@@ -2015,7 +2241,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].cu_total'
               master_item:
-                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: radios
@@ -2037,7 +2263,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].num_sta'
               master_item:
-                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: radios
@@ -2055,7 +2281,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].satisfaction'
               master_item:
-                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: radios
@@ -2079,7 +2305,7 @@ zabbix_export:
                   parameters:
                     - '$["{#UNIFI.DEVICE.ID}"]["{#UNIFI.RADIO.INDEX}"].tx_retries_pct'
               master_item:
-                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+                key: 'unifi_udm_pro_api.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
               tags:
                 - tag: component
                   value: radios
@@ -2131,7 +2357,7 @@ zabbix_export:
         - uuid: 0f82eeab022548aaaffe4591608f916c
           name: 'UniFi radio discovery'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["discover-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}"]'
+          key: 'unifi_udm_pro_api.py["discover-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]'
           delay: 1h
           filter:
             evaltype: AND
@@ -2146,7 +2372,7 @@ zabbix_export:
             - uuid: 2cc3da7e5e66483fad14e207d2f1ee34
               name: 'Radio {#UNIFI.RADIO.INDEX} channel on {#UNIFI.DEVICE.NAME}'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","channel"]'
+              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","channel","{$UNIFI.TLS.ARG}"]'
               delay: 5m
               history: 90d
               timeout: 30s
@@ -2158,7 +2384,7 @@ zabbix_export:
             - uuid: 441e879d1c4645fbb8de9d94841799ff
               name: 'Radio {#UNIFI.RADIO.INDEX} channel width on {#UNIFI.DEVICE.NAME}'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","channelWidthMHz"]'
+              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","channelWidthMHz","{$UNIFI.TLS.ARG}"]'
               delay: 5m
               history: 90d
               units: MHz
@@ -2171,7 +2397,7 @@ zabbix_export:
             - uuid: 1326d1824c5041dc92e7f0a078c9e193
               name: 'Radio {#UNIFI.RADIO.INDEX} frequency on {#UNIFI.DEVICE.NAME}'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","frequencyGHz"]'
+              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","frequencyGHz","{$UNIFI.TLS.ARG}"]'
               delay: 1h
               history: 90d
               value_type: FLOAT
@@ -2185,7 +2411,7 @@ zabbix_export:
             - uuid: 4ab810907e39443bb1e7a6e976d6326e
               name: 'Radio {#UNIFI.RADIO.INDEX} WLAN standard on {#UNIFI.DEVICE.NAME}'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","wlanStandard"]'
+              key: 'unifi_udm_pro_api.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","wlanStandard","{$UNIFI.TLS.ARG}"]'
               delay: 1h
               history: 90d
               value_type: CHAR
@@ -2199,7 +2425,7 @@ zabbix_export:
         - uuid: 345f2b8e8f104a47bfac7e165996f1e5
           name: 'UniFi storage discovery'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["discover-storage","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["discover-storage","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           delay: 1h
           filter:
             evaltype: AND
@@ -2212,7 +2438,7 @@ zabbix_export:
             - uuid: 091d340ea82b491a9573142171992fde
               name: 'Storage {#UNIFI.STORAGE.NAME} free'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","free"]'
+              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","free","{$UNIFI.TLS.ARG}"]'
               delay: 5m
               history: 90d
               units: B
@@ -2225,7 +2451,7 @@ zabbix_export:
             - uuid: 7d3eea9a94cd4030b845df6656daeefc
               name: 'Storage {#UNIFI.STORAGE.NAME} total'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","size"]'
+              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","size","{$UNIFI.TLS.ARG}"]'
               delay: 1h
               history: 90d
               units: B
@@ -2238,7 +2464,7 @@ zabbix_export:
             - uuid: 545cf97349f24e1f928d2362def2628a
               name: 'Storage {#UNIFI.STORAGE.NAME} used'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","used"]'
+              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","used","{$UNIFI.TLS.ARG}"]'
               delay: 5m
               history: 90d
               units: B
@@ -2251,7 +2477,7 @@ zabbix_export:
             - uuid: e5384c3b3f2b493a874933ddf23e4e83
               name: 'Storage {#UNIFI.STORAGE.NAME} utilization'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","used_percent"]'
+              key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","used_percent","{$UNIFI.TLS.ARG}"]'
               delay: 5m
               history: 90d
               value_type: FLOAT
@@ -2264,7 +2490,7 @@ zabbix_export:
                   value: '{#UNIFI.STORAGE.NAME}'
               trigger_prototypes:
                 - uuid: 41594fa0f1474e43924d2e4144c2587e
-                  expression: 'last(/UniFi UDM Pro API Monitoring/unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","used_percent"])>{$UNIFI.STORAGE.WARN}'
+                  expression: 'last(/UniFi UDM Pro API Monitoring/unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","used_percent","{$UNIFI.TLS.ARG}"])>{$UNIFI.STORAGE.WARN}'
                   name: 'High UniFi storage utilization on {#UNIFI.STORAGE.NAME}'
                   priority: WARNING
           graph_prototypes:
@@ -2274,17 +2500,17 @@ zabbix_export:
                 - color: 42A5F5
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","used"]'
+                    key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","used","{$UNIFI.TLS.ARG}"]'
                 - sortorder: '1'
                   color: 66BB6A
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","free"]'
+                    key: 'unifi_udm_pro_api.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","free","{$UNIFI.TLS.ARG}"]'
           timeout: 60s
         - uuid: 37d8fc7db6f741ada944c25b7649c8b1
           name: 'UniFi WAN discovery'
           type: EXTERNAL
-          key: 'unifi_udm_pro_api.py["discover-wans","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}"]'
+          key: 'unifi_udm_pro_api.py["discover-wans","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]'
           delay: 1h
           filter:
             evaltype: AND
@@ -2297,7 +2523,7 @@ zabbix_export:
             - uuid: e026ff7a0a7d42e98c91b105b1646ad7
               name: '{#UNIFI.WAN.NAME} active'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","active"]'
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","active","{$UNIFI.TLS.ARG}"]'
               history: 90d
               preprocessing:
                 - type: JAVASCRIPT
@@ -2312,7 +2538,7 @@ zabbix_export:
             - uuid: b17a401ff49e4d1bb913f1c3638dcbd3
               name: '{#UNIFI.WAN.NAME} alive'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","alive"]'
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","alive","{$UNIFI.TLS.ARG}"]'
               history: 90d
               timeout: 30s
               tags:
@@ -2322,13 +2548,13 @@ zabbix_export:
                   value: '{#UNIFI.WAN.NAME}'
               trigger_prototypes:
                 - uuid: a2760ff9b7824b54a5ae4a04b2d12db6
-                  expression: 'last(/UniFi UDM Pro API Monitoring/unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","alive"])=0'
+                  expression: 'last(/UniFi UDM Pro API Monitoring/unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","alive","{$UNIFI.TLS.ARG}"])=0'
                   name: '{#UNIFI.WAN.NAME} is not alive'
                   priority: HIGH
             - uuid: 470bf30f607f4c8c94c27b4ab426fda9
               name: '{#UNIFI.WAN.NAME} availability'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","availability_percent"]'
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","availability_percent","{$UNIFI.TLS.ARG}"]'
               history: 90d
               value_type: FLOAT
               units: '%'
@@ -2341,7 +2567,7 @@ zabbix_export:
             - uuid: ebbe1f0d107c446fa432b921b735a6ae
               name: '{#UNIFI.WAN.NAME} failover state'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","failover_state"]'
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","failover_state","{$UNIFI.TLS.ARG}"]'
               history: 90d
               value_type: CHAR
               timeout: 30s
@@ -2353,7 +2579,7 @@ zabbix_export:
             - uuid: 2d07d2cfc5974caf84a224a26597abac
               name: '{#UNIFI.WAN.NAME} latency'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","latency_ms"]'
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","latency_ms","{$UNIFI.TLS.ARG}"]'
               history: 90d
               value_type: FLOAT
               units: ms
@@ -2366,7 +2592,7 @@ zabbix_export:
             - uuid: d8639d7cb94c492f81a08e6888f8fe19
               name: '{#UNIFI.WAN.NAME} packet loss'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","packet_loss_percent"]'
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","packet_loss_percent","{$UNIFI.TLS.ARG}"]'
               history: 90d
               value_type: FLOAT
               units: '%'
@@ -2379,7 +2605,7 @@ zabbix_export:
             - uuid: 368e62de9e724cf9804d442a9776061c
               name: '{#UNIFI.WAN.NAME} role'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","role"]'
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","role","{$UNIFI.TLS.ARG}"]'
               delay: 5m
               history: 90d
               value_type: CHAR
@@ -2392,7 +2618,7 @@ zabbix_export:
             - uuid: 43259d1ab2e446268d7e551bb869daed
               name: '{#UNIFI.WAN.NAME} download rate'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","rx_bps"]'
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","rx_bps","{$UNIFI.TLS.ARG}"]'
               history: 90d
               units: bps
               timeout: 30s
@@ -2404,7 +2630,7 @@ zabbix_export:
             - uuid: d898e059e3214d08acbf3af54edc5c37
               name: '{#UNIFI.WAN.NAME} upload rate'
               type: EXTERNAL
-              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","tx_bps"]'
+              key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","tx_bps","{$UNIFI.TLS.ARG}"]'
               history: 90d
               units: bps
               timeout: 30s
@@ -2421,39 +2647,45 @@ zabbix_export:
                   yaxisside: RIGHT
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","latency_ms"]'
+                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","latency_ms","{$UNIFI.TLS.ARG}"]'
                 - sortorder: '1'
                   drawtype: BOLD_LINE
                   color: F06292
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","packet_loss_percent"]'
+                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","packet_loss_percent","{$UNIFI.TLS.ARG}"]'
                 - sortorder: '2'
                   color: 66BB6A
                   yaxisside: RIGHT
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","rx_bps"]'
+                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","rx_bps","{$UNIFI.TLS.ARG}"]'
                 - sortorder: '3'
                   color: FFC107
                   yaxisside: RIGHT
                   item:
                     host: 'UniFi UDM Pro API Monitoring'
-                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","tx_bps"]'
+                    key: 'unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","tx_bps","{$UNIFI.TLS.ARG}"]'
           timeout: 60s
       macros:
         - macro: '{$UNIFI.API.KEY}'
           type: SECRET_TEXT
-          description: 'Local UniFi Network API key generated in Control Plane > Integrations.'
+          description: 'Local UniFi Network API key generated in UniFi Network > Integrations.'
         - macro: '{$UNIFI.API.URL}'
           value: 'https://xxx.xxx.xxx.xxx'
           description: 'Base URL of the UDM Pro. The script appends /proxy/network/integration/v1 automatically.'
+        - macro: '{$UNIFI.TLS.ARG}'
+          value: '--timeout=20'
+          description: 'Collector TLS argument. Keep --timeout=20 for compatibility with self-signed consoles, or set --verify-tls to validate the HTTPS certificate.'
         - macro: '{$UNIFI.CPU.WARN}'
           value: '85'
           description: 'CPU utilization warning threshold in percent.'
         - macro: '{$UNIFI.IDS.SIGNATURE.MAX_AGE}'
           value: '604800'
           description: 'Maximum accepted age for IDS/IPS signature data, in seconds.'
+        - macro: '{$UNIFI.LLD.OFFICIAL.STATS.MODEL.MATCHES}'
+          value: '(?i)^(UDM.*|UCG.*|UXG.*)$'
+          description: 'Gateway model regex included in official Integration API statistics/latest discovery.'
         - macro: '{$UNIFI.LLD.CLIENT.TYPE.MATCHES}'
           value: '.*'
           description: 'Regular expression for UniFi client types included in low-level discovery.'

@@ -7,6 +7,33 @@ All notable changes to this project are documented here.
 Documentation maintenance: when this English changelog is updated, update
 `CHANGELOG.pt-BR.md` in the same change.
 
+## 0.7.0 - Unreleased
+
+### Added
+
+- Added the `device-stats` collector command for the documented Integration API
+  `/sites/{siteId}/devices/{deviceId}/statistics/latest` endpoint.
+- Added parallel official gateway statistics discovery to both Zabbix 7.0 and
+  8.0 templates with CPU, memory, 1/5/15-minute load averages, uptime, and
+  uplink RX/TX rate items.
+- Added official statistics collector health and last-error item prototypes.
+- Added `{$UNIFI.LLD.OFFICIAL.STATS.MODEL.MATCHES}` to control which gateway
+  models use the parallel official statistics collection.
+- Added `{$UNIFI.TLS.ARG}`. Keep `--timeout=20` for current self-signed
+  compatibility or set it to `--verify-tls` to enable certificate validation
+  for all external checks.
+
+### Changed
+
+- Updated both template vendor versions to `0.7-0` and collector version to
+  `0.7.0`.
+- Updated the API key macro description and bilingual documentation for UniFi
+  Network 10.6.x using **UniFi Network > Integrations**.
+- Clarified implemented local API sources versus planned Site Manager, CEF/syslog,
+  and NetFlow/IPFIX integrations.
+- Kept existing legacy telemetry and dashboards unchanged while official
+  statistics are validated in parallel.
+
 ## 0.6.10 - Unreleased
 
 ### Added

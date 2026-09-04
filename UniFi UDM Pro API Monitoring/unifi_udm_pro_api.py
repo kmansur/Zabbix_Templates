@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi UDM Pro API Monitoring
-Version: 0.6.10
+Version: 0.7.0
 Author: Karim Mansur (Net Tech)
 
 External script for Zabbix templates.
@@ -15,7 +15,8 @@ The project uses two UniFi Network API surfaces:
    /proxy/network/integration/v1
 
    This is the documented API key based interface used for sites, devices,
-   clients, networks, and simple device details.
+   clients, networks, simple device details, and the documented
+   devices/{deviceId}/statistics/latest real-time statistics endpoint.
 
 2. Legacy Network API:
    /proxy/network/api/s/<site>/...
@@ -1375,7 +1376,7 @@ def parse_args():
     args.site_id = os.getenv("UNIFI_SITE_ID")
     args.object_id = None
 
-    object_commands = {"device", "client", "discover-ports", "discover-radios"}
+    object_commands = {"device", "device-stats", "client", "discover-ports", "discover-radios"}
     optional_legacy_device_commands = {
         "system-health",
         "wan-health",
@@ -1591,6 +1592,18 @@ def main():
         if not args.object_id:
             fail("missing device ID")
         print_json(request_json(args.base_url, args.api_key, f"sites/{args.site_id}/devices/{args.object_id}", insecure=insecure, timeout=args.timeout))
+        return
+
+    if command == "device-stats":
+        if not args.object_id:
+            fail("missing device ID")
+        print_json(request_json(
+            args.base_url,
+            args.api_key,
+            f"sites/{args.site_id}/devices/{args.object_id}/statistics/latest",
+            insecure=insecure,
+            timeout=args.timeout,
+        ))
         return
 
     if command == "client":
