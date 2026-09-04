@@ -1,14 +1,14 @@
-# UniFi Dashboard Telemetry 0.8.0-rc2
+# UniFi Dashboard Telemetry 0.8.0-rc4
 
-This release-candidate companion layer adds the telemetry contracts already consumed by `Zabbix-UniFi-Dashboard` without changing the stable 0.7.0 template while live validation is still in progress.
+This release-candidate companion layer adds the telemetry contracts consumed by `Zabbix-UniFi-Dashboard` without changing the stable 0.7.0 production template while validation is completed.
 
 ## What it adds
 
-- Per-client traffic ranking from the legacy Network `stat/sta` endpoint.
-- Wireless client RSSI in dBm from the same station payload.
-- Site-wide DPI application traffic from legacy `stat/sitedpi` with `type=by_app`.
-- DPI application names enriched from the documented Integration API `/v1/dpi/applications` catalog when available.
-- Optional Wi-Fi connectivity metrics from the controller-local `/v2/api/site/<site>/wifi-stats/performance` endpoint.
+- Per-client traffic ranking over a rolling 24-hour window from controller-local `GET /v2/api/site/<site>/traffic`.
+- Current wireless client RSSI in dBm, AP, SSID and identity data from legacy `stat/sta`.
+- Site-wide DPI application traffic from the same v2 traffic endpoint, with legacy `stat/sitedpi` retained as a compatibility fallback.
+- DPI application-name enrichment from the Integration API `/v1/dpi/applications` catalog when a matching catalog identifier is available.
+- Wi-Fi association, authentication, DHCP and DNS success metrics from controller-local `GET /v2/api/site/<site>/wifi-connectivity`.
 
 The resulting Zabbix keys match the dashboard contracts:
 
@@ -42,9 +42,7 @@ install -o root -g zabbix -m 0750 \
   /usr/lib/zabbix/externalscripts/unifi_dashboard_telemetry.py
 ```
 
-Adjust the path and group to match the existing Zabbix installation.
-
-Import the companion template matching the Zabbix major version and link it to the same UniFi host that already uses `UniFi UDM Pro API Monitoring >= 0.7.0`.
+Adjust ownership and mode to match the existing Zabbix installation. Import the companion template matching the Zabbix major version and link it to the same UniFi host that already uses `UniFi UDM Pro API Monitoring >= 0.7.0`.
 
 The companion template deliberately does not redefine the API macros. It expects the host to already provide:
 
@@ -54,11 +52,17 @@ The companion template deliberately does not redefine the API macros. It expects
 {$UNIFI.NETWORK.SITE}
 ```
 
-`{$UNIFI.TLS.ARG}` is also referenced for compatibility with the base template. During live validation on Zabbix 8.0 it was confirmed that a macro defined only on a sibling linked template can remain unresolved for the companion item's external-script command. Starting with rc2 the collector safely ignores only unresolved Zabbix macro tokens such as `{$UNIFI.TLS.ARG}` and falls back to its default timeout/TLS behavior. If the macro is defined directly on the host, normal values such as `--timeout=20` and `--verify-tls` are still honored.
+`{$UNIFI.TLS.ARG}` is referenced for compatibility with the base template. Live validation on Zabbix 8.0 showed that a macro defined only on a sibling linked template can remain unresolved in the companion external-item command line. The collector therefore ignores only unresolved Zabbix macro tokens such as `{$UNIFI.TLS.ARG}`; normal values such as `--timeout=20` and `--verify-tls` are still honored.
+
+## Traffic time window
+
+UniFi Network 10.6.101 was verified to require `start` and `end` on the v2 `/traffic` endpoint in Unix epoch **milliseconds**. Sending epoch seconds returns HTTP 200 with empty `total_usage_by_app` and `client_usage_by_app` arrays. RC4 converts the collector's internal second-based rolling window to milliseconds only for the HTTP request and keeps the normalized output `start`/`end` values in seconds.
+
+When usable v2 client traffic is returned, RC4 resets the legacy station traffic counters before applying v2 totals. This prevents mixing a 24-hour v2 window with legacy counters for clients not present in `client_usage_by_app`.
 
 ## Manual collector tests
 
-Use the same URL, API key and Network site already configured in the base template. Do not paste the API key into tickets or logs.
+Use the same URL, API key and Network site configured in the base template. Do not paste the API key into tickets or logs.
 
 ```bash
 ./unifi_dashboard_telemetry.py clients \
@@ -76,31 +80,30 @@ Expected top-level shapes:
 ```json
 {"clients":{},"summary":{}}
 {"applications":{},"summary":{}}
-{"available":true,"association":99.0,"authentication":99.0,"dhcp":99.0,"dns":99.0}
+{"available":true,"association":100.0,"authentication":100.0,"dhcp":100.0,"dns":100.0}
 ```
 
-The Wi-Fi performance response is intentionally optional. UniFi's documented Integration API uses API-key authentication, while controller-local v2 endpoints can have different authentication behavior between releases. If the v2 endpoint rejects the API key or is absent, the collector returns `available:false` instead of fabricating success percentages.
+## Live validation notes
+
+Validated on Zabbix 8.0.0beta2 with UniFi Network 10.6.101 / UniFi OS 5.1.31:
+
+- Legacy `stat/sta` returned 27 active clients, including 17 wireless clients with valid negative dBm RSSI values.
+- `GET /proxy/network/v2/api/site/<site>/traffic` with epoch seconds returned HTTP 200 but empty traffic arrays.
+- The same request with epoch milliseconds returned 74 `total_usage_by_app` entries and 29 `client_usage_by_app` entries over the tested 24-hour window.
+- A sample client entry included MAC, name, wired/wireless state and per-application `category`, `application`, RX, TX and total byte counters.
+- The Integration API DPI catalog returned `totalCount: 2112` and application identifiers/names.
+- `GET /proxy/network/v2/api/site/<site>/wifi-connectivity` returned live association, authentication, DHCP and DNS ratios plus total attempts, failed client connections and latency data. The tested sample returned 100% for all four stages with 388 attempts and 14 clients.
+- Legacy `stat/sitedpi` returned an empty application set on the tested controller; RC4 therefore prefers the validated v2 traffic source and only uses the legacy endpoint as fallback.
 
 ## Validation checklist
 
 1. `python3 -m py_compile unifi_dashboard_telemetry.py` succeeds.
-2. `clients` returns active clients and negative dBm RSSI for wireless stations where exposed.
-3. `dpi` returns one or more applications when Traffic Identification/DPI is enabled and the controller exposes site DPI statistics through the tested endpoint.
-4. The Zabbix LLD rules create `unifi.client.*`, `unifi.radio.rssi[*]`, and `unifi.dpi.app.*` items.
-5. The UniFi Dashboard fills Top clients, Density / signal strength and Top applications without dashboard code changes.
-6. If `wifi-performance` returns `available:true`, the Wi-Fi Connectivity card also fills automatically.
-
-## Live validation notes
-
-Validated on Zabbix 8.0.0beta2 with UniFi Network 10.6.101:
-
-- `stat/sta` returned 27 active clients, including 17 wireless stations with valid negative dBm RSSI values and per-client traffic counters.
-- The initial rc1 master items failed because `{$UNIFI.TLS.ARG}` remained literal in the companion template command line. rc2 fixes this by ignoring unresolved Zabbix macro tokens only.
-- `/proxy/network/v2/api/site/<site>/wifi-stats/performance` returned HTTP 404 on the tested Network 10.6.101 system, so Wi-Fi Connectivity remains optional pending identification of the controller's current internal source.
-- `stat/sitedpi` with `type=by_app` returned an empty application set on the tested system; DPI collection remains under investigation.
+2. `clients` reports `traffic_source: v2/traffic` and a non-zero rolling-window Top Clients ranking.
+3. `dpi` reports `traffic_source: v2/traffic` and one or more applications.
+4. `wifi-performance` reports `available:true` and the four connectivity success values.
+5. The Zabbix LLD rules create `unifi.client.*`, `unifi.radio.rssi[*]`, and `unifi.dpi.app.*` items.
+6. The UniFi Dashboard fills Top clients, Density / signal strength, Top applications and Wi-Fi Connectivity from those item contracts.
 
 ## Why this is a companion template first
 
-The existing 0.7.0 template is already in use. Client/RSSI and DPI collection use established legacy API families, but the Wi-Fi performance endpoint needs validation on the target Network 10.6.101 system. Keeping the new collection isolated as an RC makes rollback trivial and prevents a partially validated endpoint from destabilizing the production template.
-
-After successful live validation, these items can be folded into the main 7.0/8.0 templates as the 0.8.0 release.
+The existing 0.7.0 template is already in production use. Keeping the new collection isolated as an RC makes rollback simple and prevents validation changes from destabilizing the stable template. After end-to-end Zabbix and dashboard validation, these items can be folded into the main 7.0/8.0 templates as the 0.8.0 release.
