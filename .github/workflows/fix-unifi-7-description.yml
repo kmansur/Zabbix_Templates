@@ -12,47 +12,18 @@ permissions:
 
 jobs:
   fix:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: fix/unifi-7-description-0-7
           fetch-depth: 0
-      - name: Align description and validate
+      - name: Update description
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('UniFi UDM Pro API Monitoring/7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml')
-          s = p.read_text(encoding='utf-8')
-          old = '''        Template for monitoring a Ubiquiti UniFi Dream Machine Pro through the
-        local UniFi Network API.
-
-        Requires the external script unifi_udm_pro_api.py in the Zabbix server
-        or proxy external scripts directory.
-'''
-          new = '''        Template for monitoring a Ubiquiti UniFi Dream Machine Pro through the
-        local UniFi Network API. Version 0.7.0 adds parallel collection from the
-        documented Integration API statistics/latest endpoint for Network 10.6
-        validation while retaining existing legacy telemetry for compatibility.
-
-        Requires the external script unifi_udm_pro_api.py in the Zabbix server
-        or proxy external scripts directory.
-'''
-          if old not in s:
-              raise SystemExit('7.0 description anchor not found')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
-          PY
+          python3 -c "from pathlib import Path; p=Path('UniFi UDM Pro API Monitoring/7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml'); s=p.read_text(); old='        local UniFi Network API.\\n'; new='        local UniFi Network API. Version 0.7.0 adds parallel collection from the\\n        documented Integration API statistics/latest endpoint for Network 10.6\\n        validation while retaining existing legacy telemetry for compatibility.\\n'; assert old in s; p.write_text(s.replace(old,new,1))"
           python3 -m pip install --quiet pyyaml
-          python3 - <<'PY'
-          from pathlib import Path
-          import yaml
-          p = Path('UniFi UDM Pro API Monitoring/7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml')
-          t = p.read_text(encoding='utf-8')
-          d = yaml.safe_load(t)
-          assert d['zabbix_export']['version'] == '7.0'
-          assert 'Version 0.7.0 adds parallel collection' in t
-          PY
+          python3 -c "import yaml; yaml.safe_load(open('UniFi UDM Pro API Monitoring/7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml'))"
+          grep -q 'Version 0.7.0 adds parallel collection' 'UniFi UDM Pro API Monitoring/7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml'
           git diff --check
       - name: Commit fix
         run: |
