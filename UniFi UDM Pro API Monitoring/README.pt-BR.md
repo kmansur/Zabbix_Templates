@@ -91,18 +91,30 @@ podem mudar entre versões.
 ### Testando a Chave
 
 ```bash
-curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/info"
+curl --fail-with-body -sS -k \
+  -H "Accept: application/json" \
+  -H "X-API-KEY: <api-key>" \
+  "https://<udm-pro-ip>/proxy/network/integration/v1/info"
 
-curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/sites"
+curl --fail-with-body -sS -k \
+  -H "Accept: application/json" \
+  -H "X-API-KEY: <api-key>" \
+  "https://<udm-pro-ip>/proxy/network/integration/v1/sites"
 ```
 
 Depois de obter o site ID, teste dispositivos e o endpoint documentado de
 estatísticas mais recentes:
 
 ```bash
-curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices"
+curl --fail-with-body -sS -k \
+  -H "Accept: application/json" \
+  -H "X-API-KEY: <api-key>" \
+  "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices"
 
-curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices/<device-id>/statistics/latest"
+curl --fail-with-body -sS -k \
+  -H "Accept: application/json" \
+  -H "X-API-KEY: <api-key>" \
+  "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices/<device-id>/statistics/latest"
 ```
 
 Na versão 0.7.0, esse endpoint é coletado em paralelo com a telemetria legada e
