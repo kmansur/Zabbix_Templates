@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi Dashboard Telemetry collector
-Version: 0.8.0-rc1
+Version: 0.8.0-rc2
 Author: Karim Mansur / Net Tech
 
 Companion collector for UniFi UDM Pro API Monitoring. It adds per-client
@@ -18,7 +18,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-VERSION = "0.8.0-rc1"
+VERSION = "0.8.0-rc2"
 DEFAULT_TIMEOUT = 20
 LIMIT = 200
 
@@ -280,7 +280,20 @@ def main():
     parser.add_argument("site", nargs="?", default="default")
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT)
     parser.add_argument("--verify-tls", action="store_true")
-    args = parser.parse_args()
+
+    # Zabbix leaves a user macro literal (for example {$UNIFI.TLS.ARG}) in the
+    # command line when that macro is not defined on the host or on the template
+    # that owns the item. The companion template is linked beside the base
+    # template, so sibling-template macros are not guaranteed to resolve here.
+    # Ignore only unresolved Zabbix macro tokens; keep rejecting all other
+    # unknown arguments so real configuration mistakes remain visible.
+    args, unknown = parser.parse_known_args()
+    unexpected = [
+        token for token in unknown
+        if not (token.startswith("{$") and token.endswith("}"))
+    ]
+    if unexpected:
+        parser.error("unrecognized arguments: " + " ".join(unexpected))
 
     if args.command == "version":
         emit({"version": VERSION})
