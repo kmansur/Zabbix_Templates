@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 UniFi Dashboard Telemetry collector
-Version: 0.8.0-rc3
+Version: 0.8.0-rc4
 Author: Karim Mansur / Net Tech
 
 Companion collector for UniFi UDM Pro API Monitoring. It adds per-client
@@ -14,6 +14,7 @@ accessible controller-local v2 endpoints:
   /proxy/network/v2/api/site/<site>/wifi-connectivity
   /proxy/network/v2/api/site/<site>/wifi-stats/radios
 
+The v2 traffic endpoint expects start/end in Unix epoch milliseconds.
 Only Python standard-library modules are required.
 """
 
@@ -25,7 +26,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-VERSION = "0.8.0-rc3"
+VERSION = "0.8.0-rc4"
 DEFAULT_TIMEOUT = 20
 DEFAULT_WINDOW = 86400
 LIMIT = 200
@@ -139,7 +140,11 @@ def traffic_snapshot(base, key, site, timeout, verify, window):
     start, end = period(window)
     payload = req(
         v2(base, site, "traffic"), key,
-        query={"start": start, "end": end, "includeUnidentified": "true"},
+        query={
+            "start": start * 1000,
+            "end": end * 1000,
+            "includeUnidentified": "true"
+        },
         timeout=timeout, verify=verify
     )
     return payload, start, end
@@ -184,9 +189,8 @@ def clients(base, key, site, timeout, verify, window):
     source = "legacy/stat/sta"
     start = end = None
 
-    # Start with the current station table because its internal client id is the
-    # identifier used by earlier RC discovery. Keeping it for connected clients
-    # avoids needless Zabbix LLD churn while still enriching traffic from v2.
+    # Keep the current station table for identity, RSSI, AP and SSID. Its
+    # internal client id is preserved to avoid unnecessary Zabbix LLD churn.
     try:
         rows = legacy_station_rows(base, key, site, timeout, verify)
     except RequestError:
@@ -203,39 +207,58 @@ def clients(base, key, site, timeout, verify, window):
             station_by_mac[mac] = cid
 
     try:
-        payload, start, end = traffic_snapshot(base, key, site, timeout, verify, window)
-        source = "v2/traffic"
-        for entry in payload.get("client_usage_by_app", []):
-            if not isinstance(entry, dict):
-                continue
-            client = entry.get("client") or {}
-            mac = str(first(client, "mac", "macAddress") or "")
-            cid = station_by_mac.get(mac.lower()) or safe_id(
-                mac or first(client, "id", "client_id", "clientId", "name", "hostname")
-            )
-            if not cid:
-                continue
-            usage = entry.get("usage_by_app") or []
-            total = sum(bytes_total(row) for row in usage if isinstance(row, dict))
-            wired = first(client, "is_wired", "isWired", "wired")
-            wireless = wired is False or str(wired).lower() in {"0", "false", "no"}
-            if cid in result:
-                current = result[cid]
-                current["traffic_bytes"] = max(0, int(total))
-                if first(client, "name", "hostname", "display_name", "displayName"):
-                    current["name"] = str(first(client, "name", "hostname", "display_name", "displayName"))
-                current["wireless"] = wireless
-            else:
-                result[cid] = {
-                    "name": str(first(client, "name", "hostname", "display_name", "displayName") or mac or cid),
-                    "mac": mac,
-                    "ip": str(first(client, "ip", "ipAddress") or ""),
-                    "wireless": wireless,
-                    "rssi": None,
-                    "traffic_bytes": max(0, int(total)),
-                    "ap_mac": "",
-                    "ssid": ""
-                }
+        payload, traffic_start, traffic_end = traffic_snapshot(
+            base, key, site, timeout, verify, window
+        )
+        entries = [
+            entry for entry in payload.get("client_usage_by_app", [])
+            if isinstance(entry, dict)
+        ]
+
+        if entries:
+            # Once v2 traffic is usable, all ranking values must come from the
+            # same rolling window. Do not mix 24-hour v2 totals with legacy
+            # counters for stations missing from client_usage_by_app.
+            source = "v2/traffic"
+            start, end = traffic_start, traffic_end
+            for current in result.values():
+                current["traffic_bytes"] = 0
+
+            for entry in entries:
+                client = entry.get("client") or {}
+                mac = str(first(client, "mac", "macAddress") or "")
+                cid = station_by_mac.get(mac.lower()) or safe_id(
+                    mac or first(client, "id", "client_id", "clientId", "name", "hostname")
+                )
+                if not cid:
+                    continue
+
+                usage = entry.get("usage_by_app") or []
+                total = sum(bytes_total(row) for row in usage if isinstance(row, dict))
+                wired = first(client, "is_wired", "isWired", "wired")
+                wireless = None if wired is None else (
+                    wired is False or str(wired).lower() in {"0", "false", "no"}
+                )
+                client_name = first(client, "name", "hostname", "display_name", "displayName")
+
+                if cid in result:
+                    current = result[cid]
+                    current["traffic_bytes"] += max(0, int(total))
+                    if client_name:
+                        current["name"] = str(client_name)
+                    if wireless is not None:
+                        current["wireless"] = wireless
+                else:
+                    result[cid] = {
+                        "name": str(client_name or mac or cid),
+                        "mac": mac,
+                        "ip": str(first(client, "ip", "ipAddress") or ""),
+                        "wireless": bool(wireless),
+                        "rssi": None,
+                        "traffic_bytes": max(0, int(total)),
+                        "ap_mac": "",
+                        "ssid": ""
+                    }
     except RequestError:
         if not result:
             raise
@@ -252,7 +275,9 @@ def clients(base, key, site, timeout, verify, window):
     median = None
     if ordered:
         middle = len(ordered) // 2
-        median = ordered[middle] if len(ordered) % 2 else round((ordered[middle - 1] + ordered[middle]) / 2, 1)
+        median = ordered[middle] if len(ordered) % 2 else round(
+            (ordered[middle - 1] + ordered[middle]) / 2, 1
+        )
 
     return {
         "clients": result,
@@ -305,21 +330,30 @@ def compound_dpi_id(category, application):
 
 def dpi_v2(base, key, site, timeout, verify, window):
     payload, start, end = traffic_snapshot(base, key, site, timeout, verify, window)
+    rows = [row for row in payload.get("total_usage_by_app", []) if isinstance(row, dict)]
+    if not rows:
+        raise RequestError("v2 traffic returned no DPI applications")
+
     catalog, apps = dpi_catalog(base, key, timeout, verify), {}
-    for row in payload.get("total_usage_by_app", []):
-        if not isinstance(row, dict):
-            continue
+    for row in rows:
         category = first(row, "category", "category_id", "categoryId")
         application = first(row, "application", "app", "application_id", "applicationId", "appId")
         compound = compound_dpi_id(category, application)
         if compound is None:
             continue
         appid = safe_id(compound)
+
         rx = num(first(row, "bytes_received", "rx_bytes", "rxBytes", "bytes_rx", "bytesRx")) or 0
         tx = num(first(row, "bytes_transmitted", "tx_bytes", "txBytes", "bytes_tx", "bytesTx")) or 0
         total = num(first(row, "total_bytes", "totalBytes", "bytes", "num_bytes", "numBytes"))
         total = rx + tx if total is None else total
-        fallback_name = "Unidentified / Unknown" if int(category) == 255 or int(application) == 65535 else f"App {category}/{application}"
+
+        try:
+            unidentified = int(category) == 255 or int(application) == 65535
+        except (TypeError, ValueError):
+            unidentified = False
+        fallback_name = "Unidentified / Unknown" if unidentified else f"App {category}/{application}"
+
         item = apps.setdefault(appid, {
             "name": catalog.get(appid) or fallback_name,
             "bytes": 0,
@@ -332,7 +366,13 @@ def dpi_v2(base, key, site, timeout, verify, window):
         item["bytes"] += max(0, int(total))
         item["rx_bytes"] += max(0, int(rx))
         item["tx_bytes"] += max(0, int(tx))
-        item["client_count"] = max(item["client_count"], int(num(row.get("client_count")) or 0))
+        item["client_count"] = max(
+            item["client_count"], int(num(row.get("client_count")) or 0)
+        )
+
+    if not apps:
+        raise RequestError("v2 traffic contained no usable DPI applications")
+
     return {
         "applications": apps,
         "summary": {
@@ -361,20 +401,25 @@ def dpi_legacy(base, key, site, timeout, verify):
         appid = safe_id(compound if compound is not None else application)
         if not appid:
             continue
+
         rx = num(first(row, "rx_bytes", "rxBytes", "bytes_rx", "bytesRx")) or 0
         tx = num(first(row, "tx_bytes", "txBytes", "bytes_tx", "bytesTx")) or 0
         total = num(first(row, "bytes", "total_bytes", "totalBytes", "num_bytes", "numBytes"))
         total = rx + tx if total is None else total
+
         item = apps.setdefault(appid, {
             "name": str(first(row, "app_name", "appName", "name") or catalog.get(appid) or f"App {appid}"),
             "bytes": 0,
             "rx_bytes": 0,
             "tx_bytes": 0,
-            "category": str(category or "")
+            "category": str(category or ""),
+            "application": str(application or ""),
+            "client_count": int(num(row.get("client_count")) or 0)
         })
         item["bytes"] += max(0, int(total))
         item["rx_bytes"] += max(0, int(rx))
         item["tx_bytes"] += max(0, int(tx))
+
     return {
         "applications": apps,
         "summary": {
@@ -484,12 +529,10 @@ def main():
                         help="rolling traffic/DPI window in seconds (default: 86400)")
     parser.add_argument("--verify-tls", action="store_true")
 
-    # Zabbix leaves a user macro literal (for example {$UNIFI.TLS.ARG}) in the
-    # command line when that macro is not defined on the host or on the template
-    # that owns the item. The companion template is linked beside the base
-    # template, so sibling-template macros are not guaranteed to resolve here.
-    # Ignore only unresolved Zabbix macro tokens; keep rejecting all other
-    # unknown arguments so real configuration mistakes remain visible.
+    # Zabbix can leave a user macro literal (for example {$UNIFI.TLS.ARG}) in
+    # the command line when a macro defined only on a sibling linked template
+    # is not resolved for this external item. Ignore only unresolved Zabbix
+    # macro tokens so real command-line mistakes remain visible.
     args, unknown = parser.parse_known_args()
     unexpected = [
         token for token in unknown
