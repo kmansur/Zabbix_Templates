@@ -9,8 +9,10 @@ Portuguese version: [README.pt-BR.md](README.pt-BR.md)
 > `README.pt-BR.md` in the same change.
 
 Zabbix template project for monitoring a Ubiquiti UniFi Dream Machine Pro
-through the UniFi Network API, Site Manager API, CEF/syslog events, and
-optional NetFlow/IPFIX data.
+primarily through the local UniFi Network APIs. The current collector implements
+the official Integration API and keeps selected legacy Network endpoints for
+operational metrics that have not yet been migrated. Site Manager, CEF/syslog,
+and NetFlow/IPFIX remain planned integrations.
 
 ## Author
 
@@ -29,119 +31,94 @@ optional NetFlow/IPFIX data.
 
 - Discover UniFi sites, devices, networks, clients, WAN links, and gateway data.
 - Collect gateway health, WAN latency, packet loss, uptime, traffic, and device state.
-- Use UniFi logs and CEF exports for operational and security events.
+- Gradually migrate advanced telemetry from legacy Network endpoints to the documented Integration API.
 - Keep SNMP as an optional fallback for basic interface counters.
 
-## Planned Sources
+## Data Sources
 
-- Local Network API: `https://<udm-pro>/proxy/network/integration/v1`
+### Currently Implemented
+
+- Official local Network Integration API: `https://<udm-pro>/proxy/network/integration/v1`
+- Legacy Network operational endpoint used for advanced telemetry not yet
+  available in equivalent form through the Integration API:
+  `/proxy/network/api/s/<site>/stat/device`
+
+### Planned
+
 - Site Manager API: `https://api.ui.com/v1`
 - UniFi System Logs / SIEM CEF export
 - Traffic Flows / NetFlow/IPFIX
 
-## Creating API Keys
+Site Manager, CEF/syslog, and NetFlow/IPFIX are roadmap items and are not
+currently collected by the template.
 
-This project can use two different API keys. The local UniFi Network API key is
-the primary key for monitoring a UDM Pro on the LAN. The Site Manager API key is
-optional and is used when you want cloud-based or multi-site data from
-`api.ui.com`.
+## Creating the Local UniFi Network API Key
 
-### Local UniFi Network API Key
+The current template uses the **local UniFi Network API key**. This is separate
+from a Site Manager API key.
 
-Use this key for direct access to the UDM Pro, for example:
+### UniFi Network 10.6.x
+
+Current Ubiquiti guidance places local Network API key management and the
+version-specific API documentation under **UniFi Network > Integrations**.
+
+Official reference: [Getting Started with the Official UniFi API](https://help.ui.com/hc/en-us/articles/30076656117655-Getting-Started-with-the-Official-UniFi-API).
+
+Recommended process:
+
+1. Sign in to the UniFi Console/UDM Pro with an account allowed to administer Network.
+2. Open **UniFi Network**.
+3. Open **Integrations**.
+4. Create a local Network API key.
+5. Give it a clear name such as `zabbix-udm-pro-monitoring`.
+6. Copy and store the generated key securely.
+7. Store it in the Zabbix secret macro `{$UNIFI.API.KEY}`.
+
+> The local Network API key is not the same credential as a Site Manager API
+> key for `api.ui.com`.
+
+The collector uses the local API at:
 
 ```text
 https://<udm-pro-ip>/proxy/network/integration/v1
 ```
 
-Recommended process:
+The **Integrations** page also exposes API documentation matching the installed
+Network version. Review it after Network upgrades because endpoint schemas can
+change between releases.
 
-1. Log in to the UDM Pro web interface with an administrator account.
-2. Open the UniFi Network application.
-3. Go to **Settings**.
-4. Open **Control Plane**.
-5. Open **Integrations**.
-6. Find the **API Keys** or **Network API** section.
-7. Create a new API key.
-8. Give the key a clear name, for example:
-
-   ```text
-   zabbix-udm-pro-monitoring
-   ```
-
-9. If UniFi offers an expiration option, choose the policy that matches your
-   environment. For production monitoring, a non-expiring key is convenient, but
-   a rotating key policy is safer.
-10. Copy the generated key immediately and store it in the Zabbix secret macro
-    or in the script environment. UniFi may not show the full key again.
-11. Test the key from the Zabbix server or proxy:
-
-    ```bash
-    curl -k \
-      -H "Accept: application/json" \
-      -H "X-API-KEY: <api-key>" \
-      "https://<udm-pro-ip>/proxy/network/integration/v1/sites"
-    ```
-
-Expected result: a JSON response with the available UniFi site or sites. On a
-typical UDM Pro deployment, there will usually be one site.
-
-After listing sites, use the returned site ID to test devices:
+### Test the Key
 
 ```bash
-curl -k \
-  -H "Accept: application/json" \
-  -H "X-API-KEY: <api-key>" \
-  "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices"
+curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/info"
+
+curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/sites"
 ```
 
-And clients:
+After obtaining the site ID, test devices and the documented latest statistics
+endpoint:
 
 ```bash
-curl -k \
-  -H "Accept: application/json" \
-  -H "X-API-KEY: <api-key>" \
-  "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/clients"
+curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices"
+
+curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices/<device-id>/statistics/latest"
 ```
 
-### Site Manager API Key
+The latest statistics endpoint is used in 0.7.0 in parallel with the existing
+legacy telemetry. It supplies documented fields such as uptime, CPU and memory
+utilization, load averages, and uplink RX/TX rates.
 
-Use this key only when the template needs cloud data from UniFi Site Manager,
-such as multi-site inventory or ISP metrics from:
+### Common Errors
 
-```text
-https://api.ui.com/v1
-```
+- `401 Unauthorized`: invalid/missing key or a key from the wrong UniFi API surface.
+- `403 Forbidden`: the associated key/account cannot access the requested resource.
+- Timeout/connection errors: check routing, firewall, DNS, and HTTPS reachability.
+- TLS errors: use a trusted certificate and enable verification when possible.
 
-Recommended process:
+### Site Manager API Key — Planned
 
-1. Go to the UniFi developer or Site Manager API area associated with your UI
-   account.
-2. Create an API key for the account that owns or administers the UDM Pro.
-3. Give the key a clear name, for example:
-
-   ```text
-   zabbix-unifi-site-manager
-   ```
-
-4. Copy the key immediately and store it securely.
-5. Test the key:
-
-   ```bash
-   curl \
-     -H "Accept: application/json" \
-     -H "X-API-Key: <api-key>" \
-     "https://api.ui.com/v1/sites"
-   ```
-
-6. Test ISP metrics if you plan to use WAN history from Site Manager:
-
-   ```bash
-   curl \
-     -H "Accept: application/json" \
-     -H "X-API-Key: <api-key>" \
-     "https://api.ui.com/ea/isp-metrics/5m?duration=24h"
-   ```
+Site Manager uses a different key and `https://api.ui.com/v1`. Site Manager
+support remains planned and is not required by the current template.
 
 ### Security Recommendations
 
@@ -162,27 +139,28 @@ Recommended process:
 
 - Restrict API access at the firewall so only the Zabbix server or Zabbix proxy
   can reach the UDM Pro management interface.
-- Prefer HTTPS with valid certificates where possible. If the UDM Pro uses a
-  self-signed certificate, testing with `curl -k` is acceptable on a trusted LAN,
-  but production scripts should make this behavior explicit and documented.
+- Prefer HTTPS with valid certificates where possible. `{$UNIFI.TLS.ARG}` defaults
+  to `--timeout=20`, preserving the current self-signed-certificate behavior. Set
+  it to `--verify-tls` after the console certificate is trusted by the Zabbix host.
 - Rotate the key after staff changes, suspected exposure, or repository leaks.
 - Revoke old keys that are no longer used.
 
-## Planned Zabbix Components
+## Zabbix Components
 
-- Low-level discovery for devices, clients, networks, WAN links, and interfaces.
-- HTTP/API items for UniFi Network and Site Manager metrics.
-- Dependent items for JSON parsing.
-- Trigger prototypes for WAN degradation, device offline, packet loss, high latency,
-  firmware updates, and security events.
-- Optional syslog trapper items for CEF events.
+- Low-level discovery for devices, clients, networks, WAN links, interfaces,
+  storage, radios, and PoE budgets.
+- External master items and dependent items for local UniFi Network APIs.
+- Parallel official `statistics/latest` collection for gateway-class devices.
+- Existing legacy Network telemetry retained for WAN, storage, PoE, radio, and
+  other fields without a fully equivalent official replacement yet.
+- Site Manager, CEF/syslog, and NetFlow/IPFIX remain planned integrations.
 
 ## Zabbix Template
 
 Current project version:
 
 ```text
-0.6.10
+0.7.0
 ```
 
 The importable Zabbix 7.0 template is:
@@ -249,6 +227,8 @@ The initial template includes:
   graph prototypes.
 - Radio discovery with item prototypes for channel, channel width, frequency,
   and WLAN standard.
+- Parallel official Integration API device statistics: CPU, memory, uptime,
+  1/5/15-minute load averages, and uplink RX/TX rates for selected gateway models.
 - System health from `/proxy/network/api/s/default/stat/device`: CPU, memory,
   load average, aggregate storage, uptime, and CPU temperature.
 - Gateway identity and firmware information from the Network API endpoint:
@@ -315,6 +295,7 @@ For a broader validation checklist, see `docs/VALIDATION.md`.
 The most common operational thresholds are exposed as host macros:
 
 ```text
+{$UNIFI.TLS.ARG}
 {$UNIFI.CPU.WARN}
 {$UNIFI.MEMORY.WARN}
 {$UNIFI.STORAGE.WARN}
@@ -482,6 +463,10 @@ You can still test a single device manually:
 
 ### Suggested Next Additions
 
+- Continue migrating WAN, storage, PoE, and radio telemetry to documented API endpoints when equivalent fields are available.
+- Validate Network 10.6.x payloads on additional gateway models and refine `{$UNIFI.LLD.OFFICIAL.STATS.MODEL.MATCHES}` as needed.
+- Add Site Manager, CEF/syslog, and NetFlow/IPFIX as separate optional integrations.
+
 ### API Review Notes
 
 The Network API `stat/device` payload contains several high-value fields that are
@@ -501,7 +486,11 @@ good candidates for future template expansion:
 - Network services: `network_table`, VPN status, DHCP lease counts, IPv4 active
   leases, reported networks, and WAN failover state.
 
-## Confirmed Local API Responses
+## Confirmed Local API Responses from Previous Validation
+
+The examples below document an earlier validation environment and are retained
+for regression reference. Use the Network 10.6.x instructions above for current
+API-key creation and compatibility validation.
 
 The initial tests against the local UDM Pro Network API confirmed the following
 site response:

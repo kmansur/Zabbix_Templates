@@ -7,6 +7,33 @@ Todas as mudanças relevantes deste projeto são documentadas aqui.
 Manutenção da documentação: quando o `CHANGELOG.md` em inglês for atualizado,
 atualize este `CHANGELOG.pt-BR.md` na mesma alteração.
 
+## 0.7.0 - Não Lançado
+
+### Adicionado
+
+- Adicionado o comando `device-stats` ao coletor para o endpoint documentado da
+  Integration API `/sites/{siteId}/devices/{deviceId}/statistics/latest`.
+- Adicionada coleta oficial paralela de estatísticas de gateway aos templates
+  Zabbix 7.0 e 8.0, com CPU, memória, load averages de 1/5/15 minutos, uptime e
+  taxas RX/TX do uplink.
+- Adicionados protótipos de saúde e último erro da coleta oficial de estatísticas.
+- Adicionada `{$UNIFI.LLD.OFFICIAL.STATS.MODEL.MATCHES}` para controlar quais
+  modelos de gateway usam a coleta oficial paralela.
+- Adicionada `{$UNIFI.TLS.ARG}`. Mantenha `--timeout=20` para compatibilidade
+  atual com certificados autoassinados ou altere para `--verify-tls` para ativar
+  validação do certificado em todos os external checks.
+
+### Alterado
+
+- Atualizadas as versões de vendor dos dois templates para `0.7-0` e a versão
+  do coletor para `0.7.0`.
+- Atualizada a descrição da macro da chave e a documentação bilíngue para UniFi
+  Network 10.6.x usando **UniFi Network > Integrations**.
+- Separadas claramente as fontes locais já implementadas das integrações
+  planejadas de Site Manager, CEF/syslog e NetFlow/IPFIX.
+- Mantidas as métricas legadas e dashboards atuais enquanto as estatísticas
+  oficiais são validadas em paralelo.
+
 ## 0.6.10 - Não Lançado
 
 ### Adicionado
