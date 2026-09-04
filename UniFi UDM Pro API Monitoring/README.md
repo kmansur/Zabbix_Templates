@@ -90,18 +90,30 @@ change between releases.
 ### Test the Key
 
 ```bash
-curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/info"
+curl --fail-with-body -sS -k \
+  -H "Accept: application/json" \
+  -H "X-API-KEY: <api-key>" \
+  "https://<udm-pro-ip>/proxy/network/integration/v1/info"
 
-curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/sites"
+curl --fail-with-body -sS -k \
+  -H "Accept: application/json" \
+  -H "X-API-KEY: <api-key>" \
+  "https://<udm-pro-ip>/proxy/network/integration/v1/sites"
 ```
 
 After obtaining the site ID, test devices and the documented latest statistics
 endpoint:
 
 ```bash
-curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices"
+curl --fail-with-body -sS -k \
+  -H "Accept: application/json" \
+  -H "X-API-KEY: <api-key>" \
+  "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices"
 
-curl --fail-with-body -sS -k   -H "Accept: application/json"   -H "X-API-KEY: <api-key>"   "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices/<device-id>/statistics/latest"
+curl --fail-with-body -sS -k \
+  -H "Accept: application/json" \
+  -H "X-API-KEY: <api-key>" \
+  "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices/<device-id>/statistics/latest"
 ```
 
 The latest statistics endpoint is used in 0.7.0 in parallel with the existing
