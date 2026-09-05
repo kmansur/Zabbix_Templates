@@ -1,45 +1,131 @@
-name: Build UniFi Unified 0.8 RC
+name: Finalize clean UniFi 0.8
 
 on:
   push:
     branches:
-      - feature/unifi-unified-0.8
-    paths-ignore:
-      - 'UniFi UDM Pro API Monitoring/generated/**'
+      - release/unifi-0.8-clean
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  finalize:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feature/unifi-unified-0.8
+          ref: release/unifi-0.8-clean
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install build dependency
+      - name: Install YAML validator
         run: python -m pip install --disable-pip-version-check pyyaml
 
-      - name: Build and validate unified files
+      - name: Consolidate collector and templates
         run: |
-          python 'UniFi UDM Pro API Monitoring/tools/build_unified_0_8.py' --check
-          python 'UniFi UDM Pro API Monitoring/tools/build_staging_unified_0_8.py'
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
 
-      - name: Commit generated RC artifacts
+          root = Path('UniFi UDM Pro API Monitoring')
+
+          # One deployable collector. Keep the already live-tested unified RC5
+          # behavior, but publish it as the final 0.8.0 source path.
+          script_src = root / 'generated' / 'unifi_udm_pro_api.py'
+          script_dst = root / 'unifi_udm_pro_api.py'
+          script = script_src.read_text(encoding='utf-8')
+          script = script.replace('Generated UniFi unified collector 0.8.0-rc5.', 'UniFi UDM Pro API Monitoring unified collector 0.8.0.')
+          script = script.replace("VERSION = '0.8.0-rc5'", "VERSION = '0.8.0'")
+          script_dst.write_text(script, encoding='utf-8')
+          script_dst.chmod(0o755)
+
+          delays = {
+              'UniFi dashboard traffic 1h raw': '2m',
+              'UniFi dashboard traffic 1d raw': '5m',
+              'UniFi dashboard traffic 1w raw': '15m',
+              'UniFi dashboard traffic 1m raw': '1h',
+          }
+
+          for version in ('7.0', '8.0'):
+              src = root / 'generated' / f'UniFi_UDM_Pro_API_Monitoring_Unified_{version}.yaml'
+              dst = root / version / f'UniFi_UDM_Pro_API_Monitoring_{version}.yaml'
+              document = yaml.safe_load(src.read_text(encoding='utf-8'))
+              template = document['zabbix_export']['templates'][0]
+              template['description'] = (
+                  'UniFi UDM Pro API Monitoring 0.8.0. Unified template for gateway, WAN, system, '
+                  'devices, clients, radios and dashboard telemetry. Includes rolling 1h/1d/1w/30d '
+                  'client and DPI traffic windows, current wireless RSSI and Wi-Fi connectivity metrics.'
+              )
+              template.setdefault('vendor', {})['name'] = 'Net Tech'
+              template['vendor']['version'] = '0.8-0'
+
+              for item in template.get('items', []):
+                  if item.get('name') in delays:
+                      item['delay'] = delays[item['name']]
+
+              # Dashboard 0.2 uses only period-aware ranking contracts. Remove
+              # the temporary one-argument 1d compatibility prototypes.
+              for rule in template.get('discovery_rules', []):
+                  prototypes = rule.get('item_prototypes', [])
+                  rule['item_prototypes'] = [
+                      proto for proto in prototypes
+                      if not (
+                          str(proto.get('key', '')).startswith('unifi.client.traffic.bytes[{#')
+                          or str(proto.get('key', '')).startswith('unifi.dpi.app.bytes[{#')
+                      )
+                  ]
+
+              dst.write_text(
+                  yaml.safe_dump(document, sort_keys=False, allow_unicode=True, width=120),
+                  encoding='utf-8'
+              )
+
+          PY
+
+      - name: Validate final files
         run: |
-          git add 'UniFi UDM Pro API Monitoring/generated'
-          if git diff --cached --quiet; then
-            echo 'Generated artifacts are already current.'
-            exit 0
-          fi
+          python -m py_compile 'UniFi UDM Pro API Monitoring/unifi_udm_pro_api.py'
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          root = Path('UniFi UDM Pro API Monitoring')
+          for version in ('7.0', '8.0'):
+              path = root / version / f'UniFi_UDM_Pro_API_Monitoring_{version}.yaml'
+              doc = yaml.safe_load(path.read_text(encoding='utf-8'))
+              template = doc['zabbix_export']['templates'][0]
+              assert template['vendor']['version'] == '0.8-0'
+              keys = []
+              for rule in template.get('discovery_rules', []):
+                  keys.extend(str(p.get('key', '')) for p in rule.get('item_prototypes', []))
+              for period in ('1h', '1d', '1w', '1m'):
+                  assert any(k.startswith(f'unifi.client.traffic.bytes[{period},') for k in keys)
+                  assert any(k.startswith(f'unifi.dpi.app.bytes[{period},') for k in keys)
+              assert not any(k.startswith('unifi.client.traffic.bytes[{#') for k in keys)
+              assert not any(k.startswith('unifi.dpi.app.bytes[{#') for k in keys)
+          PY
+
+      - name: Remove RC build clutter
+        run: |
+          git rm -r 'UniFi UDM Pro API Monitoring/generated'
+          git rm -f \
+            'UniFi UDM Pro API Monitoring/unifi_dashboard_telemetry.py' \
+            'UniFi UDM Pro API Monitoring/7.0/UniFi_UDM_Pro_Dashboard_Telemetry_7.0.yaml' \
+            'UniFi UDM Pro API Monitoring/8.0/UniFi_UDM_Pro_Dashboard_Telemetry_8.0.yaml' \
+            'UniFi UDM Pro API Monitoring/tools/build_unified_0_8.py' \
+            'UniFi UDM Pro API Monitoring/tools/build_staging_unified_0_8.py'
+
+          git add \
+            'UniFi UDM Pro API Monitoring/unifi_udm_pro_api.py' \
+            'UniFi UDM Pro API Monitoring/7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml' \
+            'UniFi UDM Pro API Monitoring/8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml'
+
+      - name: Commit final clean layout
+        run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Build unified UniFi 0.8 RC artifacts'
-          git push origin HEAD:feature/unifi-unified-0.8
+          git commit -m 'Finalize unified UniFi 0.8 template and collector'
+          git push origin HEAD:release/unifi-0.8-clean
