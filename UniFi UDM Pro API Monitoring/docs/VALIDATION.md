@@ -1,78 +1,59 @@
-# Validation Checklist
+# UniFi UDM Pro API Monitoring 0.8 validation
 
-Use this checklist before promoting the template to production. Version 0.7.0
-adds parallel validation of the documented UniFi Network Integration API device
-statistics endpoint while keeping legacy telemetry in place.
+Validated reference environment:
 
-## 1. Script Sanity
+- UniFi Network 10.6.101
+- UniFi OS 5.1.31
+- Zabbix 8.0.0beta2
+- local Network API key from **UniFi Network > Integrations**
 
-```bash
-python3 -m py_compile unifi_udm_pro_api.py
-```
-
-## 2. Integration API Reachability
+## Collector validation completed
 
 ```bash
-python3 unifi_udm_pro_api.py info "$UNIFI_API_URL" "$UNIFI_API_KEY"
-python3 unifi_udm_pro_api.py sites "$UNIFI_API_URL" "$UNIFI_API_KEY"
+./unifi_udm_pro_api.py version
+./unifi_udm_pro_api.py info "$UDM" "$KEY" --timeout=20
+./unifi_udm_pro_api.py dashboard-client-status "$UDM" "$KEY" "$SITE" --timeout=20
+./unifi_udm_pro_api.py wifi-connectivity "$UDM" "$KEY" "$SITE" --timeout=20
+./unifi_udm_pro_api.py dpi-catalog "$UDM" "$KEY" "$SITE" --timeout=20
 ```
 
-Expected: valid JSON payloads without an `error` field.
+The following rolling traffic windows were live-tested with `dashboard-traffic`:
 
-## 3. Official Device Statistics
-
-First identify the site ID and gateway device ID, then test:
-
-```bash
-python3 unifi_udm_pro_api.py devices "$UNIFI_API_URL" "$UNIFI_API_KEY" "$UNIFI_SITE_ID"
-python3 unifi_udm_pro_api.py device-stats "$UNIFI_API_URL" "$UNIFI_API_KEY" "$UNIFI_SITE_ID" "$UNIFI_GATEWAY_DEVICE_ID"
+```text
+3600       1 hour
+86400      1 day
+604800     1 week
+2592000    30 days
 ```
 
-Expected fields on Network versions supporting the documented endpoint include
-`uptimeSec`, `cpuUtilizationPct`, `memoryUtilizationPct`, load averages, and
-`uplink.rxRateBps` / `uplink.txRateBps`.
+Observed response times for the larger windows were approximately 0.74 s for one week and 1.00 s for 30 days.
 
-## 4. TLS Validation
+Validated data:
 
-The templates define `{$UNIFI.TLS.ARG}`.
+- current client identity and RSSI;
+- per-client traffic rankings;
+- site DPI traffic rankings;
+- 2,112-entry DPI application catalog;
+- compound DPI application IDs `(category << 16) + application`;
+- Wi-Fi association, authentication, DHCP and DNS success ratios;
+- v2 traffic timestamps in Unix epoch milliseconds.
 
-- Default `--timeout=20`: preserves existing behavior, including self-signed
-  console certificates.
-- Set to `--verify-tls`: the collector validates the HTTPS certificate using the
-  Zabbix server/proxy system trust store.
+## Template validation
 
-After enabling verification, confirm both Integration API and legacy collector
-health items remain available.
+The final repository contains one template per Zabbix major version:
 
-## 5. Legacy Network API Payloads
-
-```bash
-python3 unifi_udm_pro_api.py system-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-python3 unifi_udm_pro_api.py gateway-info "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-python3 unifi_udm_pro_api.py wan-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-python3 unifi_udm_pro_api.py network-services "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-python3 unifi_udm_pro_api.py poe-budget "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-python3 unifi_udm_pro_api.py radio-performance "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-python3 unifi_udm_pro_api.py port-telemetry "$UNIFI_API_URL" "$UNIFI_API_KEY" default
+```text
+7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml
+8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml
 ```
 
-Expected: valid JSON payloads; numeric fields should be numeric.
+The templates were parsed successfully during the 0.8 consolidation build and contain the period-aware client and DPI contracts for `1h`, `1d`, `1w` and `1m`.
 
-## 6. Zabbix Template Checks
+Before tagging a later release, validate at minimum:
 
-1. Import `7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml` for Zabbix 7.0 or
-   `8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml` for Zabbix 8.0.
-2. Link the template to a test UDM Pro host.
-3. Set `{$UNIFI.API.URL}`, `{$UNIFI.API.KEY}`, `{$UNIFI.SITE.ID}` when needed,
-   and `{$UNIFI.NETWORK.SITE}`.
-4. Confirm the official gateway statistics discovery selects the expected device.
-5. Confirm official CPU, memory, load, uptime, and uplink items receive data.
-6. Confirm legacy collector status items remain `1` and existing dashboards keep data.
-7. Confirm no dependent item is unsupported after the first collection cycles.
-
-## 7. Trigger Validation
-
-1. Confirm the official statistics collection trigger stays recovered.
-2. Confirm informational firmware/reboot triggers stay stable.
-3. Confirm WAN/radio/PoE threshold triggers recover after values normalize.
-4. Confirm `gateway-info` dependent items (`name`, `type`, `mac`, `model`, `version`) are populated.
+1. Python syntax with `python3 -m py_compile unifi_udm_pro_api.py`.
+2. YAML parsing for both templates.
+3. `version` and `info` collector commands.
+4. One short and one long `dashboard-traffic` window.
+5. Zabbix master items and dependent discovery rules.
+6. Dashboard period switching and ranking changes.
