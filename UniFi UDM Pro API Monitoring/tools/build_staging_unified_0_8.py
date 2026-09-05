@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Create side-by-side staging copies of the generated unified 0.8 templates.
 
-The staging templates use a different template name/UUID and an isolated
-external-script filename so they can be imported and exercised without
-updating either the production template or production collector. Link a
-staging template only to a cloned Zabbix host during RC validation.
+The staging templates use a different template name, isolated object UUIDs and
+an isolated external-script filename so they can be imported and exercised
+without updating either the production template or production collector. Link
+a staging template only to a cloned Zabbix host during RC validation.
 """
 
 from __future__ import annotations
@@ -36,6 +36,31 @@ def replace_strings(value):
     return value
 
 
+def remap_template_uuids(value, version: str):
+    """Give every template-owned object a deterministic staging UUID.
+
+    Zabbix template imports identify template objects by UUID. Reusing item,
+    trigger, discovery-rule or prototype UUIDs from the production template can
+    make a side-by-side staging import collide with already imported objects.
+    Only the template subtree is remapped; the template-group UUID is preserved
+    so the staging template stays in the existing group.
+    """
+    if isinstance(value, dict):
+        remapped = {}
+        for key, child in value.items():
+            if key == "uuid" and isinstance(child, str) and child:
+                remapped[key] = uuid.uuid5(
+                    uuid.NAMESPACE_URL,
+                    f"https://nettech.com.br/zabbix/unifi/0.8/staging/{version}/object/{child}",
+                ).hex
+            else:
+                remapped[key] = remap_template_uuids(child, version)
+        return remapped
+    if isinstance(value, list):
+        return [remap_template_uuids(child, version) for child in value]
+    return value
+
+
 def main() -> None:
     for version in ("7.0", "8.0"):
         source = GENERATED / f"UniFi_UDM_Pro_API_Monitoring_Unified_{version}.yaml"
@@ -44,10 +69,9 @@ def main() -> None:
         document = yaml.safe_load(source.read_text(encoding="utf-8"))
         document = replace_strings(document)
         template = document["zabbix_export"]["templates"][0]
-        template["uuid"] = uuid.uuid5(
-            uuid.NAMESPACE_URL,
-            f"https://nettech.com.br/zabbix/unifi/0.8/staging/{version}",
-        ).hex
+        template = remap_template_uuids(template, version)
+        document["zabbix_export"]["templates"][0] = template
+
         template["template"] = STAGING_NAME
         template["name"] = STAGING_NAME
         template["description"] = (
