@@ -4,7 +4,7 @@ zabbix_export:
   - uuid: 9a7b1f8ac78a4c27aa0aa540c6485078
     name: Templates/Network devices
   templates:
-  - uuid: ee5bdaf0ae815f10be8472202f408bea
+  - uuid: d93fac0065495aa8aac84887d514c6b1
     template: UniFi UDM Pro API Monitoring Unified RC
     name: UniFi UDM Pro API Monitoring Unified RC
     description: 'UniFi UDM Pro API Monitoring 0.8.0-rc5. Unified collector/template release candidate. Adds dashboard telemetry,
@@ -16,7 +16,7 @@ zabbix_export:
     groups:
     - name: Templates/Network devices
     items:
-    - uuid: e404f614f7c0453ca21b8a94a2d64a63
+    - uuid: 8eed88fe31c65c3da907a5685a5ff495
       name: UniFi API info raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.TLS.ARG}"]
@@ -28,7 +28,7 @@ zabbix_export:
       tags:
       - tag: component
         value: api
-    - uuid: 9d38c15e9bb04ee4bf105022e7fed628
+    - uuid: 7a31371dfbdf517bbbd552934fa03b7f
       name: UniFi Integration API collection available
       type: DEPENDENT
       key: unifi.collector.integration.available
@@ -44,12 +44,12 @@ zabbix_export:
       - tag: component
         value: collector
       triggers:
-      - uuid: 5b7725bf8cad4f01bd4a49acac225b12
+      - uuid: d75280a1eec759e98ddf878e26d3bb7d
         expression: max(/UniFi UDM Pro API Monitoring Unified RC/unifi.collector.integration.available,10m)=0
         name: UniFi Integration API collection is failing
         priority: HIGH
         description: The Integration API master item is returning an error or invalid JSON.
-    - uuid: 1f17bbedaa0045c8932205b2f067c8d4
+    - uuid: c00ddb31ebde53fa86d616988e5f3de3
       name: UniFi Integration API last error
       type: DEPENDENT
       key: unifi.collector.integration.error
@@ -67,7 +67,7 @@ zabbix_export:
       tags:
       - tag: component
         value: collector
-    - uuid: 6254713021174394af4ad792e6afd651
+    - uuid: 81564528aff956408cb1a85600ea98d9
       name: UniFi Network application version
       type: DEPENDENT
       key: unifi.api.application_version
@@ -84,14 +84,14 @@ zabbix_export:
       - tag: component
         value: api
       triggers:
-      - uuid: 5d99c50b81584b3eb6cb5f4bf7b51582
+      - uuid: d78f2d6a9bdd5afeb9535183ed35ab5c
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.api.application_version,#1)<>last(/UniFi UDM Pro API
           Monitoring Unified RC/unifi.api.application_version,#2)
         name: UniFi Network application version changed
         opdata: 'Current version: {ITEM.LASTVALUE1}'
         priority: INFO
         manual_close: 'YES'
-    - uuid: 3dab808867e84e04a4234104afc18a8c
+    - uuid: 9acc27ac7571503a90bf0c726462285c
       name: UniFi devices summary raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["summary-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]
@@ -103,7 +103,7 @@ zabbix_export:
       tags:
       - tag: component
         value: devices
-    - uuid: 3f9d82832f254b5aa7f0443287f1b34d
+    - uuid: 3a9cd45fd31a5fdc97884b16411b4532
       name: UniFi devices total
       type: DEPENDENT
       key: unifi.devices.total
@@ -118,7 +118,7 @@ zabbix_export:
       tags:
       - tag: component
         value: devices
-    - uuid: 6c35c68d278549f09568e7e60638241c
+    - uuid: e5046fa1d3fa5a1a86a8cb26aa50496f
       name: UniFi devices online
       type: DEPENDENT
       key: unifi.devices.online
@@ -133,7 +133,7 @@ zabbix_export:
       tags:
       - tag: component
         value: devices
-    - uuid: 278cb10cc7bc442d9515688be3e2a81d
+    - uuid: e34e3c00dea151ec89aef37fc50cbae2
       name: UniFi devices offline
       type: DEPENDENT
       key: unifi.devices.offline
@@ -149,12 +149,12 @@ zabbix_export:
       - tag: component
         value: devices
       triggers:
-      - uuid: 1050877a97b84b97b3b677dd2ffbe2fe
+      - uuid: a84a9be661785f2b8c3b7f62e1363534
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.devices.offline)>0
         name: One or more UniFi devices are offline
         opdata: 'Offline devices: {ITEM.LASTVALUE1}'
         priority: HIGH
-    - uuid: f067061d6d7d48bf9cf7f75ef1a66193
+    - uuid: 19e72a337068572a933f477ad2b8365e
       name: UniFi devices with firmware update available
       type: DEPENDENT
       key: unifi.devices.updatable
@@ -170,12 +170,12 @@ zabbix_export:
       - tag: component
         value: devices
       triggers:
-      - uuid: a904b63e471b4dbf9ea70dba89781e60
+      - uuid: 34260a7888b25d029e765bfaf877d597
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.devices.updatable)>0
         name: One or more UniFi devices have firmware updates available
         opdata: 'Upgradeable devices: {ITEM.LASTVALUE1}'
         priority: INFO
-    - uuid: 8b6cbe0a77e145e4bf5136387741e00b
+    - uuid: 66743a8f3e335fc1b7c9439254f38a8a
       name: UniFi clients summary raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["summary-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]
@@ -187,7 +187,7 @@ zabbix_export:
       tags:
       - tag: component
         value: clients
-    - uuid: 77de80b9934942a7a5a801e504af4776
+    - uuid: eabb4fec5c355240a78e67134bb7818a
       name: UniFi clients total
       type: DEPENDENT
       key: unifi.clients.total
@@ -202,7 +202,7 @@ zabbix_export:
       tags:
       - tag: component
         value: clients
-    - uuid: 8bd0bdd5b4c54db6891e43ac5d2e447d
+    - uuid: 668876f223ac5b60a43dbf1f5ee88fd0
       name: UniFi wired clients
       type: DEPENDENT
       key: unifi.clients.wired
@@ -217,7 +217,7 @@ zabbix_export:
       tags:
       - tag: component
         value: clients
-    - uuid: bd789bd5599a44f89052bd86c47291bd
+    - uuid: 180e58e8ff485991ab9509c1effc0ee2
       name: UniFi wireless clients
       type: DEPENDENT
       key: unifi.clients.wireless
@@ -232,7 +232,7 @@ zabbix_export:
       tags:
       - tag: component
         value: clients
-    - uuid: da9692947d1b481aa8458105cc7d3fa0
+    - uuid: cb9227ead010525ea9895e47e874a269
       name: UniFi networks summary raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["summary-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]
@@ -244,7 +244,7 @@ zabbix_export:
       tags:
       - tag: component
         value: networks
-    - uuid: c37bcb1e0aad4dd9b8d8350d778e33fb
+    - uuid: 0a5bc624101551439a244bab399ef99e
       name: UniFi networks total
       type: DEPENDENT
       key: unifi.networks.total
@@ -259,7 +259,7 @@ zabbix_export:
       tags:
       - tag: component
         value: networks
-    - uuid: 6fded466bec2444aa5dddc7a6f995f9f
+    - uuid: 5b24f49dd89b57c3b793114bfd321fa2
       name: UniFi networks enabled
       type: DEPENDENT
       key: unifi.networks.enabled
@@ -274,7 +274,7 @@ zabbix_export:
       tags:
       - tag: component
         value: networks
-    - uuid: 4d74351599ab4238a3f1187e541c0aea
+    - uuid: 946b93d963225efc92b58561aa5d7e00
       name: UniFi networks disabled
       type: DEPENDENT
       key: unifi.networks.disabled
@@ -290,12 +290,12 @@ zabbix_export:
       - tag: component
         value: networks
       triggers:
-      - uuid: e48a3c9c06804057984a7132cd066503
+      - uuid: b9ff4e6ce572552a95fd34cdc45c4252
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.networks.disabled)>0
         name: One or more UniFi networks are disabled
         opdata: 'Disabled networks: {ITEM.LASTVALUE1}'
         priority: WARNING
-    - uuid: 51e5f40a88ce4339ba7dd9ccb28738d5
+    - uuid: a2363bc16eef555dba8e724f56cc8d5c
       name: UniFi system health raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["system-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -307,7 +307,7 @@ zabbix_export:
       tags:
       - tag: component
         value: system
-    - uuid: 7c9ef206f7fb4300ad7f4929494d0349
+    - uuid: e55365e9bd625325a8f20ade38988678
       name: UniFi gateway info raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["gateway-info","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -320,7 +320,7 @@ zabbix_export:
       tags:
       - tag: component
         value: gateway
-    - uuid: ad1deee83dde4003ad34238758e1471f
+    - uuid: 285f7235a8b75a068de3fc575f6b4592
       name: UniFi Network API gateway info collection available
       type: DEPENDENT
       key: unifi.collector.network.gateway_info.available
@@ -336,12 +336,12 @@ zabbix_export:
       - tag: component
         value: collector
       triggers:
-      - uuid: b463ad5be3a346baaeb8e90f5c73c793
+      - uuid: 9851e237a21252be885a5ae154afcc93
         expression: max(/UniFi UDM Pro API Monitoring Unified RC/unifi.collector.network.gateway_info.available,30m)=0
         name: UniFi Network API gateway info collection is failing
         priority: WARNING
         description: The gateway-info master item is returning an error or invalid JSON.
-    - uuid: e19e2ba02c7e4727ba178fe1a35cda87
+    - uuid: 80e94f0ab8a35efb8b33efbf482f064a
       name: UniFi Network API gateway info last error
       type: DEPENDENT
       key: unifi.collector.network.gateway_info.error
@@ -359,7 +359,7 @@ zabbix_export:
       tags:
       - tag: component
         value: collector
-    - uuid: 1d32dbfc0f6b45ac8484e60c31609d98
+    - uuid: cc4eafca03495d7fbb9f5a902f159263
       name: UniFi gateway model
       type: DEPENDENT
       key: unifi.gateway.model
@@ -376,7 +376,7 @@ zabbix_export:
       tags:
       - tag: component
         value: gateway
-    - uuid: 81ccd16ecfd94022aeb0e8e9fb4b5b36
+    - uuid: b16ad7e84b235ec4b2e0e985bfbc51e9
       name: UniFi gateway name
       type: DEPENDENT
       key: unifi.gateway.name
@@ -393,7 +393,7 @@ zabbix_export:
       tags:
       - tag: component
         value: gateway
-    - uuid: 89fc25f432d34dcd8b02f59ccd13350a
+    - uuid: 8493dd593eb7517a8c6dca857626020e
       name: UniFi gateway type
       type: DEPENDENT
       key: unifi.gateway.type
@@ -410,7 +410,7 @@ zabbix_export:
       tags:
       - tag: component
         value: gateway
-    - uuid: 56ad95f43eb04a868236465cb4c305cd
+    - uuid: ceb5be4727c75708a53e0fa0e838ef4a
       name: UniFi gateway MAC address
       type: DEPENDENT
       key: unifi.gateway.mac
@@ -427,7 +427,7 @@ zabbix_export:
       tags:
       - tag: component
         value: gateway
-    - uuid: e36a0ea262484734b7a79423d58f2e5b
+    - uuid: 506315d8fb5c52d88731a416c02bfb13
       name: UniFi gateway firmware version
       type: DEPENDENT
       key: unifi.gateway.version
@@ -445,13 +445,13 @@ zabbix_export:
       - tag: component
         value: gateway
       triggers:
-      - uuid: 285dac7593ae4893a8816e84045c4aef
+      - uuid: 1e0bc43396265f2c9743f2f5c5e08c1a
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.gateway.version,#1)<>last(/UniFi UDM Pro API Monitoring
           Unified RC/unifi.gateway.version,#2)
         name: UniFi gateway firmware version changed
         opdata: 'Current version: {ITEM.LASTVALUE1}'
         priority: INFO
-    - uuid: 5869923c905e4130be6af7f170ced502
+    - uuid: f7bf60a0bdd95211a041435ea00b8e0e
       name: UniFi gateway displayable version
       type: DEPENDENT
       key: unifi.gateway.displayable_version
@@ -468,7 +468,7 @@ zabbix_export:
       tags:
       - tag: component
         value: gateway
-    - uuid: 4cf120c277674909b9ffaa83f17f5924
+    - uuid: 8f8fcbbfc472576bb261070d5a5fd7f5
       name: UniFi gateway kernel version
       type: DEPENDENT
       key: unifi.gateway.kernel_version
@@ -485,7 +485,7 @@ zabbix_export:
       tags:
       - tag: component
         value: gateway
-    - uuid: 07de12f822554d8ba6b88be9d38324ee
+    - uuid: a1a2d2ba6f8951b6b8b1b75716f1e4ed
       name: UniFi gateway architecture
       type: DEPENDENT
       key: unifi.gateway.architecture
@@ -502,7 +502,7 @@ zabbix_export:
       tags:
       - tag: component
         value: gateway
-    - uuid: 366bd34332b04d48a3adcf605bb1fc00
+    - uuid: e4808f5c830851acb795e173adf54ac4
       name: UniFi gateway firmware update available
       type: DEPENDENT
       key: unifi.gateway.upgradable
@@ -521,11 +521,11 @@ zabbix_export:
       - tag: component
         value: gateway
       triggers:
-      - uuid: 37d8c72d19ce4808b027d6fe693ebf68
+      - uuid: 809e6f94f4b4583f80dc3db939216a64
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.gateway.upgradable)=1
         name: UniFi gateway firmware update is available
         priority: INFO
-    - uuid: 51edfff4c941420fb8918a33e1df2a21
+    - uuid: 27133c32bd2c50cb9f0b78ac6a6d40a9
       name: UniFi Network API system collection available
       type: DEPENDENT
       key: unifi.collector.network.system.available
@@ -541,12 +541,12 @@ zabbix_export:
       - tag: component
         value: collector
       triggers:
-      - uuid: 7cef57945cf44b1489a6b661a39169df
+      - uuid: 9ff3a0c6bd5053dc945e5776eeab3b63
         expression: max(/UniFi UDM Pro API Monitoring Unified RC/unifi.collector.network.system.available,10m)=0
         name: UniFi Network API system collection is failing
         priority: HIGH
         description: The Network API system-health master item is returning an error or invalid JSON.
-    - uuid: d32cc38ca3fd4c27af994f292ca97747
+    - uuid: 0f855f39c06a594ead977ee149ba1468
       name: UniFi Network API system last error
       type: DEPENDENT
       key: unifi.collector.network.system.error
@@ -564,7 +564,7 @@ zabbix_export:
       tags:
       - tag: component
         value: collector
-    - uuid: 94d5980801fc40279db1eb83d7139d36
+    - uuid: 54500ace70d1591d980688104a1df912
       name: UniFi system CPU utilization
       type: DEPENDENT
       key: unifi.system.cpu.percent
@@ -582,12 +582,12 @@ zabbix_export:
       - tag: component
         value: system
       triggers:
-      - uuid: 1aa49b3c3b9a43af82114fc6b42d4562
+      - uuid: b0351ab55ee95abfb909493eb59dc46d
         expression: avg(/UniFi UDM Pro API Monitoring Unified RC/unifi.system.cpu.percent,5m)>{$UNIFI.CPU.WARN}
         name: High UniFi system CPU utilization
         opdata: 'CPU: {ITEM.LASTVALUE1}'
         priority: WARNING
-    - uuid: 12ef83b8336d471fb81dbccb4fcd3d64
+    - uuid: cac2e67ba5485feda93febb7f6c31ff5
       name: UniFi system memory utilization
       type: DEPENDENT
       key: unifi.system.memory.percent
@@ -605,12 +605,12 @@ zabbix_export:
       - tag: component
         value: system
       triggers:
-      - uuid: 14addb82de4a413c9e38f66f4725e8c3
+      - uuid: d35bb5ae9dc15edcb8a2d1a094eb9857
         expression: avg(/UniFi UDM Pro API Monitoring Unified RC/unifi.system.memory.percent,5m)>{$UNIFI.MEMORY.WARN}
         name: High UniFi system memory utilization
         opdata: 'Memory: {ITEM.LASTVALUE1}'
         priority: WARNING
-    - uuid: 28fcb2c11dcf4c19956cf2524cbdff7d
+    - uuid: 21737ca9eb3d5e8b9e9ba0bf901ec05b
       name: UniFi system memory total
       type: DEPENDENT
       key: unifi.system.memory.total
@@ -626,7 +626,7 @@ zabbix_export:
       tags:
       - tag: component
         value: system
-    - uuid: 38e0770ff9f64976936674ced88800f1
+    - uuid: 4f4afa33b2b3566ca4330f10a3364dc6
       name: UniFi system memory used
       type: DEPENDENT
       key: unifi.system.memory.used
@@ -642,7 +642,7 @@ zabbix_export:
       tags:
       - tag: component
         value: system
-    - uuid: 6304ae77b11141a6a2597e69a4e1d831
+    - uuid: 12743e67d1b354ffa1a5d92b12d31ebe
       name: UniFi system load average 1m
       type: DEPENDENT
       key: unifi.system.loadavg_1
@@ -658,7 +658,7 @@ zabbix_export:
       tags:
       - tag: component
         value: system
-    - uuid: 9d44a984e4cd41909f92784af3d09243
+    - uuid: 782aadc01e8e5c0eb11aad693584d0a6
       name: UniFi system storage utilization
       type: DEPENDENT
       key: unifi.system.storage.percent
@@ -676,12 +676,12 @@ zabbix_export:
       - tag: component
         value: storage
       triggers:
-      - uuid: fc9551ce6d2744c2be4ab9a18f8ff504
+      - uuid: abb569758d2850e1975e2a83cee38917
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.system.storage.percent)>{$UNIFI.STORAGE.WARN}
         name: High UniFi system storage utilization
         opdata: 'Storage: {ITEM.LASTVALUE1}'
         priority: WARNING
-    - uuid: e3916972a7e74566946c3e7110517480
+    - uuid: f121cf8495555c579b3b4dcb5fa47273
       name: UniFi system storage total
       type: DEPENDENT
       key: unifi.system.storage.total
@@ -697,7 +697,7 @@ zabbix_export:
       tags:
       - tag: component
         value: storage
-    - uuid: 25863b1e78144503ac89d232eeb3d082
+    - uuid: 6bd0caf135985c15b3a8cedcdbd97b49
       name: UniFi system storage used
       type: DEPENDENT
       key: unifi.system.storage.used
@@ -713,7 +713,7 @@ zabbix_export:
       tags:
       - tag: component
         value: storage
-    - uuid: 0729c1854e4046098886be6f20f54278
+    - uuid: 91ff6e07b8255b8c8663b4b22d3953a3
       name: UniFi system storage free
       type: DEPENDENT
       key: unifi.system.storage.free
@@ -729,7 +729,7 @@ zabbix_export:
       tags:
       - tag: component
         value: storage
-    - uuid: f90f4fc1c23c44eea29e4896a3577937
+    - uuid: 29ff831815fe5e1eb6324d49c398d301
       name: UniFi system CPU temperature
       type: DEPENDENT
       key: unifi.system.temperature.cpu
@@ -749,12 +749,12 @@ zabbix_export:
       - tag: component
         value: temperature
       triggers:
-      - uuid: 56de8cd08da64b658f379f35114783a1
+      - uuid: 78fe207165ab5a11b80fb459f043f730
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.system.temperature.cpu)>{$UNIFI.TEMP.WARN}
         name: High UniFi system CPU temperature
         opdata: 'CPU temperature: {ITEM.LASTVALUE1}'
         priority: WARNING
-    - uuid: b2c1d09c2e6647c88aa4341805ceea4b
+    - uuid: 35fb275eb48e5e7a9a481b7cdf2d48ed
       name: UniFi WAN health raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["wan-health","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -766,7 +766,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: 4ab7a39ce2f842028a7c64b10f522c2c
+    - uuid: aea5d72ea8875e35820e8b165ecbd043
       name: UniFi Network API WAN collection available
       type: DEPENDENT
       key: unifi.collector.network.wan.available
@@ -782,12 +782,12 @@ zabbix_export:
       - tag: component
         value: collector
       triggers:
-      - uuid: 82f2213752fc430291a381d9cab30464
+      - uuid: c46847fa00ad5ce5b47fd3f00ee364c8
         expression: max(/UniFi UDM Pro API Monitoring Unified RC/unifi.collector.network.wan.available,10m)=0
         name: UniFi Network API WAN collection is failing
         priority: HIGH
         description: The Network API wan-health master item is returning an error or invalid JSON.
-    - uuid: a455f8faea4447fca0132fdf51c1479f
+    - uuid: cab9de58cdce5b7cb974004818fad1b6
       name: UniFi Network API WAN last error
       type: DEPENDENT
       key: unifi.collector.network.wan.error
@@ -805,7 +805,7 @@ zabbix_export:
       tags:
       - tag: component
         value: collector
-    - uuid: 7a08b50aae0f45349db31ed79f610abb
+    - uuid: f007cb6405785106ab6780cfd9616cbd
       name: UniFi WAN latency
       type: DEPENDENT
       key: unifi.wan.latency
@@ -823,12 +823,12 @@ zabbix_export:
       - tag: component
         value: internet
       triggers:
-      - uuid: 14a43165a09c405e8c970287a2b54f38
+      - uuid: 204ca33d4244538ba72a1aa4b90d6eb3
         expression: avg(/UniFi UDM Pro API Monitoring Unified RC/unifi.wan.latency,5m)>{$UNIFI.WAN.LATENCY.WARN}
         name: High UniFi WAN latency
         opdata: 'Latency: {ITEM.LASTVALUE1}'
         priority: WARNING
-    - uuid: 94e2763e8e0c4582b8b712dafd25642f
+    - uuid: c900ba51c7b1553597b09f749c6dee4b
       name: UniFi WAN packet loss
       type: DEPENDENT
       key: unifi.wan.packet_loss
@@ -846,12 +846,12 @@ zabbix_export:
       - tag: component
         value: internet
       triggers:
-      - uuid: d310ce73981b4961ae1a0db15de118bc
+      - uuid: 0050634f08d05535bb0d3b28b6e58cda
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.wan.packet_loss)>{$UNIFI.WAN.LOSS.WARN}
         name: High UniFi WAN packet loss
         opdata: 'Packet loss: {ITEM.LASTVALUE1}'
         priority: HIGH
-    - uuid: 03d07f8f85384062942052a584586aa6
+    - uuid: e3a515ae64ed5b58959d027b9c01c9f9
       name: UniFi WAN availability
       type: DEPENDENT
       key: unifi.wan.availability
@@ -869,12 +869,12 @@ zabbix_export:
       - tag: component
         value: internet
       triggers:
-      - uuid: c5116a844f6f498e9c5f53aeb1c9d22e
+      - uuid: 80b6d18cc9cb55e3ac42f81634fe923d
         expression: avg(/UniFi UDM Pro API Monitoring Unified RC/unifi.wan.availability,10m)<{$UNIFI.WAN.AVAILABILITY.MIN}
         name: Low UniFi WAN availability
         opdata: 'Availability: {ITEM.LASTVALUE1}'
         priority: WARNING
-    - uuid: 8ae03c9289834292990cd56c789b49a0
+    - uuid: 67b02ac5b26050a898cdbd0454d99a53
       name: UniFi WAN download rate
       type: DEPENDENT
       key: unifi.wan.rx_bps
@@ -890,7 +890,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: 9c07b363607840358f88a011a95650d1
+    - uuid: ce8d7417032853cda8c62212179d2ffd
       name: UniFi WAN upload rate
       type: DEPENDENT
       key: unifi.wan.tx_bps
@@ -906,7 +906,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: c484d0fef770435285ca4cdbdd6972eb
+    - uuid: ad367c73429d52349711196957dae5ca
       name: UniFi WAN speedtest download
       type: DEPENDENT
       key: unifi.wan.speedtest.download
@@ -923,7 +923,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: 7f803e3d2338419988efba405bd92c5d
+    - uuid: 642fdaa07ef954769dd9ee54a90c7bae
       name: UniFi WAN speedtest upload
       type: DEPENDENT
       key: unifi.wan.speedtest.upload
@@ -940,7 +940,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: d1437919063b40ccb54e1a98b12b5681
+    - uuid: f2347ab0e5605bb38a8874cad742daca
       name: UniFi WAN speedtest latency
       type: DEPENDENT
       key: unifi.wan.speedtest.latency
@@ -957,7 +957,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: ca47c35e55bb4aee8bf67f4c45284513
+    - uuid: 03112d4c4d4c5bf0a92d7484a78d8124
       name: UniFi WAN speedtest last run
       type: DEPENDENT
       key: unifi.wan.speedtest.last_run
@@ -973,7 +973,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: d7a982c9fb7b4ed2abb90251be0d3ef3
+    - uuid: 7e3b7caddefe55b0a7134afdcdf69ce7
       name: UniFi WAN speedtest age
       type: DEPENDENT
       key: unifi.wan.speedtest.age
@@ -990,12 +990,12 @@ zabbix_export:
       - tag: component
         value: internet
       triggers:
-      - uuid: 08dd8dbf847e40bbbb546fc6dbfa8dac
+      - uuid: 1d8ff9d6c2b1515d86558498f990bb2f
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.wan.speedtest.age)>{$UNIFI.SPEEDTEST.MAX_AGE}
         name: UniFi WAN speedtest result is stale
         opdata: 'Speedtest age: {ITEM.LASTVALUE1}'
         priority: INFO
-    - uuid: 16d56f8aff5e4876a41b22f6515ef3fe
+    - uuid: 632839435b235624a02e3f357fb81298
       name: UniFi WAN speedtest status
       type: DEPENDENT
       key: unifi.wan.speedtest.status
@@ -1012,7 +1012,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: df6607337f364f4498b42eee29c6ffef
+    - uuid: 75294a19213459e3825f773ae7a88374
       name: UniFi WAN alive
       type: DEPENDENT
       key: unifi.wan.alive
@@ -1031,11 +1031,11 @@ zabbix_export:
       - tag: component
         value: internet
       triggers:
-      - uuid: 6e269c2148bb4003bb18d8b5aef47171
+      - uuid: 1dc114f74ecb553487fba9d56c4ed61a
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.wan.alive)=0
         name: UniFi WAN is not alive
         priority: HIGH
-    - uuid: c96f27ad87f84f7d83185e7ab0ed1e28
+    - uuid: 6b88727a978057b6b053d626cf954934
       name: UniFi WAN IP address
       type: DEPENDENT
       key: unifi.wan.ip
@@ -1052,7 +1052,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: 2d45fdc43d754b0a89b52d6add3a5f9d
+    - uuid: 1fddf13f239f52448d410aea90055247
       name: UniFi WAN active interface
       type: DEPENDENT
       key: unifi.wan.active
@@ -1069,7 +1069,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: d99a89e2526049c0be5c41b193849568
+    - uuid: f8f93a79ac6c54bca39f879974a2799b
       name: UniFi WAN failover enabled
       type: DEPENDENT
       key: unifi.wan.failover.enabled
@@ -1087,7 +1087,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: 26afbf6fe5a042fc8fbca14edeb9ce06
+    - uuid: 63a9b680af725b36bf55199e7f036d5a
       name: UniFi WAN primary active
       type: DEPENDENT
       key: unifi.wan.primary.active
@@ -1106,13 +1106,13 @@ zabbix_export:
       - tag: component
         value: internet
       triggers:
-      - uuid: f4192f6ee2524f35968a55ab9e18b799
+      - uuid: 43d38b08c0805bc0afd35a898100b9a5
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.wan.primary.active)=0 and last(/UniFi UDM Pro API
           Monitoring Unified RC/unifi.wan.failover.enabled)=1
         name: UniFi WAN primary link is not active
         priority: WARNING
         description: The UDM reports a non-primary WAN as the active uplink while multi-WAN/failover is available.
-    - uuid: eac36c7858024122a98706fb23891378
+    - uuid: e6471c48e114534794bff8d4eff57b3b
       name: UniFi WAN failover state
       type: DEPENDENT
       key: unifi.wan.failover.state
@@ -1129,7 +1129,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: 55ab0d78c7424506a11e76b50f00dc39
+    - uuid: 16ea68e0861e50558f832d4d85b88b97
       name: UniFi WAN count
       type: DEPENDENT
       key: unifi.wan.count
@@ -1144,7 +1144,7 @@ zabbix_export:
       tags:
       - tag: component
         value: internet
-    - uuid: cc49b1a6fe1043d98b2523236fc30800
+    - uuid: 3f7a5f9b8b5e59c7a0a2f91bebfccb7b
       name: UniFi network services raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["network-services","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -1157,7 +1157,7 @@ zabbix_export:
       tags:
       - tag: component
         value: network-services
-    - uuid: 06378ca1acd94b8a932f9fae956ce528
+    - uuid: 7b09181503555fc0b94fe5f4b1d7d43d
       name: UniFi Network API services collection available
       type: DEPENDENT
       key: unifi.collector.network.services.available
@@ -1173,12 +1173,12 @@ zabbix_export:
       - tag: component
         value: collector
       triggers:
-      - uuid: 645ea35f0af041b69e962fd1b99b2139
+      - uuid: b0e5edfabd885dcebed9fcdf2fbf62fc
         expression: max(/UniFi UDM Pro API Monitoring Unified RC/unifi.collector.network.services.available,15m)=0
         name: UniFi Network API services collection is failing
         priority: WARNING
         description: The network-services master item is returning an error or invalid JSON.
-    - uuid: 5513f49480074a45b47765ded4a39c74
+    - uuid: c8eec4cff4015f2e870dc8d969cb3eb6
       name: UniFi Network API services last error
       type: DEPENDENT
       key: unifi.collector.network.services.error
@@ -1196,7 +1196,7 @@ zabbix_export:
       tags:
       - tag: component
         value: collector
-    - uuid: eebe804ba8f04e228735476efbe604b2
+    - uuid: c26ba08a14c4511ab588de53af9d4dfa
       name: UniFi DHCP networks
       type: DEPENDENT
       key: unifi.dhcp.networks
@@ -1211,7 +1211,7 @@ zabbix_export:
       tags:
       - tag: component
         value: dhcp
-    - uuid: 1d30b066b84547dcae8ac569ac28c359
+    - uuid: beef61fd620b5ea189fa7edbca4fa4c3
       name: UniFi DHCP active leases
       type: DEPENDENT
       key: unifi.dhcp.active_leases
@@ -1226,7 +1226,7 @@ zabbix_export:
       tags:
       - tag: component
         value: dhcp
-    - uuid: 5d689f53220848f49e49802bb51b2ede
+    - uuid: 225689748eed5803ad0e96f9aedc7831
       name: UniFi VPN tunnels
       type: DEPENDENT
       key: unifi.vpn.total
@@ -1241,7 +1241,7 @@ zabbix_export:
       tags:
       - tag: component
         value: vpn
-    - uuid: bcb1e2913d014456902bfe2f288f8b78
+    - uuid: 16c99e7765685f3cb96110207a69ed0f
       name: UniFi VPN enabled tunnels
       type: DEPENDENT
       key: unifi.vpn.enabled
@@ -1256,7 +1256,7 @@ zabbix_export:
       tags:
       - tag: component
         value: vpn
-    - uuid: 72e1d1090d46468e998f499c55b896d1
+    - uuid: a185be3d684a5c5486ace6d54440324f
       name: UniFi VPN up tunnels
       type: DEPENDENT
       key: unifi.vpn.up
@@ -1272,13 +1272,13 @@ zabbix_export:
       - tag: component
         value: vpn
       triggers:
-      - uuid: 29d90f51d5d14b66b8e8548a085c4669
+      - uuid: c9aa93f3350a50dba31997fc6dace196
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.vpn.enabled)>0 and last(/UniFi UDM Pro API Monitoring
           Unified RC/unifi.vpn.up)<last(/UniFi UDM Pro API Monitoring Unified RC/unifi.vpn.enabled)
         name: One or more UniFi VPN tunnels are down
         opdata: 'Up: {ITEM.LASTVALUE1}'
         priority: WARNING
-    - uuid: 9dbe7cf052b4475d98d88586421b5b36
+    - uuid: 55fe17dfd99e55c7b833fcb7d3b04b5a
       name: UniFi IDS/IPS enabled
       type: DEPENDENT
       key: unifi.ids.enabled
@@ -1296,7 +1296,7 @@ zabbix_export:
       tags:
       - tag: component
         value: security
-    - uuid: df0f64b50c7a464f8a7efb1a55d02cbb
+    - uuid: 7c840d5b38bb59b992ddb36dbd9f1e1c
       name: UniFi IDS/IPS mode
       type: DEPENDENT
       key: unifi.ids.mode
@@ -1313,7 +1313,7 @@ zabbix_export:
       tags:
       - tag: component
         value: security
-    - uuid: e126d65317e04ed3b110fba8b6ead092
+    - uuid: 1972c968294b52eba85bb4be4d1d3809
       name: UniFi IDS/IPS signature rules
       type: DEPENDENT
       key: unifi.ids.signature.rules
@@ -1328,7 +1328,7 @@ zabbix_export:
       tags:
       - tag: component
         value: security
-    - uuid: 8eda0a205a1a4aeeaf1d5bb38db3922e
+    - uuid: 5371705e638c552db41b76675f9ce103
       name: UniFi IDS/IPS signature version
       type: DEPENDENT
       key: unifi.ids.signature.version
@@ -1345,7 +1345,7 @@ zabbix_export:
       tags:
       - tag: component
         value: security
-    - uuid: 55acc522928148728a5ecd613e240bfd
+    - uuid: 9834b0bb113d5a738bbba7d605d16087
       name: UniFi IDS/IPS signature last update
       type: DEPENDENT
       key: unifi.ids.signature.last_update
@@ -1361,7 +1361,7 @@ zabbix_export:
       tags:
       - tag: component
         value: security
-    - uuid: 72650f33bb8d475eb8d45bd08298149f
+    - uuid: c92800172d375a65a98ae4518d405d0a
       name: UniFi IDS/IPS signature age
       type: DEPENDENT
       key: unifi.ids.signature.age
@@ -1378,13 +1378,13 @@ zabbix_export:
       - tag: component
         value: security
       triggers:
-      - uuid: 68548320ae9e478ea49c7bce53b47ba2
+      - uuid: 1e53ad4bb5e25671b568e3c3013e5fb5
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.ids.enabled)=1 and last(/UniFi UDM Pro API Monitoring
           Unified RC/unifi.ids.signature.age)>{$UNIFI.IDS.SIGNATURE.MAX_AGE}
         name: UniFi IDS/IPS signature data is stale
         opdata: 'Signature age: {ITEM.LASTVALUE1}'
         priority: WARNING
-    - uuid: 24b68df79fb8488baeb8b0948f0583ae
+    - uuid: 826794acd4da5390a403efe906fb8211
       name: UniFi PoE budget raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -1398,7 +1398,7 @@ zabbix_export:
       tags:
       - tag: component
         value: poe
-    - uuid: 477cfcc1f04546669f27a5165ff997a3
+    - uuid: 947ae7a5a9825fa5b72cda3a49ce9914
       name: UniFi PoE budget collection available
       type: DEPENDENT
       key: unifi.collector.network.poe_budget.available
@@ -1414,12 +1414,12 @@ zabbix_export:
       - tag: component
         value: collector
       triggers:
-      - uuid: d8604caadb9a4e7d8e85a6d89b42ffe8
+      - uuid: 95c94e1c24855cb4a4c726826f937b01
         expression: max(/UniFi UDM Pro API Monitoring Unified RC/unifi.collector.network.poe_budget.available,15m)=0
         name: UniFi PoE budget collection is failing
         priority: WARNING
         description: The PoE budget master item is returning an error or invalid JSON.
-    - uuid: 77ae10e2c6a84cbbad6e8fe9b9585580
+    - uuid: 999433df35965b938e0624539a8fdcf0
       name: UniFi PoE budget last error
       type: DEPENDENT
       key: unifi.collector.network.poe_budget.error
@@ -1437,7 +1437,7 @@ zabbix_export:
       tags:
       - tag: component
         value: collector
-    - uuid: 4f2d12c6478c43e5abfbc1aad5d035cb
+    - uuid: 9708fae4a7995f8eba1f4e9d822c57e9
       name: UniFi port telemetry raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -1451,7 +1451,7 @@ zabbix_export:
       tags:
       - tag: component
         value: ports
-    - uuid: e24c9b0d15ce423a96ec9bf116eb62ba
+    - uuid: 946753342ef25182bd0879f43f1557cb
       name: UniFi port collection available
       type: DEPENDENT
       key: unifi.collector.network.ports.available
@@ -1467,12 +1467,12 @@ zabbix_export:
       - tag: component
         value: collector
       triggers:
-      - uuid: a7c5deb0f11747568394b287d036019e
+      - uuid: 05c6c58815bf59eb8b280b5edaed38c2
         expression: max(/UniFi UDM Pro API Monitoring Unified RC/unifi.collector.network.ports.available,15m)=0
         name: UniFi port collection is failing
         priority: WARNING
         description: The Port telemetry master item is returning an error or invalid JSON.
-    - uuid: b34b84b6d3484844a72073937b97ec9c
+    - uuid: 40972ed751d053abbab4c0d61ecd3eae
       name: UniFi port last error
       type: DEPENDENT
       key: unifi.collector.network.ports.error
@@ -1490,7 +1490,7 @@ zabbix_export:
       tags:
       - tag: component
         value: collector
-    - uuid: 928ff53e228f40c9a52b2f0f2c8c382f
+    - uuid: c9526b0bedc3543390a66aeacba5330d
       name: UniFi radio performance raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -1504,7 +1504,7 @@ zabbix_export:
       tags:
       - tag: component
         value: radios
-    - uuid: f166288f7c3048a6a051d13ac96259b3
+    - uuid: 5c32e628777b5737be5d1d1764dcfa95
       name: UniFi radio collection available
       type: DEPENDENT
       key: unifi.collector.network.radios.available
@@ -1520,12 +1520,12 @@ zabbix_export:
       - tag: component
         value: collector
       triggers:
-      - uuid: 562ab5f03e1e4aaaab9de658d022eb6b
+      - uuid: c8d34fd3007d5add8212d9b196d32a89
         expression: max(/UniFi UDM Pro API Monitoring Unified RC/unifi.collector.network.radios.available,15m)=0
         name: UniFi radio collection is failing
         priority: WARNING
         description: The radio performance master item is returning an error or invalid JSON.
-    - uuid: 4528ab32a02a48a09eb347327866152d
+    - uuid: 04baab967df45dfabcab0b3562d01994
       name: UniFi radio last error
       type: DEPENDENT
       key: unifi.collector.network.radios.error
@@ -1543,7 +1543,7 @@ zabbix_export:
       tags:
       - tag: component
         value: collector
-    - uuid: b8e354582c9148d38efa868b073dc52e
+    - uuid: 0eefea3574245bb8a6a2b00407378e67
       name: UniFi system uptime
       type: DEPENDENT
       key: unifi.system.uptime
@@ -1560,13 +1560,13 @@ zabbix_export:
       - tag: component
         value: system
       triggers:
-      - uuid: ee4ac663d31e44d6b94840f7aa13fb43
+      - uuid: 5a309e5401a15d4ea9f658282711de07
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.system.uptime)<{$UNIFI.UPTIME.REBOOT.WINDOW}
         name: UniFi gateway rebooted recently
         opdata: 'Uptime: {ITEM.LASTVALUE1}'
         priority: INFO
         manual_close: 'YES'
-    - uuid: 5d2af0923570576b85809472024bd489
+    - uuid: 996ca439a8bb51cdbbbc0f157b1c43a0
       name: UniFi dashboard traffic 1h raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["dashboard-traffic","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","3600","{$UNIFI.TLS.ARG}"]
@@ -1580,7 +1580,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: traffic
-    - uuid: 2b6c47e96e4f5f5bad4e8882d9f91382
+    - uuid: 0d56c9ce648c5c358df6e409504446d6
       name: UniFi dashboard traffic 1d raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["dashboard-traffic","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","86400","{$UNIFI.TLS.ARG}"]
@@ -1594,7 +1594,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: traffic
-    - uuid: 53279502bb5f52988c4d76d1b547f2b7
+    - uuid: b23af1baf7e35401b666a5c0621ce4f5
       name: UniFi dashboard traffic 1w raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["dashboard-traffic","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","604800","{$UNIFI.TLS.ARG}"]
@@ -1608,7 +1608,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: traffic
-    - uuid: c6b64f9d7dcc5af7bbf04f04991f1559
+    - uuid: d9437fe7c2cc5ec2898d6c5ae6dd203b
       name: UniFi dashboard traffic 1m raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["dashboard-traffic","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","2592000","{$UNIFI.TLS.ARG}"]
@@ -1622,7 +1622,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: traffic
-    - uuid: e90b1cf5801650998176e0ce522d2df6
+    - uuid: d318a9eba0315a548b6c1e54b5f6eac6
       name: UniFi dashboard current client status raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["dashboard-client-status","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -1636,7 +1636,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: clients
-    - uuid: eacf2df7119b59afbb0c28bfadd3642f
+    - uuid: 9e19fd34f6e55025a76ce9e5f411f1f6
       name: UniFi DPI application catalog raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["dpi-catalog","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -1650,7 +1650,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: dpi
-    - uuid: 56d7b5b8d61052f58a5f1ec987a24b1a
+    - uuid: 5ff36a6a13875df5acd3772b8afcaff3
       name: UniFi Wi-Fi connectivity raw
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["wifi-connectivity","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -1664,7 +1664,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: wifi
-    - uuid: 4cf76f9917735bc7b3419d35e5b85f3d
+    - uuid: e077938aaaba57429d347510cdb24be5
       name: UniFi Wi-Fi association success
       type: DEPENDENT
       key: unifi.wifi.association.success
@@ -1682,7 +1682,7 @@ zabbix_export:
         value: dashboard-telemetry
       value_type: CHAR
       trends: '0'
-    - uuid: ea3e429285365aaf916e8bda3452b3e1
+    - uuid: 73ef99ccb30b5105b3aca18e352eef77
       name: UniFi Wi-Fi authentication success
       type: DEPENDENT
       key: unifi.wifi.authentication.success
@@ -1700,7 +1700,7 @@ zabbix_export:
         value: dashboard-telemetry
       value_type: CHAR
       trends: '0'
-    - uuid: 3c304b05c72d5cec96481674b8c6c9e9
+    - uuid: bf747508445c5840803d7b8079ddabe0
       name: UniFi Wi-Fi DHCP success
       type: DEPENDENT
       key: unifi.wifi.dhcp.success
@@ -1718,7 +1718,7 @@ zabbix_export:
         value: dashboard-telemetry
       value_type: CHAR
       trends: '0'
-    - uuid: e3000997b83b5921a10ffc9c086cb04f
+    - uuid: efa9915c8e745963903860dd23b6740a
       name: UniFi Wi-Fi DNS success
       type: DEPENDENT
       key: unifi.wifi.dns.success
@@ -1737,7 +1737,7 @@ zabbix_export:
       value_type: CHAR
       trends: '0'
     discovery_rules:
-    - uuid: e86189358b09410cbd3062534c4f1826
+    - uuid: 53938f78a9db5724a24d886c7160d816
       name: UniFi official gateway statistics discovery
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["discover-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]
@@ -1751,7 +1751,7 @@ zabbix_export:
       description: Discovers gateway-class devices for parallel monitoring through the documented Integration API statistics/latest
         endpoint.
       item_prototypes:
-      - uuid: 6b4f2306172147f58ebdfb321ad5279d
+      - uuid: 6cb7515e538154db89055f9625f1f966
         name: Official API statistics raw on {#UNIFI.DEVICE.NAME}
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["device-stats","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{$UNIFI.TLS.ARG}"]
@@ -1765,7 +1765,7 @@ zabbix_export:
           value: official-api
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: e0d412ab49234f98908725467f3ebdeb
+      - uuid: 25ff2181e1515c3897fda79189babf92
         name: Official API statistics available on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.official.stats.available[{#UNIFI.DEVICE.ID}]
@@ -1782,12 +1782,12 @@ zabbix_export:
         - tag: source
           value: official-api
         trigger_prototypes:
-        - uuid: 85b8f6b202324b52a5de1b704b40da1a
+        - uuid: b19c36c867ab5847beb842e3c05d460c
           expression: max(/UniFi UDM Pro API Monitoring Unified RC/unifi.official.stats.available[{#UNIFI.DEVICE.ID}],10m)=0
           name: Official UniFi statistics collection is failing on {#UNIFI.DEVICE.NAME}
           priority: WARNING
           description: The documented Integration API statistics/latest endpoint is returning an error or invalid JSON.
-      - uuid: 4bad6b05cce4485ebc33f857757f9455
+      - uuid: 6437cf57003357ff918f3e32663f4616
         name: Official API statistics last error on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.official.stats.error[{#UNIFI.DEVICE.ID}]
@@ -1805,7 +1805,7 @@ zabbix_export:
           value: collector
         - tag: source
           value: official-api
-      - uuid: 77218585aa6349b69f27edf259196fc9
+      - uuid: 24a3d483ca585879a7a99b26542c4797
         name: Official CPU utilization on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.official.system.cpu.percent[{#UNIFI.DEVICE.ID}]
@@ -1823,7 +1823,7 @@ zabbix_export:
           value: system
         - tag: source
           value: official-api
-      - uuid: ae5a1820d1744f13849cb17eec8e8ddf
+      - uuid: 1a44726c39cd50e4a6cc0a4f62660734
         name: Official memory utilization on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.official.system.memory.percent[{#UNIFI.DEVICE.ID}]
@@ -1841,7 +1841,7 @@ zabbix_export:
           value: system
         - tag: source
           value: official-api
-      - uuid: 7ab2b460e70e4550908530eaa74f293b
+      - uuid: bc22aa2115e35db6864da166d54a92ea
         name: Official load average 1m on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.official.system.loadavg_1[{#UNIFI.DEVICE.ID}]
@@ -1858,7 +1858,7 @@ zabbix_export:
           value: system
         - tag: source
           value: official-api
-      - uuid: 998c2ccbe48144809c7f907d5439dfc4
+      - uuid: d71aa877c6b85f79a4957fb7edd750c9
         name: Official load average 5m on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.official.system.loadavg_5[{#UNIFI.DEVICE.ID}]
@@ -1875,7 +1875,7 @@ zabbix_export:
           value: system
         - tag: source
           value: official-api
-      - uuid: c19f4b566cb841afa9d7ce11403ca5fd
+      - uuid: dd1675ec951655e08b55b636f00bdef6
         name: Official load average 15m on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.official.system.loadavg_15[{#UNIFI.DEVICE.ID}]
@@ -1892,7 +1892,7 @@ zabbix_export:
           value: system
         - tag: source
           value: official-api
-      - uuid: 77427d98f7ce44cd9984012ff23ea8f6
+      - uuid: 149f69bc007e5069a77a7c4ae0adc512
         name: Official uptime on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.official.system.uptime[{#UNIFI.DEVICE.ID}]
@@ -1909,7 +1909,7 @@ zabbix_export:
           value: system
         - tag: source
           value: official-api
-      - uuid: 9d7eb672d6fd43ccb883c5c78f06420e
+      - uuid: f6ffcc9745bc54689a0ba103581ee5e3
         name: Official uplink download rate on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.official.uplink.rx_bps[{#UNIFI.DEVICE.ID}]
@@ -1929,7 +1929,7 @@ zabbix_export:
           value: internet
         - tag: source
           value: official-api
-      - uuid: 996cec1b652b4068a457a3d2c931f487
+      - uuid: dbe67a36848f50bf920eb19897599596
         name: Official uplink upload rate on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.official.uplink.tx_bps[{#UNIFI.DEVICE.ID}]
@@ -1950,7 +1950,7 @@ zabbix_export:
         - tag: source
           value: official-api
       graph_prototypes:
-      - uuid: 49184ab29ea9448e9fa347f67e85d668
+      - uuid: 56d1695f18625df0ad960e51bc033682
         name: Official system health on {#UNIFI.DEVICE.NAME}
         graph_items:
         - color: FF7043
@@ -1963,7 +1963,7 @@ zabbix_export:
             host: UniFi UDM Pro API Monitoring
             key: unifi.official.system.memory.percent[{#UNIFI.DEVICE.ID}]
       timeout: 60s
-    - uuid: 850053dae79e41778cb024190992ac40
+    - uuid: 6e05801e4f365d4b9e3b4264eb13afb4
       name: UniFi device discovery
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["discover-devices","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]
@@ -1980,7 +1980,7 @@ zabbix_export:
         - macro: '{#UNIFI.DEVICE.MODEL}'
           value: '{$UNIFI.LLD.DEVICE.MODEL.MATCHES}'
           formulaid: B
-    - uuid: e09bac0916214333825d7b6e24a00b69
+    - uuid: fa6809a730535436be7697191c791853
       name: UniFi network discovery
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["discover-networks","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]
@@ -1994,7 +1994,7 @@ zabbix_export:
         - macro: '{#UNIFI.NETWORK.NAME}'
           value: '{$UNIFI.LLD.NETWORK.NAME.MATCHES}'
           formulaid: A
-    - uuid: a268db968f864a399eeea0ff3d60235a
+    - uuid: 1f90e702193a5aa099593ea2eb7c14b7
       name: UniFi client discovery
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["discover-clients","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]
@@ -2008,7 +2008,7 @@ zabbix_export:
         - macro: '{#UNIFI.CLIENT.TYPE}'
           value: '{$UNIFI.LLD.CLIENT.TYPE.MATCHES}'
           formulaid: A
-    - uuid: b05ea9168c89446eae28c7fdfd4b52a3
+    - uuid: 69b55a929b0a52a69fd6511bb3d3c1cd
       name: UniFi port discovery
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["discover-ports","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]
@@ -2026,7 +2026,7 @@ zabbix_export:
           value: '{$UNIFI.LLD.PORT.IDX.MATCHES}'
           formulaid: B
       item_prototypes:
-      - uuid: d7ca3569e4cd4cbcae3097a6421ca12b
+      - uuid: ce2e7dc9b6d85c0285c8bedb0195e299
         name: Port {#UNIFI.PORT.IDX} state on {#UNIFI.DEVICE.NAME}
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","state","{$UNIFI.TLS.ARG}"]
@@ -2039,7 +2039,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 604464bae5404d1eba541436e6b4d565
+      - uuid: f725b4a7513e58939e38b741a7802cde
         name: Port {#UNIFI.PORT.IDX} speed on {#UNIFI.DEVICE.NAME}
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","speedMbps","{$UNIFI.TLS.ARG}"]
@@ -2052,7 +2052,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 3ec9707fec5f4f27ae8d7df599d865a1
+      - uuid: 15177c75894556379f2b96b9c40b2778
         name: Port {#UNIFI.PORT.IDX} max speed on {#UNIFI.DEVICE.NAME}
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","maxSpeedMbps","{$UNIFI.TLS.ARG}"]
@@ -2065,7 +2065,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 3e8eec90550245379c948c5b487add99
+      - uuid: aaf0a0611d785299afb2b3a0fc79895a
         name: Port {#UNIFI.PORT.IDX} connector on {#UNIFI.DEVICE.NAME}
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["port-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.PORT.IDX}","connector","{$UNIFI.TLS.ARG}"]
@@ -2078,7 +2078,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-    - uuid: b53bba5f3fbf43b58625d2af0901a674
+    - uuid: 84be4d8050e151ed9595ce4866c1c8fd
       name: UniFi PoE budget discovery
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["discover-poe-budget","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -2096,7 +2096,7 @@ zabbix_export:
           value: '{$UNIFI.LLD.DEVICE.MODEL.MATCHES}'
           formulaid: B
       item_prototypes:
-      - uuid: 507620f90e8447a58fde4e916c84af67
+      - uuid: 01be00a745b4530796cd3a0dc7092add
         name: PoE used power on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.poe_budget.used_power_w[{#UNIFI.DEVICE.ID}]
@@ -2115,7 +2115,7 @@ zabbix_export:
           value: poe
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 9a9465789bea454d9da9bdee96382456
+      - uuid: ed45c437a2e05b7e916d6a147ae345be
         name: PoE max power on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.poe_budget.max_power_w[{#UNIFI.DEVICE.ID}]
@@ -2134,7 +2134,7 @@ zabbix_export:
           value: poe
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: cf3c1ecf91734e1b9009427f1b6573a2
+      - uuid: a19f9b6e2d4b5915b90f43178fb17818
         name: PoE available power on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.poe_budget.available_power_w[{#UNIFI.DEVICE.ID}]
@@ -2153,7 +2153,7 @@ zabbix_export:
           value: poe
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 17f7017444f042e89a5ed88faed57dda
+      - uuid: eed717a53066550eb21cce157a5f67a6
         name: PoE budget utilization on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.poe_budget.used_percent[{#UNIFI.DEVICE.ID}]
@@ -2172,7 +2172,7 @@ zabbix_export:
           value: poe
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: aef9e29cae1949cd965c78361e48801e
+      - uuid: 9e653f66706d5b2db6e6af572d5c8288
         name: PoE-capable ports on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.poe_budget.ports[{#UNIFI.DEVICE.ID}]
@@ -2189,7 +2189,7 @@ zabbix_export:
           value: poe
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 1f78ab895fe44636aec66116ff12e4d4
+      - uuid: f61eba236939530b91dd2b604d66820d
         name: PoE near limit on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.poe_budget.near_limit[{#UNIFI.DEVICE.ID}]
@@ -2210,17 +2210,17 @@ zabbix_export:
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
       trigger_prototypes:
-      - uuid: bfaa03eb2f29429aaf64706e99c66af6
+      - uuid: 44f24645d6d85819ac491606ddd8092b
         expression: avg(/UniFi UDM Pro API Monitoring Unified RC/unifi.network.poe_budget.used_percent[{#UNIFI.DEVICE.ID}],10m)>{$UNIFI.POE.BUDGET.WARN}
         name: High PoE budget utilization on {#UNIFI.DEVICE.NAME}
         opdata: 'PoE budget: {ITEM.LASTVALUE1}'
         priority: WARNING
-      - uuid: b3d34cc33df340a99802c7663716bbbc
+      - uuid: 29d1a15a338f5ad1aafc8a3986e418db
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi.network.poe_budget.near_limit[{#UNIFI.DEVICE.ID}])=1
         name: PoE budget is near limit on {#UNIFI.DEVICE.NAME}
         priority: WARNING
       graph_prototypes:
-      - uuid: c13b421698064c6b81b39db81f7509ba
+      - uuid: fdcc39d07d1253408d5b18617a4090fb
         name: PoE budget on {#UNIFI.DEVICE.NAME}
         graph_items:
         - color: FF7043
@@ -2232,7 +2232,7 @@ zabbix_export:
           item:
             host: UniFi UDM Pro API Monitoring
             key: unifi.network.poe_budget.available_power_w[{#UNIFI.DEVICE.ID}]
-    - uuid: 6d9f504290a34f87b3fa4adaf6fbeab4
+    - uuid: 464448b6d929551590c002ea434ff741
       name: UniFi port telemetry discovery
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["discover-port-telemetry","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -2251,7 +2251,7 @@ zabbix_export:
           value: '{$UNIFI.LLD.PORT.NAME.MATCHES}'
           formulaid: B
       item_prototypes:
-      - uuid: 829592e49c0547c0a4387fd077283879
+      - uuid: 5dc2e7a20e7a53f6a9695530f4cf0bdb
         name: Port {#UNIFI.PORT.IDX} link state on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.up[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2270,7 +2270,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 200e207493f94db3aa9b80f25d634074
+      - uuid: 216a9a9e70c151278cf51460febcfc8b
         name: Port {#UNIFI.PORT.IDX} speed on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.speed_mbps[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2288,7 +2288,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 6600562d177542c28edabd82526672a9
+      - uuid: 5947780418e258258cd3708683fdd458
         name: Port {#UNIFI.PORT.IDX} download rate on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.rx_bps[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2306,7 +2306,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 079ceb95f42b46318534869da3d33ee9
+      - uuid: 5de5c89a809c531ea6847eaa9d3adb8b
         name: Port {#UNIFI.PORT.IDX} upload rate on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.tx_bps[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2324,7 +2324,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: c5d8e2a872eb4757b65094a86b4f2977
+      - uuid: 1ae958a450f25e598ace1d72370a162a
         name: Port {#UNIFI.PORT.IDX} RX errors on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.rx_errors[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2340,7 +2340,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: dc495e6de4aa44cebefa88fdd9518541
+      - uuid: a4795068f1df5883af25201756b7796f
         name: Port {#UNIFI.PORT.IDX} TX errors on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.tx_errors[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2356,7 +2356,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 0e77bbc479cf4371a7a8d653d0e9049e
+      - uuid: 0fe4b21a30b05aff9e13af9643b3c8e4
         name: Port {#UNIFI.PORT.IDX} RX drops on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.rx_dropped[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2372,7 +2372,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: ebbb5f3eb50b4828bc93d89b6bf0beab
+      - uuid: 4572aaf0b76050a2b2f2ebee1f645e83
         name: Port {#UNIFI.PORT.IDX} TX drops on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.tx_dropped[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2388,7 +2388,7 @@ zabbix_export:
           value: ports
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: d70a55c88bc544e39c4d907ee259240e
+      - uuid: d3f2faa3437c5ee68f87de64f95b415b
         name: Port {#UNIFI.PORT.IDX} PoE power on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.poe_power_w[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2406,7 +2406,7 @@ zabbix_export:
           value: poe
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 29c9e37f732d4ed2a7a3e2aaa00e4501
+      - uuid: dd919a4df89e5d9b87c26561a5842c5f
         name: Port {#UNIFI.PORT.IDX} PoE voltage on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.poe_voltage_v[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2424,7 +2424,7 @@ zabbix_export:
           value: poe
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: f961b9e2ecc24a3b805814355edad9cd
+      - uuid: 2239717e392451eab09caa2c71eb6261
         name: Port {#UNIFI.PORT.IDX} PoE good on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.poe_good[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2443,7 +2443,7 @@ zabbix_export:
           value: poe
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 698aee3fd06f4f938a598b5746553f37
+      - uuid: dcd46c19d24a546a82f71d9539544029
         name: Port {#UNIFI.PORT.IDX} PoE mode on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.port.poe_mode[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
@@ -2461,7 +2461,7 @@ zabbix_export:
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
       graph_prototypes:
-      - uuid: 00bd6b167e834cfb946e63bf326deb75
+      - uuid: 5db06b57e02e5f389b63014d9c2cc944
         name: Port {#UNIFI.PORT.IDX} traffic on {#UNIFI.DEVICE.NAME}
         graph_items:
         - color: 42A5F5
@@ -2473,7 +2473,7 @@ zabbix_export:
           item:
             host: UniFi UDM Pro API Monitoring
             key: unifi.network.port.tx_bps[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
-      - uuid: 5503f094b22b43a29e57380cda84a7b3
+      - uuid: 1ee6ec32509453f19f3161373c49d092
         name: Port {#UNIFI.PORT.IDX} errors and drops on {#UNIFI.DEVICE.NAME}
         graph_items:
         - color: EF5350
@@ -2495,7 +2495,7 @@ zabbix_export:
           item:
             host: UniFi UDM Pro API Monitoring
             key: unifi.network.port.tx_dropped[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
-      - uuid: eea923b94fee4652be90aa32e7581c07
+      - uuid: e79f5222686d5e7f99c5b391cdaf0419
         name: Port {#UNIFI.PORT.IDX} PoE on {#UNIFI.DEVICE.NAME}
         graph_items:
         - color: 66BB6A
@@ -2508,7 +2508,7 @@ zabbix_export:
           item:
             host: UniFi UDM Pro API Monitoring
             key: unifi.network.port.poe_voltage_v[{#UNIFI.DEVICE.ID},{#UNIFI.PORT.IDX}]
-    - uuid: 0f82eeab022548aaaffe4591608f916c
+    - uuid: 42a734e714c952509b46e776f60b386b
       name: UniFi radio discovery
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["discover-radios","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{$UNIFI.TLS.ARG}"]
@@ -2526,7 +2526,7 @@ zabbix_export:
           value: '{$UNIFI.LLD.RADIO.INDEX.MATCHES}'
           formulaid: B
       item_prototypes:
-      - uuid: 2cc3da7e5e66483fad14e207d2f1ee34
+      - uuid: 5e7b32b9c11e5ac6acca7b0c848bf3fc
         name: Radio {#UNIFI.RADIO.INDEX} channel on {#UNIFI.DEVICE.NAME}
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","channel","{$UNIFI.TLS.ARG}"]
@@ -2538,7 +2538,7 @@ zabbix_export:
           value: radios
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 441e879d1c4645fbb8de9d94841799ff
+      - uuid: 34b53e22c6915416ac81a008cb3f5884
         name: Radio {#UNIFI.RADIO.INDEX} channel width on {#UNIFI.DEVICE.NAME}
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","channelWidthMHz","{$UNIFI.TLS.ARG}"]
@@ -2551,7 +2551,7 @@ zabbix_export:
           value: radios
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 1326d1824c5041dc92e7f0a078c9e193
+      - uuid: 21fab1eb235d5925b72888d751fe7698
         name: Radio {#UNIFI.RADIO.INDEX} frequency on {#UNIFI.DEVICE.NAME}
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","frequencyGHz","{$UNIFI.TLS.ARG}"]
@@ -2565,7 +2565,7 @@ zabbix_export:
           value: radios
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 4ab810907e39443bb1e7a6e976d6326e
+      - uuid: 5f3b9c2e8d595290983c46565880d7cf
         name: Radio {#UNIFI.RADIO.INDEX} WLAN standard on {#UNIFI.DEVICE.NAME}
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["radio-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.SITE.ID}","{#UNIFI.DEVICE.ID}","{#UNIFI.RADIO.INDEX}","wlanStandard","{$UNIFI.TLS.ARG}"]
@@ -2578,7 +2578,7 @@ zabbix_export:
           value: radios
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-    - uuid: 02bea3760966435fa33498040b2b09ce
+    - uuid: 8bbda58024f35404a180220f5529f94f
       name: UniFi radio performance discovery
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["discover-radio-performance","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -2596,7 +2596,7 @@ zabbix_export:
           value: '{$UNIFI.LLD.RADIO.BAND.MATCHES}'
           formulaid: B
       item_prototypes:
-      - uuid: 20694b9752544753bee1b1600dfd25cc
+      - uuid: aa27974de5705e51a0ef4e1a01432456
         name: Radio {#UNIFI.RADIO.BAND} utilization on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.radio.cu_total[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]
@@ -2615,7 +2615,7 @@ zabbix_export:
           value: radios
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 6aec8bfb9868443faec180fcf1167cd4
+      - uuid: 7c156974c80d5bea957c92753c11084b
         name: Radio {#UNIFI.RADIO.BAND} self RX utilization on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.radio.cu_self_rx[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]
@@ -2634,7 +2634,7 @@ zabbix_export:
           value: radios
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: dbd721fe23654df5b9ff7427354dcd2b
+      - uuid: f02f610483575275bf04cee993bc22f2
         name: Radio {#UNIFI.RADIO.BAND} self TX utilization on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.radio.cu_self_tx[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]
@@ -2653,7 +2653,7 @@ zabbix_export:
           value: radios
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: cb4a69bc52bb45c581557f040599c822
+      - uuid: 6dd769036dbd564882b559b7029f3e9a
         name: Radio {#UNIFI.RADIO.BAND} retry percentage on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.radio.tx_retries_pct[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]
@@ -2672,7 +2672,7 @@ zabbix_export:
           value: radios
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 02d744e3e3a34d46949fbf86cc42b9c7
+      - uuid: d573fd83bf49513282c3a9f1c4ece8b0
         name: Radio {#UNIFI.RADIO.BAND} clients on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.radio.num_sta[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]
@@ -2689,7 +2689,7 @@ zabbix_export:
           value: radios
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
-      - uuid: 2a8426e860e14f1f8c4f81fc81425ef3
+      - uuid: 71325376b1c0517d83b2effb66f5cf47
         name: Radio {#UNIFI.RADIO.BAND} satisfaction on {#UNIFI.DEVICE.NAME}
         type: DEPENDENT
         key: unifi.network.radio.satisfaction[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]
@@ -2709,24 +2709,24 @@ zabbix_export:
         - tag: device
           value: '{#UNIFI.DEVICE.NAME}'
       trigger_prototypes:
-      - uuid: bfccb0b6d4a342c6bb767e9423a50b8f
+      - uuid: fad1baec4e85534e9e81e34a7dbbe569
         expression: avg(/UniFi UDM Pro API Monitoring Unified RC/unifi.network.radio.cu_total[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}],10m)>{$UNIFI.RADIO.UTIL.WARN}
         name: High radio {#UNIFI.RADIO.BAND} utilization on {#UNIFI.DEVICE.NAME}
         opdata: 'Utilization: {ITEM.LASTVALUE1}'
         priority: WARNING
-      - uuid: 69b4969b23b74abf9632d311a366c468
+      - uuid: df1bec62d71257bb9fde3f839b550e8b
         expression: avg(/UniFi UDM Pro API Monitoring Unified RC/unifi.network.radio.tx_retries_pct[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}],10m)>{$UNIFI.RADIO.RETRY.WARN}
         name: High radio {#UNIFI.RADIO.BAND} retry percentage on {#UNIFI.DEVICE.NAME}
         opdata: 'Retries: {ITEM.LASTVALUE1}'
         priority: WARNING
-      - uuid: e67dc88a902748a989314de9224af9a2
+      - uuid: bf435485430755509381e6fc92b09814
         expression: avg(/UniFi UDM Pro API Monitoring Unified RC/unifi.network.radio.satisfaction[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}],10m)<{$UNIFI.RADIO.SATISFACTION.MIN}
           and last(/UniFi UDM Pro API Monitoring Unified RC/unifi.network.radio.satisfaction[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}])>0
         name: Low radio {#UNIFI.RADIO.BAND} satisfaction on {#UNIFI.DEVICE.NAME}
         opdata: 'Satisfaction: {ITEM.LASTVALUE1}'
         priority: WARNING
       graph_prototypes:
-      - uuid: 8f29b129b4a842d28ecf5ec9d9c1faef
+      - uuid: 8f117dfa97045008a70defb30d640210
         name: Radio {#UNIFI.RADIO.BAND} channel utilization on {#UNIFI.DEVICE.NAME}
         graph_items:
         - color: 42A5F5
@@ -2743,7 +2743,7 @@ zabbix_export:
           item:
             host: UniFi UDM Pro API Monitoring
             key: unifi.network.radio.cu_self_tx[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]
-      - uuid: bb590f6707404e3893df03ef784c98fb
+      - uuid: a3449689ed0457f58916fe26c954427b
         name: Radio {#UNIFI.RADIO.BAND} quality on {#UNIFI.DEVICE.NAME}
         graph_items:
         - color: F06292
@@ -2761,7 +2761,7 @@ zabbix_export:
           item:
             host: UniFi UDM Pro API Monitoring
             key: unifi.network.radio.satisfaction[{#UNIFI.DEVICE.ID},{#UNIFI.RADIO.INDEX}]
-    - uuid: 345f2b8e8f104a47bfac7e165996f1e5
+    - uuid: 7207bec01d0454e79c393afb399013fb
       name: UniFi storage discovery
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["discover-storage","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -2776,7 +2776,7 @@ zabbix_export:
           value: '{$UNIFI.LLD.STORAGE.MOUNT.MATCHES}'
           formulaid: A
       item_prototypes:
-      - uuid: 545cf97349f24e1f928d2362def2628a
+      - uuid: fbdbe5e923085d9197dd99196e3be89a
         name: Storage {#UNIFI.STORAGE.NAME} used
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","used","{$UNIFI.TLS.ARG}"]
@@ -2789,7 +2789,7 @@ zabbix_export:
           value: storage
         - tag: storage
           value: '{#UNIFI.STORAGE.NAME}'
-      - uuid: 091d340ea82b491a9573142171992fde
+      - uuid: d556bc4ec5da58d0ae39e4f7fbf9c5e5
         name: Storage {#UNIFI.STORAGE.NAME} free
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","free","{$UNIFI.TLS.ARG}"]
@@ -2802,7 +2802,7 @@ zabbix_export:
           value: storage
         - tag: storage
           value: '{#UNIFI.STORAGE.NAME}'
-      - uuid: 7d3eea9a94cd4030b845df6656daeefc
+      - uuid: 6002f050cf7f5af0ba4491a360226158
         name: Storage {#UNIFI.STORAGE.NAME} total
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","size","{$UNIFI.TLS.ARG}"]
@@ -2815,7 +2815,7 @@ zabbix_export:
           value: storage
         - tag: storage
           value: '{#UNIFI.STORAGE.NAME}'
-      - uuid: e5384c3b3f2b493a874933ddf23e4e83
+      - uuid: 489c7f848ca15330bed01f1c6e65913f
         name: Storage {#UNIFI.STORAGE.NAME} utilization
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","used_percent","{$UNIFI.TLS.ARG}"]
@@ -2830,12 +2830,12 @@ zabbix_export:
         - tag: storage
           value: '{#UNIFI.STORAGE.NAME}'
       trigger_prototypes:
-      - uuid: 41594fa0f1474e43924d2e4144c2587e
+      - uuid: 8d777b8576ec5677a68b09ef35d395fd
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi_udm_pro_api_unified.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","used_percent","{$UNIFI.TLS.ARG}"])>{$UNIFI.STORAGE.WARN}
         name: High UniFi storage utilization on {#UNIFI.STORAGE.NAME}
         priority: WARNING
       graph_prototypes:
-      - uuid: 600611a3efe94dadafab72da999545e0
+      - uuid: c7b58f8f18c65854ba31783c5ba8077f
         name: Storage {#UNIFI.STORAGE.NAME} usage
         graph_items:
         - color: 42A5F5
@@ -2847,7 +2847,7 @@ zabbix_export:
           item:
             host: UniFi UDM Pro API Monitoring
             key: unifi_udm_pro_api_unified.py["storage-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.STORAGE.MOUNT}","free","{$UNIFI.TLS.ARG}"]
-    - uuid: 37d8fc7db6f741ada944c25b7649c8b1
+    - uuid: fa447ba070ae51f8888085d62723a04c
       name: UniFi WAN discovery
       type: EXTERNAL
       key: unifi_udm_pro_api_unified.py["discover-wans","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -2863,7 +2863,7 @@ zabbix_export:
           value: '{$UNIFI.LLD.WAN.NAME.MATCHES}'
           formulaid: A
       item_prototypes:
-      - uuid: 2d07d2cfc5974caf84a224a26597abac
+      - uuid: 917f5022e58656d68d910a1140116c2f
         name: '{#UNIFI.WAN.NAME} latency'
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","latency_ms","{$UNIFI.TLS.ARG}"]
@@ -2877,7 +2877,7 @@ zabbix_export:
           value: internet
         - tag: wan
           value: '{#UNIFI.WAN.NAME}'
-      - uuid: d8639d7cb94c492f81a08e6888f8fe19
+      - uuid: ee257ac009905535a2871e1bb2cf031d
         name: '{#UNIFI.WAN.NAME} packet loss'
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","packet_loss_percent","{$UNIFI.TLS.ARG}"]
@@ -2891,7 +2891,7 @@ zabbix_export:
           value: internet
         - tag: wan
           value: '{#UNIFI.WAN.NAME}'
-      - uuid: 470bf30f607f4c8c94c27b4ab426fda9
+      - uuid: 84208fbf6f7b5a96ad6a0567a2ae777e
         name: '{#UNIFI.WAN.NAME} availability'
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","availability_percent","{$UNIFI.TLS.ARG}"]
@@ -2905,7 +2905,7 @@ zabbix_export:
           value: internet
         - tag: wan
           value: '{#UNIFI.WAN.NAME}'
-      - uuid: 43259d1ab2e446268d7e551bb869daed
+      - uuid: 1977088d181b5a31b8574b8ccb6ec789
         name: '{#UNIFI.WAN.NAME} download rate'
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","rx_bps","{$UNIFI.TLS.ARG}"]
@@ -2918,7 +2918,7 @@ zabbix_export:
           value: internet
         - tag: wan
           value: '{#UNIFI.WAN.NAME}'
-      - uuid: d898e059e3214d08acbf3af54edc5c37
+      - uuid: f642ae948806595e9f657b710462a051
         name: '{#UNIFI.WAN.NAME} upload rate'
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","tx_bps","{$UNIFI.TLS.ARG}"]
@@ -2931,7 +2931,7 @@ zabbix_export:
           value: internet
         - tag: wan
           value: '{#UNIFI.WAN.NAME}'
-      - uuid: b17a401ff49e4d1bb913f1c3638dcbd3
+      - uuid: ec53a1202deb5a29a6b1e27cda7f2b93
         name: '{#UNIFI.WAN.NAME} alive'
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","alive","{$UNIFI.TLS.ARG}"]
@@ -2943,7 +2943,7 @@ zabbix_export:
           value: internet
         - tag: wan
           value: '{#UNIFI.WAN.NAME}'
-      - uuid: e026ff7a0a7d42e98c91b105b1646ad7
+      - uuid: e3bd8f4d39f45932995cc9a4973d4626
         name: '{#UNIFI.WAN.NAME} active'
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","active","{$UNIFI.TLS.ARG}"]
@@ -2959,7 +2959,7 @@ zabbix_export:
           value: internet
         - tag: wan
           value: '{#UNIFI.WAN.NAME}'
-      - uuid: 368e62de9e724cf9804d442a9776061c
+      - uuid: 5ff31e212b315756a6c040c088562328
         name: '{#UNIFI.WAN.NAME} role'
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","role","{$UNIFI.TLS.ARG}"]
@@ -2973,7 +2973,7 @@ zabbix_export:
           value: internet
         - tag: wan
           value: '{#UNIFI.WAN.NAME}'
-      - uuid: ebbe1f0d107c446fa432b921b735a6ae
+      - uuid: 0b4f23b119475b838d5b14b4b219f14e
         name: '{#UNIFI.WAN.NAME} failover state'
         type: EXTERNAL
         key: unifi_udm_pro_api_unified.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","failover_state","{$UNIFI.TLS.ARG}"]
@@ -2988,12 +2988,12 @@ zabbix_export:
         - tag: wan
           value: '{#UNIFI.WAN.NAME}'
       trigger_prototypes:
-      - uuid: a2760ff9b7824b54a5ae4a04b2d12db6
+      - uuid: 491af127e73b55278872877bd3420ad6
         expression: last(/UniFi UDM Pro API Monitoring Unified RC/unifi_udm_pro_api_unified.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","alive","{$UNIFI.TLS.ARG}"])=0
         name: '{#UNIFI.WAN.NAME} is not alive'
         priority: HIGH
       graph_prototypes:
-      - uuid: ce1d0f34b7d64e3a95609936f6e662d4
+      - uuid: 52a1089179355d2ea53dfd66de277e20
         name: '{#UNIFI.WAN.NAME} Internet activity'
         graph_items:
         - color: 42A5F5
@@ -3019,13 +3019,13 @@ zabbix_export:
           item:
             host: UniFi UDM Pro API Monitoring
             key: unifi_udm_pro_api_unified.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","tx_bps","{$UNIFI.TLS.ARG}"]
-    - uuid: ff1f0650c4895957bb6240d186904c91
+    - uuid: 7b957a6617ea5f1d92ec9b2b81c157df
       name: UniFi dashboard client traffic discovery
       type: DEPENDENT
       key: unifi.dashboard.clients.traffic.discovery
       lifetime: 30d
       item_prototypes:
-      - uuid: d5d13c0ff944534ab1aa09e88fa2d561
+      - uuid: d4156464197e55e68d532c628644c0b7
         name: UniFi client {#UNIFI.CLIENT.NAME} name
         type: DEPENDENT
         key: unifi.client.name[{#UNIFI.CLIENT.ID}]
@@ -3042,7 +3042,7 @@ zabbix_export:
           value: dashboard-telemetry
         value_type: CHAR
         trends: '0'
-      - uuid: 791ecb0bc308529d88e1bfbc1aa90cad
+      - uuid: 2487cf2989295f969e7cb32db88535c1
         name: UniFi client {#UNIFI.CLIENT.NAME} traffic 1h
         type: DEPENDENT
         key: unifi.client.traffic.bytes[1h,{#UNIFI.CLIENT.ID}]
@@ -3058,7 +3058,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: ccd92f8349cd59ceb0d7e9f0ac622677
+      - uuid: 19c410655f3854afaa2853d9c6d70ca9
         name: UniFi client {#UNIFI.CLIENT.NAME} traffic 1d
         type: DEPENDENT
         key: unifi.client.traffic.bytes[1d,{#UNIFI.CLIENT.ID}]
@@ -3074,7 +3074,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: 1226f43f4b6a522ea6726185a4a24040
+      - uuid: 04de14bf5def57fd9877aa9e304547f5
         name: UniFi client {#UNIFI.CLIENT.NAME} traffic 1w
         type: DEPENDENT
         key: unifi.client.traffic.bytes[1w,{#UNIFI.CLIENT.ID}]
@@ -3090,7 +3090,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: 32f3ce5a4467589390b2eb424e304d48
+      - uuid: 5e02016fc71d5204a0053f88a2d15e3e
         name: UniFi client {#UNIFI.CLIENT.NAME} traffic 1m
         type: DEPENDENT
         key: unifi.client.traffic.bytes[1m,{#UNIFI.CLIENT.ID}]
@@ -3106,7 +3106,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: f94c46e9ff9c5f5c9bd00a3fdfb047e8
+      - uuid: f552e4a519d159c0b34dc73242622592
         name: UniFi client {#UNIFI.CLIENT.NAME} traffic
         type: DEPENDENT
         key: unifi.client.traffic.bytes[{#UNIFI.CLIENT.ID}]
@@ -3129,13 +3129,13 @@ zabbix_export:
         parameters:
         - "var d=JSON.parse(value), out=[], clients=d.clients||{};\nObject.keys(clients).forEach(function(id) {\n  var c=clients[id]||{};\n\
           \  out.push({\"{#UNIFI.CLIENT.ID}\":id,\"{#UNIFI.CLIENT.NAME}\":c.name||id});\n});\nreturn JSON.stringify(out);"
-    - uuid: 39ad03ef17fa5d20b90c327ab8e77520
+    - uuid: 9e5165ee31145ccb8e94fe4b693e938f
       name: UniFi dashboard current wireless RSSI discovery
       type: DEPENDENT
       key: unifi.dashboard.clients.rssi.discovery
       lifetime: 7d
       item_prototypes:
-      - uuid: 6e5171b55ce65ab7be10d6b949819a75
+      - uuid: a1b024b83af05a769523db8ed5840c81
         name: UniFi wireless client {#UNIFI.CLIENT.NAME} RSSI
         type: DEPENDENT
         key: unifi.radio.rssi[{#UNIFI.CLIENT.ID}]
@@ -3160,13 +3160,13 @@ zabbix_export:
         - "var d=JSON.parse(value), out=[], clients=d.clients||{};\nObject.keys(clients).forEach(function(id) {\n  var c=clients[id]||{};\n\
           \  if (c.rssi !== null && typeof c.rssi !== \"undefined\") {\n    out.push({\"{#UNIFI.CLIENT.ID}\":id,\"{#UNIFI.CLIENT.NAME}\"\
           :c.name||id});\n  }\n});\nreturn JSON.stringify(out);"
-    - uuid: bf0b97c5d678535494732437ca0839f9
+    - uuid: 08b5d51b1da35d518221b3db3a66ec5a
       name: UniFi dashboard DPI application discovery
       type: DEPENDENT
       key: unifi.dashboard.dpi.app.discovery
       lifetime: 90d
       item_prototypes:
-      - uuid: ae986971d5265642a36a9c2210927b85
+      - uuid: 703a1f8c51ce53a4bb355d46db46ee64
         name: UniFi DPI application {#UNIFI.DPI.APP.NAME} name
         type: DEPENDENT
         key: unifi.dpi.app.name[{#UNIFI.DPI.APP.ID}]
@@ -3183,7 +3183,7 @@ zabbix_export:
           value: dashboard-telemetry
         value_type: CHAR
         trends: '0'
-      - uuid: 02cd3fc77d505382856287dc5af8a011
+      - uuid: 19affa7b91f35b4c89e07adff5568ed5
         name: UniFi DPI application {#UNIFI.DPI.APP.NAME} traffic 1h
         type: DEPENDENT
         key: unifi.dpi.app.bytes[1h,{#UNIFI.DPI.APP.ID}]
@@ -3199,7 +3199,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: e27dd9a2f0365337b1cd35d8277d9d1a
+      - uuid: 87f04f6b6d4b5cb1a64d1c5da092da84
         name: UniFi DPI application {#UNIFI.DPI.APP.NAME} traffic 1d
         type: DEPENDENT
         key: unifi.dpi.app.bytes[1d,{#UNIFI.DPI.APP.ID}]
@@ -3215,7 +3215,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: c4e892677d7a5deb8742d8908fcd629c
+      - uuid: aa28f2d5a24454b888638a4e1d3c2a5b
         name: UniFi DPI application {#UNIFI.DPI.APP.NAME} traffic 1w
         type: DEPENDENT
         key: unifi.dpi.app.bytes[1w,{#UNIFI.DPI.APP.ID}]
@@ -3231,7 +3231,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: 905bdd753bfd5dabadfac79d35cdf6ca
+      - uuid: 2f2c6107775a5ed280c51e64a1c529e3
         name: UniFi DPI application {#UNIFI.DPI.APP.NAME} traffic 1m
         type: DEPENDENT
         key: unifi.dpi.app.bytes[1m,{#UNIFI.DPI.APP.ID}]
@@ -3247,7 +3247,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: 1835017e8ef95f608b419ef6dddac3cd
+      - uuid: c4c8d93bcdf755838d3806b0986c00e2
         name: UniFi DPI application {#UNIFI.DPI.APP.NAME} traffic
         type: DEPENDENT
         key: unifi.dpi.app.bytes[{#UNIFI.DPI.APP.ID}]
@@ -3364,7 +3364,7 @@ zabbix_export:
       value: .*
       description: Regular expression for WAN labels included in low-level discovery.
     dashboards:
-    - uuid: b2c6d9866761431c9be8f9847a9df1f6
+    - uuid: bb0181d54ac1504b9493639612c55290
       name: UniFi Controller Overview
       pages:
       - name: Internet
@@ -3408,7 +3408,7 @@ zabbix_export:
           - type: STRING
             name: reference
             value: UNIFICLI
-    - uuid: 451628ed33ee4388bdaf3283d8110d62
+    - uuid: 319fdcc7805d561aaa6ab3fffadf679d
       name: Unifi Controller
       pages:
       - name: Overview
