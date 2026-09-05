@@ -1,720 +1,136 @@
-# UniFi UDM Pro API Monitoring
+# UniFi UDM Pro API Monitoring for Zabbix
 
-Portuguese version: [README.pt-BR.md](README.pt-BR.md)
+Unified UniFi Network monitoring for Zabbix 7.0 and 8.0.
 
-> Development status: this template is currently under active development and
-> should be validated in a test host before production use.
->
-> Documentation maintenance: when this English README is updated, update
-> `README.pt-BR.md` in the same change.
+Version: **0.8.0**  
+Author: **Karim Mansur / Net Tech**
 
-Zabbix template project for monitoring a Ubiquiti UniFi Dream Machine Pro
-primarily through the local UniFi Network APIs. The current collector implements
-the official Integration API and keeps selected legacy Network endpoints for
-operational metrics that have not yet been migrated. Site Manager, CEF/syslog,
-and NetFlow/IPFIX remain planned integrations.
+## What to install
 
-## Author
-
-- Karim Mansur (Net Tech)
-
-## Files
-
-- `7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml`: current Zabbix 7.0 template export.
-- `8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml`: Zabbix 8.0 export generated from the 7.0 base template.
-- `unifi_udm_pro_api.py`: external collector script for Integration API and Network API telemetry.
-- `CHANGELOG.md`: English changelog.
-- `CHANGELOG.pt-BR.md`: Portuguese changelog.
-- `docs/VALIDATION.md`: validation and pre-production checklist.
-
-## Goals
-
-- Discover UniFi sites, devices, networks, clients, WAN links, and gateway data.
-- Collect gateway health, WAN latency, packet loss, uptime, traffic, and device state.
-- Gradually migrate advanced telemetry from legacy Network endpoints to the documented Integration API.
-- Keep SNMP as an optional fallback for basic interface counters.
-
-## Data Sources
-
-### Currently Implemented
-
-- Official local Network Integration API: `https://<udm-pro>/proxy/network/integration/v1`
-- Legacy Network operational endpoint used for advanced telemetry not yet
-  available in equivalent form through the Integration API:
-  `/proxy/network/api/s/<site>/stat/device`
-
-### Planned
-
-- Site Manager API: `https://api.ui.com/v1`
-- UniFi System Logs / SIEM CEF export
-- Traffic Flows / NetFlow/IPFIX
-
-Site Manager, CEF/syslog, and NetFlow/IPFIX are roadmap items and are not
-currently collected by the template.
-
-## Creating the Local UniFi Network API Key
-
-The current template uses the **local UniFi Network API key**. This is separate
-from a Site Manager API key.
-
-### UniFi Network 10.6.x
-
-Current Ubiquiti guidance places local Network API key management and the
-version-specific API documentation under **UniFi Network > Integrations**.
-
-Official reference: [Getting Started with the Official UniFi API](https://help.ui.com/hc/en-us/articles/30076656117655-Getting-Started-with-the-Official-UniFi-API).
-
-Recommended process:
-
-1. Sign in to the UniFi Console/UDM Pro with an account allowed to administer Network.
-2. Open **UniFi Network**.
-3. Open **Integrations**.
-4. Create a local Network API key.
-5. Give it a clear name such as `zabbix-udm-pro-monitoring`.
-6. Copy and store the generated key securely.
-7. Store it in the Zabbix secret macro `{$UNIFI.API.KEY}`.
-
-> The local Network API key is not the same credential as a Site Manager API
-> key for `api.ui.com`.
-
-The collector uses the local API at:
+The 0.8 release has one template and one external collector. There is no dashboard companion template and no second telemetry script.
 
 ```text
-https://<udm-pro-ip>/proxy/network/integration/v1
+UniFi UDM Pro API Monitoring/
+├── 7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml
+├── 8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml
+└── unifi_udm_pro_api.py
 ```
 
-The **Integrations** page also exposes API documentation matching the installed
-Network version. Review it after Network upgrades because endpoint schemas can
-change between releases.
+Choose the YAML matching the Zabbix major version and install `unifi_udm_pro_api.py` in the Zabbix `ExternalScripts` directory.
 
-### Test the Key
+Example on Debian:
 
 ```bash
-curl --fail-with-body -sS -k \
-  -H "Accept: application/json" \
-  -H "X-API-KEY: <api-key>" \
-  "https://<udm-pro-ip>/proxy/network/integration/v1/info"
-
-curl --fail-with-body -sS -k \
-  -H "Accept: application/json" \
-  -H "X-API-KEY: <api-key>" \
-  "https://<udm-pro-ip>/proxy/network/integration/v1/sites"
+install -o root -g zabbix -m 0750 \
+  unifi_udm_pro_api.py \
+  /usr/lib/zabbix/externalscripts/unifi_udm_pro_api.py
 ```
 
-After obtaining the site ID, test devices and the documented latest statistics
-endpoint:
+Then import the template and link it to the UniFi host.
+
+## UniFi API key
+
+Create a local Network API key under **UniFi Network > Integrations**. The tested local base URL is:
+
+```text
+https://<gateway>/proxy/network/integration/v1
+```
+
+The collector also uses controller-local Network API endpoints for operational telemetry that is not exposed by the Integration API.
+
+## Required macros
+
+Configure the template/host macros as appropriate for the controller:
+
+```text
+{$UNIFI.API.URL}
+{$UNIFI.API.KEY}
+{$UNIFI.SITE.ID}
+{$UNIFI.NETWORK.SITE}
+{$UNIFI.TLS.ARG}
+```
+
+`{$UNIFI.SITE.ID}` is the Integration API site UUID when required by documented endpoints. `{$UNIFI.NETWORK.SITE}` is the internal Network site reference, normally `default` on a single-site UDM.
+
+`{$UNIFI.TLS.ARG}` defaults to `--timeout=20`. Use `--verify-tls` when the gateway certificate is trusted by the Zabbix server.
+
+## Dashboard telemetry
+
+The main template now includes the data contracts required by `Zabbix-UniFi-Dashboard`.
+
+Rolling traffic windows:
+
+| Dashboard period | Window | Collection interval |
+|---|---:|---:|
+| 1h | 3600 s | 2m |
+| 1D | 86400 s | 5m |
+| 1S / 1W | 604800 s | 15m |
+| 1M | 2592000 s (30 days) | 1h |
+
+Client ranking keys:
+
+```text
+unifi.client.traffic.bytes[1h,<id>]
+unifi.client.traffic.bytes[1d,<id>]
+unifi.client.traffic.bytes[1w,<id>]
+unifi.client.traffic.bytes[1m,<id>]
+```
+
+DPI ranking keys:
+
+```text
+unifi.dpi.app.bytes[1h,<id>]
+unifi.dpi.app.bytes[1d,<id>]
+unifi.dpi.app.bytes[1w,<id>]
+unifi.dpi.app.bytes[1m,<id>]
+```
+
+Current Wi-Fi client signal and connectivity:
+
+```text
+unifi.radio.rssi[<client-id>]
+unifi.wifi.association.success
+unifi.wifi.authentication.success
+unifi.wifi.dhcp.success
+unifi.wifi.dns.success
+```
+
+## Unified collector commands
+
+The collector preserves the existing 0.7 commands and adds the dashboard commands below:
 
 ```bash
-curl --fail-with-body -sS -k \
-  -H "Accept: application/json" \
-  -H "X-API-KEY: <api-key>" \
-  "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices"
-
-curl --fail-with-body -sS -k \
-  -H "Accept: application/json" \
-  -H "X-API-KEY: <api-key>" \
-  "https://<udm-pro-ip>/proxy/network/integration/v1/sites/<site-id>/devices/<device-id>/statistics/latest"
+./unifi_udm_pro_api.py version
+./unifi_udm_pro_api.py dashboard-client-status URL API_KEY default --timeout=20
+./unifi_udm_pro_api.py dashboard-traffic URL API_KEY default 3600 --timeout=20
+./unifi_udm_pro_api.py dpi-catalog URL API_KEY default --timeout=20
+./unifi_udm_pro_api.py wifi-connectivity URL API_KEY default --timeout=20
 ```
 
-The latest statistics endpoint is used in 0.7.0 in parallel with the existing
-legacy telemetry. It supplies documented fields such as uptime, CPU and memory
-utilization, load averages, and uplink RX/TX rates.
+`dashboard-traffic` returns client and DPI application traffic from one controller v2 request for the selected rolling window.
 
-### Common Errors
+## API surfaces used
 
-- `401 Unauthorized`: invalid/missing key or a key from the wrong UniFi API surface.
-- `403 Forbidden`: the associated key/account cannot access the requested resource.
-- Timeout/connection errors: check routing, firewall, DNS, and HTTPS reachability.
-- TLS errors: use a trusted certificate and enable verification when possible.
+- Integration API: `/proxy/network/integration/v1`
+- Legacy operational API: `/proxy/network/api/s/<site>/...`
+- Traffic: `/proxy/network/v2/api/site/<site>/traffic`
+- Wi-Fi connectivity: `/proxy/network/v2/api/site/<site>/wifi-connectivity`
 
-### Site Manager API Key — Planned
+UniFi Network 10.6.101 was verified to require traffic `start` and `end` timestamps in Unix epoch **milliseconds**.
 
-Site Manager uses a different key and `https://api.ui.com/v1`. Site Manager
-support remains planned and is not required by the current template.
-
-### Security Recommendations
-
-- Create a dedicated admin or service account for monitoring when possible.
-- Grant only the minimum permissions required for read-only monitoring.
-- Never hardcode API keys in scripts, templates, or Git-tracked files.
-- Store the local key in a Zabbix secret macro, for example:
-
-  ```text
-  {$UNIFI.API.KEY}
-  ```
-
-- Store the UDM Pro URL in a regular macro, for example:
-
-  ```text
-  {$UNIFI.API.URL}
-  ```
-
-- Restrict API access at the firewall so only the Zabbix server or Zabbix proxy
-  can reach the UDM Pro management interface.
-- Prefer HTTPS with valid certificates where possible. `{$UNIFI.TLS.ARG}` defaults
-  to `--timeout=20`, preserving the current self-signed-certificate behavior. Set
-  it to `--verify-tls` after the console certificate is trusted by the Zabbix host.
-- Rotate the key after staff changes, suspected exposure, or repository leaks.
-- Revoke old keys that are no longer used.
-
-## Zabbix Components
-
-- Low-level discovery for devices, clients, networks, WAN links, interfaces,
-  storage, radios, and PoE budgets.
-- External master items and dependent items for local UniFi Network APIs.
-- Parallel official `statistics/latest` collection for gateway-class devices.
-- Existing legacy Network telemetry retained for WAN, storage, PoE, radio, and
-  other fields without a fully equivalent official replacement yet.
-- Site Manager, CEF/syslog, and NetFlow/IPFIX remain planned integrations.
-
-## Zabbix Template
-
-Current project version:
-
-```text
-0.7.0
-```
-
-The importable Zabbix 7.0 template is:
-
-```text
-7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml
-```
-
-The importable Zabbix 8.0 template is:
-
-```text
-8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml
-```
-
-Before importing or enabling the template:
-
-1. Install `unifi_udm_pro_api.py` on the Zabbix server or proxy.
-2. Import `7.0/UniFi_UDM_Pro_API_Monitoring_7.0.yaml` (Zabbix 7.0) or
-   `8.0/UniFi_UDM_Pro_API_Monitoring_8.0.yaml` (Zabbix 8.0).
-3. Link the template to the UDM Pro host.
-4. Set host macros:
-
-   ```text
-   {$UNIFI.API.URL} = https://xxx.xxx.xxx.xxx
-   {$UNIFI.API.KEY} = your local UniFi Network API key
-   {$UNIFI.SITE.ID} = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-   {$UNIFI.NETWORK.SITE} = default
-   ```
-
-`{$UNIFI.API.URL}` may be either the UDM Pro root URL
-(`https://xxx.xxx.xxx.xxx`) or the full Integration API prefix
-(`https://xxx.xxx.xxx.xxx/proxy/network/integration/v1`). The script normalizes
-the value correctly for both Integration API and Network API calls.
-
-`{$UNIFI.SITE.ID}` can be left empty when the controller has only one site. The
-script will discover it automatically.
-Fixed system and WAN items auto-select the UDM device from the Network API payload.
-Do not set a device ID macro for normal template use; explicit Network API
-device IDs are only needed for manual script tests.
-
-The initial template includes:
-
-- UniFi Network application version.
-- Device summary: total, online, offline, firmware updates available.
-- Client summary: total, wired, wireless.
-- Network summary: total, enabled, disabled.
-- Device discovery.
-- Client discovery.
-- Network discovery.
-- Port discovery with item prototypes for state, negotiated speed, maximum speed,
-  and connector type.
-- Empty port speed values are normalized to `0` Mbps, which avoids numeric item
-  errors on disconnected or inactive ports.
-- port telemetry discovery from `port_table`, with link state,
-  negotiated speed, upload/download rate, RX/TX errors, RX/TX drops, PoE power,
-  PoE voltage, PoE good state, PoE mode, and graph prototypes for traffic,
-  errors/drops, and PoE.
-- Boolean values are normalized explicitly, so API strings such as
-  `false`, `0`, and `down` are treated as inactive.
-- port telemetry uses one master item with dependent item prototypes, so
-  large switch/AP environments do not call the UniFi API once per metric.
-- PoE budget discovery from the Network API endpoint with per-device used,
-  maximum, available, utilization, near-limit state, trigger prototypes, and
-  graph prototypes.
-- Radio discovery with item prototypes for channel, channel width, frequency,
-  and WLAN standard.
-- Parallel official Integration API device statistics: CPU, memory, uptime,
-  1/5/15-minute load averages, and uplink RX/TX rates for selected gateway models.
-- System health from `/proxy/network/api/s/default/stat/device`: CPU, memory,
-  load average, aggregate storage, uptime, and CPU temperature.
-- Gateway identity and firmware information from the Network API endpoint:
-  model, firmware version, displayable version, kernel version, architecture,
-  and firmware update availability.
-- Gateway identity fields now include gateway name, type, and MAC address from
-  the same `gateway-info` payload.
-- Storage discovery from the Network API endpoint with per-volume used, free, total,
-  utilization, trigger prototypes, and graph prototypes.
-- WAN health from the Network API endpoint: latency, packet loss, availability,
-  alive state, WAN IP, upload/download rate, and speedtest status, latency,
-  last run, age, download, and upload results.
-- WAN failover visibility: active WAN, WAN count, failover enabled state,
-  primary-WAN-active state, and failover state. Controller-level fixed WAN
-  items follow the active uplink when multi-WAN failover is in effect.
-- WAN discovery for multi-WAN environments. The current test environment has
-  one WAN, but the template includes WAN item prototypes for WAN2 and additional
-  discovered WAN labels when the Network API payload exposes them, including
-  per-WAN active state, role, and failover state.
-- Network services telemetry from the Network API endpoint: DHCP-enabled
-  networks, active DHCP leases, VPN tunnel totals/enabled/up counts, IDS/IPS
-  mode, signature rules, signature version, and signature age.
-- Radio performance from the Network API endpoint: channel utilization, self RX/TX
-  utilization, retry percentage, connected stations, and satisfaction.
-- Radio performance uses one master item with dependent item prototypes,
-  so AP-heavy environments do not call the UniFi API once per radio metric.
-- Radio satisfaction values below zero are normalized to `0`, because some
-  UniFi controllers return `-1` until that metric is available.
-- Collector health items for Integration API, Network API system, Network API
-  WAN, gateway info, network services, PoE budget, port, and radio master
-  items. These show whether the script returned usable JSON and expose the last
-  API/script error as text.
-- Low-level discovery include filters controlled by host macros. They default
-  to `.*`, so nothing is excluded unless you change the macros.
-- A dashboard named `UniFi Controller Overview` with classic graphs for
-  Internet activity, system health, and clients/devices.
-- A dashboard named `Unifi Controller` with a modern SVG graph, version widget,
-  and CPU/memory gauges.
-- Triggers for offline devices, firmware updates, disabled networks, and
-  application version changes, collector failures, high CPU, high memory, high
-  storage usage, high CPU temperature, gateway firmware update available,
-  gateway firmware version change, WAN latency, WAN packet loss, low WAN
-  availability, stale speedtest results, primary WAN not active during failover,
-  VPN tunnels down, stale IDS/IPS signatures, high PoE budget utilization, PoE
-  near-limit state, high radio utilization, high radio retries, and low radio
-  satisfaction.
-- Trigger for recent gateway reboot using the `system-health` uptime metric.
+DPI application IDs use UniFi's compound form `(category << 16) + application` and names are resolved from the Integration API DPI catalog.
 
 ## Validation
 
-Run these checks before production rollout:
+Live validation was performed with UniFi Network **10.6.101**, UniFi OS **5.1.31** and Zabbix **8.0.0beta2**.
 
-```bash
-python3 -m py_compile unifi_udm_pro_api.py
-python3 unifi_udm_pro_api.py info "$UNIFI_API_URL" "$UNIFI_API_KEY"
-python3 unifi_udm_pro_api.py system-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-python3 unifi_udm_pro_api.py gateway-info "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-```
+Validated collector windows and approximate controller response times:
 
-For a broader validation checklist, see `docs/VALIDATION.md`.
+- 1h: working
+- 1d: working
+- 1w: ~0.74 s
+- 30d: ~1.00 s
 
-### Useful Tuning Macros
+The same environment validated current client RSSI, a 2,112-entry DPI catalog and Wi-Fi association/authentication/DHCP/DNS telemetry.
 
-The most common operational thresholds are exposed as host macros:
-
-```text
-{$UNIFI.TLS.ARG}
-{$UNIFI.CPU.WARN}
-{$UNIFI.MEMORY.WARN}
-{$UNIFI.STORAGE.WARN}
-{$UNIFI.TEMP.WARN}
-{$UNIFI.WAN.LATENCY.WARN}
-{$UNIFI.WAN.LOSS.WARN}
-{$UNIFI.WAN.AVAILABILITY.MIN}
-{$UNIFI.SPEEDTEST.MAX_AGE}
-{$UNIFI.IDS.SIGNATURE.MAX_AGE}
-{$UNIFI.POE.BUDGET.WARN}
-{$UNIFI.RADIO.UTIL.WARN}
-{$UNIFI.RADIO.RETRY.WARN}
-{$UNIFI.RADIO.SATISFACTION.MIN}
-```
-
-Low-level discovery can be narrowed with include regex macros. Defaults are
-permissive:
-
-```text
-{$UNIFI.LLD.DEVICE.NAME.MATCHES} = .*
-{$UNIFI.LLD.DEVICE.MODEL.MATCHES} = .*
-{$UNIFI.LLD.NETWORK.NAME.MATCHES} = .*
-{$UNIFI.LLD.CLIENT.TYPE.MATCHES} = .*
-{$UNIFI.LLD.PORT.IDX.MATCHES} = .*
-{$UNIFI.LLD.PORT.NAME.MATCHES} = .*
-{$UNIFI.LLD.RADIO.INDEX.MATCHES} = .*
-{$UNIFI.LLD.RADIO.BAND.MATCHES} = .*
-{$UNIFI.LLD.STORAGE.MOUNT.MATCHES} = .*
-{$UNIFI.LLD.WAN.NAME.MATCHES} = .*
-```
-
-Example: to monitor only AP names starting with `ap-`, set
-`{$UNIFI.LLD.DEVICE.NAME.MATCHES}` to `^ap-`.
-
-### Troubleshooting No Data
-
-When a graph stops receiving data, check these items first on the controller
-host:
-
-```text
-UniFi Integration API collection available
-UniFi Integration API last error
-UniFi Network API system collection available
-UniFi Network API system last error
-UniFi Network API WAN collection available
-UniFi Network API WAN last error
-UniFi port collection available
-UniFi port last error
-UniFi radio collection available
-UniFi radio last error
-```
-
-If an availability item is `0`, the matching `last error` item usually points to
-TLS, API key, firewall, site ID, Network API site, or endpoint changes.
-
-## External Script
-
-The first external script is:
-
-```text
-unifi_udm_pro_api.py
-```
-
-It uses only Python standard library modules, so no extra `pip` dependencies are
-required.
-
-Install it on the Zabbix server or proxy external scripts directory:
-
-```bash
-sudo install -m 0755 unifi_udm_pro_api.py /usr/lib/zabbix/externalscripts/unifi_udm_pro_api.py
-```
-
-### Linux Test Environment
-
-Set these variables before testing:
-
-```bash
-export UNIFI_API_URL="https://xxx.xxx.xxx.xxx"
-export UNIFI_SITE_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-export UNIFI_API_KEY="replace-with-your-api-key"
-```
-
-Do not store the real API key in Git-tracked files.
-
-`UNIFI_SITE_ID` is recommended, but optional when the controller has only one
-site. In that case, the script discovers the site automatically.
-
-### Raw API Commands
-
-```bash
-./unifi_udm_pro_api.py info
-./unifi_udm_pro_api.py sites
-./unifi_udm_pro_api.py devices
-./unifi_udm_pro_api.py clients
-./unifi_udm_pro_api.py networks
-./unifi_udm_pro_api.py device xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-```
-
-From the Zabbix external scripts directory:
-
-```bash
-/usr/lib/zabbix/externalscripts/unifi_udm_pro_api.py info
-/usr/lib/zabbix/externalscripts/unifi_udm_pro_api.py summary-devices
-```
-
-The script also accepts explicit positional arguments, which is useful for
-Zabbix external checks:
-
-```bash
-./unifi_udm_pro_api.py info "{$UNIFI.API.URL}" "{$UNIFI.API.KEY}"
-./unifi_udm_pro_api.py devices "{$UNIFI.API.URL}" "{$UNIFI.API.KEY}" "{$UNIFI.SITE.ID}"
-```
-
-### Summary Commands
-
-```bash
-./unifi_udm_pro_api.py summary-devices
-./unifi_udm_pro_api.py summary-clients
-./unifi_udm_pro_api.py summary-networks
-./unifi_udm_pro_api.py system-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-./unifi_udm_pro_api.py gateway-info "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-./unifi_udm_pro_api.py wan-health "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-./unifi_udm_pro_api.py network-services "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-./unifi_udm_pro_api.py poe-budget "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-./unifi_udm_pro_api.py discover-wans "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-./unifi_udm_pro_api.py wan-field "$UNIFI_API_URL" "$UNIFI_API_KEY" default WAN latency_ms
-```
-
-`system-health` uses the Network API endpoint and returns CPU, memory,
-load, aggregate storage, uptime, and temperature metrics for the UDM Pro.
-`gateway-info` returns gateway identity, firmware, kernel, architecture, and
-upgrade availability fields.
-`wan-health` uses the same endpoint and returns WAN latency, packet loss,
-availability, upload/download rates, and speedtest data.
-`network-services` uses the same payload and returns DHCP, VPN, and IDS/IPS
-summary counters.
-`poe-budget` returns per-device PoE budget summaries for devices that expose
-PoE budget data or PoE-capable ports.
-`discover-wans` returns low-level discovery rows for WAN interfaces. It is
-prepared for labels such as `WAN`, `WAN2`, and additional WAN objects exposed by
-UniFi.
-
-### Low-Level Discovery Commands
-
-```bash
-./unifi_udm_pro_api.py discover-devices
-./unifi_udm_pro_api.py discover-clients
-./unifi_udm_pro_api.py discover-networks
-./unifi_udm_pro_api.py discover-ports
-./unifi_udm_pro_api.py discover-radios
-./unifi_udm_pro_api.py discover-radio-performance "$UNIFI_API_URL" "$UNIFI_API_KEY" default
-```
-
-The script automatically handles paginated endpoints such as `clients`.
-When `discover-ports` or `discover-radios` is called without a device ID, it
-discovers all devices first and then queries the detail endpoint only for
-devices that expose `ports` or `radios`.
-
-You can still test a single device manually:
-
-```bash
-./unifi_udm_pro_api.py discover-ports xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-./unifi_udm_pro_api.py discover-radios xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-```
-
-### Suggested Next Additions
-
-- Continue migrating WAN, storage, PoE, and radio telemetry to documented API endpoints when equivalent fields are available.
-- Validate Network 10.6.x payloads on additional gateway models and refine `{$UNIFI.LLD.OFFICIAL.STATS.MODEL.MATCHES}` as needed.
-- Add Site Manager, CEF/syslog, and NetFlow/IPFIX as separate optional integrations.
-
-### API Review Notes
-
-The Network API `stat/device` payload contains several high-value fields that are
-good candidates for future template expansion:
-
-- WAN health: `last_wan_status`, `last_wan_interfaces`, `wan1`, `wan2`,
-  `uplink`, `uptime_stats`, and `speedtest-status`.
-- Traffic and switch ports: `port_table`, `uplink`, `downlink_table`, and
-  per-port counters under `stat.sw`.
-- PoE and switch power: `poe_power`, `poe_voltage`, `poe_good`,
-  `total_used_power`, `total_max_power`, and near-limit flags.
-- Wireless quality: `radio_table_stats`, `vap_table`, retry percentage,
-  channel utilization, station count, and satisfaction.
-- Storage and temperature: `storage`, `temperatures`, and `overheating`.
-- Security and IDS/IPS: `ids_ips_signature` rule count, update time, signature
-  type, and activation state.
-- Network services: `network_table`, VPN status, DHCP lease counts, IPv4 active
-  leases, reported networks, and WAN failover state.
-
-## Confirmed Local API Responses from Previous Validation
-
-The examples below document an earlier validation environment and are retained
-for regression reference. Use the Network 10.6.x instructions above for current
-API-key creation and compatibility validation.
-
-The initial tests against the local UDM Pro Network API confirmed the following
-site response:
-
-```json
-{
-  "offset": 0,
-  "limit": 25,
-  "count": 1,
-  "totalCount": 1,
-  "data": [
-    {
-      "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-      "internalReference": "default",
-      "name": "Default"
-    }
-  ]
-}
-```
-
-Confirmed site values:
-
-- Site ID: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
-- Internal reference: `default`
-- Site name: `Default`
-
-The info endpoint confirmed the UniFi Network application version:
-
-```json
-{
-  "applicationVersion": "10.3.58"
-}
-```
-
-The device list endpoint confirmed these fields are available for low-level
-discovery:
-
-- `id`
-- `macAddress`
-- `ipAddress`
-- `name`
-- `model`
-- `state`
-- `supported`
-- `firmwareVersion`
-- `firmwareUpdatable`
-- `features`
-- `interfaces`
-
-The client list endpoint confirmed paginated client discovery. The first page
-returned 25 clients from a total of 28:
-
-```json
-{
-  "offset": 0,
-  "limit": 25,
-  "count": 25,
-  "totalCount": 28,
-  "data": []
-}
-```
-
-The collector must continue requesting pages while `offset + count` is lower
-than `totalCount`.
-
-Confirmed client discovery fields:
-
-- `type`
-- `id`
-- `name`
-- `connectedAt`
-- `ipAddress`
-- `macAddress`
-- `uplinkDeviceId`
-- `access.type`
-
-The networks endpoint confirmed VLAN and zone discovery fields:
-
-- `management`
-- `id`
-- `name`
-- `enabled`
-- `vlanId`
-- `metadata.origin`
-- `metadata.configurable`
-- `zoneId`
-- `default`
-
-The tested site returned 6 gateway-managed networks.
-
-The device detail endpoint for the UDM Pro confirmed port-level data:
-
-- `interfaces.ports[].idx`
-- `interfaces.ports[].state`
-- `interfaces.ports[].connector`
-- `interfaces.ports[].maxSpeedMbps`
-- `interfaces.ports[].speedMbps`
-
-The device detail endpoint for a FlexHD access point confirmed uplink and radio
-data:
-
-- `adoptedAt`
-- `provisionedAt`
-- `configurationId`
-- `uplink.deviceId`
-- `interfaces.radios[].wlanStandard`
-- `interfaces.radios[].frequencyGHz`
-- `interfaces.radios[].channelWidthMHz`
-- `interfaces.radios[].channel`
-
-Example port object:
-
-```json
-{
-  "idx": 1,
-  "state": "UP",
-  "connector": "RJ45",
-  "maxSpeedMbps": 1000,
-  "speedMbps": 1000
-}
-```
-
-Example radio object:
-
-```json
-{
-  "wlanStandard": "802.11ac",
-  "frequencyGHz": 5,
-  "channelWidthMHz": 40,
-  "channel": 136
-}
-```
-
-Confirmed monitoring candidates from the official local API:
-
-- Device count.
-- Device state.
-- Device support status.
-- Device firmware version.
-- Firmware update availability.
-- Device IP address.
-- Device provisioning timestamp.
-- Device configuration ID.
-- Physical port discovery.
-- Physical port state.
-- Physical port connector type.
-- Physical port maximum speed.
-- Physical port negotiated speed.
-- UniFi Network application version.
-- Access point uplink device.
-- Access point radio discovery.
-- Access point radio WLAN standard.
-- Access point radio frequency band.
-- Access point radio channel width.
-- Access point radio channel.
-- Client count.
-- Wireless client count.
-- Wired client count.
-- Client discovery.
-- Client IP address.
-- Client uplink device.
-- Client access type.
-- Network count.
-- Network enabled state.
-- Network VLAN ID.
-- Network management type.
-- Network metadata origin.
-- Network zone ID.
-- Default network flag.
-
-Confirmed Linux script tests from the Zabbix external scripts directory:
-
-```bash
-./unifi_udm_pro_api.py summary-devices
-```
-
-Returned:
-
-```json
-{"offline":0,"online":5,"total":5,"updatable":0}
-```
-
-```bash
-./unifi_udm_pro_api.py discover-devices
-```
-
-Returned 5 discovered UniFi devices.
-
-```bash
-./unifi_udm_pro_api.py discover-ports xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-```
-
-Returned 11 discovered UDM Pro ports.
-
-Confirmed trigger candidates:
-
-- Device is not `ONLINE`.
-- Device is not supported by the API.
-- Firmware update is available.
-- Device IP address changed.
-- Firmware version changed.
-- Physical port expected to be up is down.
-- Physical port negotiated below maximum speed.
-- Physical port speed changed.
-- Access point uplink changed.
-- Access point radio channel changed.
-- Access point radio channel width changed.
-- Important client disconnected or disappeared from discovery.
-- Client IP address changed.
-- Client uplink changed.
-- Unexpected client access type.
-- Network disabled unexpectedly.
-- Network VLAN ID changed.
-- Network zone changed.
-- Default network changed.
+See `docs/DASHBOARD_TELEMETRY.md` and `docs/VALIDATION.md` for additional details.
