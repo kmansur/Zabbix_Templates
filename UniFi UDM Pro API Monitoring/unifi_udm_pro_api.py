@@ -1,1695 +1,194 @@
 #!/usr/bin/env python3
+"""UniFi UDM Pro API Monitoring unified collector 0.8.0.
+
+Source modules are embedded from unifi_udm_pro_api.py and
+unifi_dashboard_telemetry.py. Do not edit this generated file directly.
 """
-UniFi UDM Pro API Monitoring
-Version: 0.7.0
-Author: Karim Mansur (Net Tech)
-
-External script for Zabbix templates.
-
-This collector intentionally uses only Python standard library modules so it can
-run in the Zabbix external scripts directory without a virtual environment.
-
-The project uses two UniFi Network API surfaces:
-
-1. Integration API:
-   /proxy/network/integration/v1
-
-   This is the documented API key based interface used for sites, devices,
-   clients, networks, simple device details, and the documented
-   devices/{deviceId}/statistics/latest real-time statistics endpoint.
-
-2. Legacy Network API:
-   /proxy/network/api/s/<site>/...
-
-   This endpoint is still available on the tested UDM Pro and exposes richer
-   operational telemetry such as CPU, memory, storage, WAN statistics, and radio
-   runtime counters. The script keeps this path isolated in dedicated helper
-   functions so it remains easy to audit or disable if a future UniFi release
-   changes behavior.
-
-All commands return valid JSON or a scalar value suitable for Zabbix items. On
-errors, JSON commands return {"error": "..."} and exit with code 0. This avoids
-breaking dependent items with malformed output.
-"""
-
 import argparse
 import json
-import os
-import ssl
 import sys
-import time
-import urllib.error
-import urllib.parse
-import urllib.request
 
-
-DEFAULT_LIMIT = 200
-
-COMMAND_ALIASES = {
-    "network-devices": "legacy-devices",
-    "port-telemetry": "legacy-ports",
-    "radio-performance": "legacy-radios",
-    "discover-port-telemetry": "legacy-discover-ports",
-    "discover-radio-performance": "legacy-discover-radios",
-    "port-telemetry-field": "legacy-port-field",
-    "radio-performance-field": "legacy-radio-field",
-}
-
-
-def is_blank_arg(value):
-    """Return true for empty values and unresolved Zabbix user macros."""
-    if value is None:
-        return True
-    text = str(value)
-    return text == "" or (text.startswith("{$") and text.endswith("}"))
-
-
-def print_json(payload):
-    """Print compact JSON.
-
-    Zabbix stores raw master item values frequently. Compact JSON reduces
-    history size while keeping the payload valid for JSONPath preprocessing.
-    """
-    print(json.dumps(payload, separators=(",", ":"), sort_keys=True))
-
-
-def fail(message, **extra):
-    """Return a stable JSON error payload and stop.
-
-    External scripts commonly fail because of TLS, firewall, credentials, or API
-    changes. Returning JSON instead of raising a traceback makes failures visible
-    in the master item without causing every dependent item to receive invalid
-    text.
-    """
-    payload = {"error": message}
-    payload.update(extra)
-    print_json(payload)
-    sys.exit(0)
-
-
-def normalize_base_url(base_url):
-    """Normalize the Integration API base URL.
-
-    The template macro can contain either the UDM Pro root URL
-    (https://<udm-pro-ip>) or the full integration prefix. Supporting both keeps
-    manual testing comfortable and prevents duplicated path segments.
-    """
-    if is_blank_arg(base_url):
-        fail("missing UniFi API URL")
-
-    base_url = base_url.rstrip("/")
-    if base_url.endswith("/proxy/network/integration/v1"):
-        return base_url
-
-    return base_url + "/proxy/network/integration/v1"
-
-
-def normalize_root_url(base_url):
-    """Normalize the UDM Pro root URL for non-Integration API paths."""
-    if is_blank_arg(base_url):
-        fail("missing UniFi API URL")
-
-    base_url = base_url.rstrip("/")
-    integration_suffix = "/proxy/network/integration/v1"
-    if base_url.endswith(integration_suffix):
-        return base_url[: -len(integration_suffix)]
-
-    return base_url
-
-
-def build_url(base_url, path, query=None):
-    """Build a URL for the documented Integration API."""
-    url = normalize_base_url(base_url) + "/" + path.lstrip("/")
-    if query:
-        url += "?" + urllib.parse.urlencode(query)
-    return url
-
-
-def build_legacy_url(base_url, legacy_site, path, query=None):
-    """Build a URL for the legacy UniFi Network API.
-
-    `legacy_site` is usually `default`, which matches the `internalReference`
-    returned by the Integration API sites endpoint in single-site UDM Pro
-    deployments.
-    """
-    if is_blank_arg(base_url):
-        fail("missing UniFi API URL")
-
-    legacy_site = "default" if is_blank_arg(legacy_site) else legacy_site
-    base_url = normalize_root_url(base_url)
-    path = path.lstrip("/")
-    url = f"{base_url}/proxy/network/api/s/{urllib.parse.quote(legacy_site)}/{path}"
-    if query:
-        url += "?" + urllib.parse.urlencode(query)
-    return url
-
-
-def request_json(base_url, api_key, path, query=None, insecure=True, timeout=20):
-    """Perform a GET request against the Integration API and parse JSON."""
-    if is_blank_arg(api_key):
-        fail("missing UniFi API key")
-
-    req = urllib.request.Request(
-        build_url(base_url, path, query),
-        headers={
-            "Accept": "application/json",
-            "X-API-KEY": api_key,
-        },
-        method="GET",
-    )
-
-    context = None
-    if insecure:
-        context = ssl._create_unverified_context()
-
-    try:
-        with urllib.request.urlopen(req, timeout=timeout, context=context) as response:
-            body = response.read().decode("utf-8")
-    except urllib.error.HTTPError as exc:
-        details = exc.read().decode("utf-8", errors="replace")
-        fail("http error", status=exc.code, details=details)
-    except urllib.error.URLError as exc:
-        fail("connection error", details=str(exc.reason))
-    except TimeoutError:
-        fail("request timed out")
-    except Exception as exc:
-        fail("request failed", details=str(exc))
-
-    try:
-        return json.loads(body)
-    except json.JSONDecodeError:
-        fail("invalid JSON response", body=body[:500])
-
-
-def request_legacy_json(base_url, api_key, legacy_site, path, query=None, insecure=True, timeout=20):
-    """Perform a GET request against the legacy Network API and parse JSON."""
-    if is_blank_arg(api_key):
-        fail("missing UniFi API key")
-
-    req = urllib.request.Request(
-        build_legacy_url(base_url, legacy_site, path, query),
-        headers={
-            "Accept": "application/json",
-            "X-API-KEY": api_key,
-        },
-        method="GET",
-    )
-
-    context = None
-    if insecure:
-        context = ssl._create_unverified_context()
-
-    try:
-        with urllib.request.urlopen(req, timeout=timeout, context=context) as response:
-            body = response.read().decode("utf-8")
-    except urllib.error.HTTPError as exc:
-        details = exc.read().decode("utf-8", errors="replace")
-        fail("legacy http error", status=exc.code, details=details)
-    except urllib.error.URLError as exc:
-        fail("legacy connection error", details=str(exc.reason))
-    except TimeoutError:
-        fail("legacy request timed out")
-    except Exception as exc:
-        fail("legacy request failed", details=str(exc))
-
-    try:
-        return json.loads(body)
-    except json.JSONDecodeError:
-        fail("invalid legacy JSON response", body=body[:500])
-
-
-def paginated_get(base_url, api_key, path, insecure=True, timeout=20, limit=DEFAULT_LIMIT):
-    """Read all pages from Integration API endpoints using offset/limit.
-
-    Tested endpoints return objects like:
-        {"offset": 0, "limit": 25, "count": 25, "totalCount": 28, "data": []}
-
-    The function preserves the envelope but replaces `data` with the combined
-    list from all pages.
-    """
-    items = []
-    offset = 0
-    last_payload = None
-
-    while True:
-        payload = request_json(
-            base_url,
-            api_key,
-            path,
-            query={"offset": offset, "limit": limit},
-            insecure=insecure,
-            timeout=timeout,
-        )
-        last_payload = payload
-
-        data = payload.get("data")
-        if not isinstance(data, list):
-            return payload
-
-        items.extend(data)
-
-        count = int(payload.get("count", len(data)))
-        total = int(payload.get("totalCount", len(items)))
-        offset = int(payload.get("offset", offset)) + count
-
-        if count <= 0 or offset >= total:
-            break
-
-    return {
-        "offset": 0,
-        "limit": limit,
-        "count": len(items),
-        "totalCount": last_payload.get("totalCount", len(items)) if last_payload else len(items),
-        "data": items,
-    }
-
-
-def lld_item(macros):
-    """Normalize low-level discovery macro values to strings.
-
-    Zabbix LLD macros are text values. Booleans are normalized to lowercase so
-    filters and overrides can compare against predictable `true`/`false`
-    strings.
-    """
-    normalized = {}
-    for key, value in macros.items():
-        if value is None:
-            normalized[key] = ""
-        elif isinstance(value, bool):
-            normalized[key] = "true" if value else "false"
-        else:
-            normalized[key] = str(value)
-    return normalized
-
-
-def discover_devices(payload):
-    """Convert Integration API devices into Zabbix LLD rows."""
-    data = payload.get("data", [])
-    return {
-        "data": [
-            lld_item({
-                "{#UNIFI.DEVICE.ID}": item.get("id"),
-                "{#UNIFI.DEVICE.NAME}": item.get("name"),
-                "{#UNIFI.DEVICE.MAC}": item.get("macAddress"),
-                "{#UNIFI.DEVICE.IP}": item.get("ipAddress"),
-                "{#UNIFI.DEVICE.MODEL}": item.get("model"),
-                "{#UNIFI.DEVICE.STATE}": item.get("state"),
-                "{#UNIFI.DEVICE.FIRMWARE}": item.get("firmwareVersion"),
-                "{#UNIFI.DEVICE.SUPPORTED}": item.get("supported"),
-                "{#UNIFI.DEVICE.UPDATABLE}": item.get("firmwareUpdatable"),
-                "{#UNIFI.DEVICE.FEATURES}": ",".join(item.get("features", [])),
-                "{#UNIFI.DEVICE.INTERFACES}": ",".join(item.get("interfaces", [])),
-            })
-            for item in data
-        ]
-    }
-
-
-def discover_clients(payload):
-    """Convert Integration API clients into Zabbix LLD rows."""
-    data = payload.get("data", [])
-    return {
-        "data": [
-            lld_item({
-                "{#UNIFI.CLIENT.ID}": item.get("id"),
-                "{#UNIFI.CLIENT.NAME}": item.get("name"),
-                "{#UNIFI.CLIENT.TYPE}": item.get("type"),
-                "{#UNIFI.CLIENT.MAC}": item.get("macAddress"),
-                "{#UNIFI.CLIENT.IP}": item.get("ipAddress"),
-                "{#UNIFI.CLIENT.UPLINK_DEVICE_ID}": item.get("uplinkDeviceId"),
-                "{#UNIFI.CLIENT.ACCESS_TYPE}": (item.get("access") or {}).get("type"),
-                "{#UNIFI.CLIENT.CONNECTED_AT}": item.get("connectedAt"),
-            })
-            for item in data
-        ]
-    }
-
-
-def discover_networks(payload):
-    """Convert Integration API networks/VLANs into Zabbix LLD rows."""
-    data = payload.get("data", [])
-    return {
-        "data": [
-            lld_item({
-                "{#UNIFI.NETWORK.ID}": item.get("id"),
-                "{#UNIFI.NETWORK.NAME}": item.get("name"),
-                "{#UNIFI.NETWORK.ENABLED}": item.get("enabled"),
-                "{#UNIFI.NETWORK.VLAN_ID}": item.get("vlanId"),
-                "{#UNIFI.NETWORK.MANAGEMENT}": item.get("management"),
-                "{#UNIFI.NETWORK.ORIGIN}": (item.get("metadata") or {}).get("origin"),
-                "{#UNIFI.NETWORK.CONFIGURABLE}": (item.get("metadata") or {}).get("configurable"),
-                "{#UNIFI.NETWORK.ZONE_ID}": item.get("zoneId"),
-                "{#UNIFI.NETWORK.DEFAULT}": item.get("default"),
-            })
-            for item in data
-        ]
-    }
-
-
-def discover_ports(payload):
-    """Discover ports from a single Integration API device-detail payload."""
-    device = payload
-    ports = ((device.get("interfaces") or {}).get("ports") or [])
-    return {
-        "data": [
-            lld_item({
-                "{#UNIFI.DEVICE.ID}": device.get("id"),
-                "{#UNIFI.DEVICE.NAME}": device.get("name"),
-                "{#UNIFI.PORT.IDX}": port.get("idx"),
-                "{#UNIFI.PORT.STATE}": port.get("state"),
-                "{#UNIFI.PORT.CONNECTOR}": port.get("connector"),
-                "{#UNIFI.PORT.MAX_SPEED}": port.get("maxSpeedMbps"),
-                "{#UNIFI.PORT.SPEED}": port.get("speedMbps"),
-            })
-            for port in ports
-        ]
-    }
-
-
-def discover_all_ports(base_url, api_key, site_id, insecure=True, timeout=20, limit=DEFAULT_LIMIT):
-    """Discover ports across all devices that advertise a `ports` interface.
-
-    The device list is cheap and tells us whether a detail call is worth making.
-    This avoids querying APs for port data they do not expose.
-    """
-    devices = paginated_get(
-        base_url,
-        api_key,
-        f"sites/{site_id}/devices",
-        insecure=insecure,
-        timeout=timeout,
-        limit=limit,
-    ).get("data", [])
-    discovered = []
-
-    for device in devices:
-        interfaces = device.get("interfaces") or []
-        if "ports" not in interfaces:
-            continue
-
-        detail = request_json(
-            base_url,
-            api_key,
-            f"sites/{site_id}/devices/{device.get('id')}",
-            insecure=insecure,
-            timeout=timeout,
-        )
-        discovered.extend(discover_ports(detail).get("data", []))
-
-    return {"data": discovered}
-
-
-def discover_radios(payload):
-    """Discover basic radio configuration from a single Integration API device."""
-    device = payload
-    radios = ((device.get("interfaces") or {}).get("radios") or [])
-    return {
-        "data": [
-            lld_item({
-                "{#UNIFI.DEVICE.ID}": device.get("id"),
-                "{#UNIFI.DEVICE.NAME}": device.get("name"),
-                "{#UNIFI.RADIO.INDEX}": index,
-                "{#UNIFI.RADIO.STANDARD}": radio.get("wlanStandard"),
-                "{#UNIFI.RADIO.FREQUENCY}": radio.get("frequencyGHz"),
-                "{#UNIFI.RADIO.CHANNEL_WIDTH}": radio.get("channelWidthMHz"),
-                "{#UNIFI.RADIO.CHANNEL}": radio.get("channel"),
-            })
-            for index, radio in enumerate(radios)
-        ]
-    }
-
-
-def discover_all_radios(base_url, api_key, site_id, insecure=True, timeout=20, limit=DEFAULT_LIMIT):
-    """Discover basic radio configuration across all APs."""
-    devices = paginated_get(
-        base_url,
-        api_key,
-        f"sites/{site_id}/devices",
-        insecure=insecure,
-        timeout=timeout,
-        limit=limit,
-    ).get("data", [])
-    discovered = []
-
-    for device in devices:
-        interfaces = device.get("interfaces") or []
-        if "radios" not in interfaces:
-            continue
-
-        detail = request_json(
-            base_url,
-            api_key,
-            f"sites/{site_id}/devices/{device.get('id')}",
-            insecure=insecure,
-            timeout=timeout,
-        )
-        discovered.extend(discover_radios(detail).get("data", []))
-
-    return {"data": discovered}
-
-
-def legacy_discover_radios(payload):
-    """Discover runtime radio rows from legacy `radio_table_stats`.
-
-    These rows contain the useful Wi-Fi health indicators that resemble the
-    UniFi controller radio/channel views: channel utilization, retries, station
-    counts, and satisfaction.
-    """
-    discovered = []
-    for device_id, device_radios in legacy_radios_document(payload).items():
-        for index, radio in device_radios.items():
-            discovered.append(lld_item({
-                "{#UNIFI.DEVICE.ID}": device_id,
-                "{#UNIFI.DEVICE.NAME}": radio.get("device_name"),
-                "{#UNIFI.RADIO.INDEX}": index,
-                "{#UNIFI.RADIO.NAME}": radio.get("name"),
-                "{#UNIFI.RADIO.BAND}": radio.get("band"),
-                "{#UNIFI.RADIO.CHANNEL}": radio.get("channel"),
-                "{#UNIFI.RADIO.STATE}": radio.get("state"),
-            }))
-    return {"data": discovered}
-
-
-def print_scalar(value):
-    """Print a scalar value for simple Zabbix external items."""
-    if value is None:
-        print("")
-    elif isinstance(value, bool):
-        print("1" if value else "0")
-    else:
-        print(value)
-
-
-def port_field(base_url, api_key, site_id, device_id, port_idx, field, insecure=True, timeout=20):
-    """Return one port field from one Integration API device detail payload."""
-    payload = request_json(
-        base_url,
-        api_key,
-        f"sites/{site_id}/devices/{device_id}",
-        insecure=insecure,
-        timeout=timeout,
-    )
-    ports = ((payload.get("interfaces") or {}).get("ports") or [])
-    for port in ports:
-        if str(port.get("idx")) == str(port_idx):
-            value = port.get(field)
-            if field in {"speedMbps", "maxSpeedMbps"} and value in (None, ""):
-                print_scalar(0)
-                return
-            print_scalar(value)
-            return
-    print_scalar(None)
-
-
-def radio_field(base_url, api_key, site_id, device_id, radio_index, field, insecure=True, timeout=20):
-    """Return one basic radio field from one Integration API device detail payload."""
-    payload = request_json(
-        base_url,
-        api_key,
-        f"sites/{site_id}/devices/{device_id}",
-        insecure=insecure,
-        timeout=timeout,
-    )
-    radios = ((payload.get("interfaces") or {}).get("radios") or [])
-    try:
-        radio = radios[int(radio_index)]
-    except (IndexError, TypeError, ValueError):
-        print_scalar(None)
-        return
-    print_scalar(radio.get(field))
-
-
-def legacy_radio_field(device, radio_index, field):
-    """Return one runtime radio field from `radio_table_stats`."""
-    radios = device.get("radio_table_stats") or []
-    try:
-        radio = radios[int(radio_index)]
-    except (IndexError, TypeError, ValueError):
-        print_scalar(None)
-        return
-
-    value = radio.get(field)
-    if field == "satisfaction" and to_float(value, 0.0) < 0:
-        print_scalar(0)
-        return
-
-    print_scalar(value)
-
-
-def legacy_radio_value(radio, field):
-    """Return normalized legacy radio metrics for Zabbix items."""
-    if field in {"cu_total", "cu_self_rx", "cu_self_tx", "tx_retries_pct", "satisfaction"}:
-        value = to_float(radio.get(field))
-        if field == "satisfaction" and value < 0:
-            return 0
-        return value
-    if field == "num_sta":
-        return to_int(radio.get(field))
-    return radio.get(field)
-
-
-def legacy_radios_document(payload):
-    """Build a compact device/radio map for dependent item prototypes."""
-    document = {}
-    fields = (
-        "cu_total",
-        "cu_self_rx",
-        "cu_self_tx",
-        "tx_retries_pct",
-        "num_sta",
-        "satisfaction",
-    )
-
-    for device in legacy_devices(payload):
-        device_id = str(device.get("external_id") or device.get("_id") or device.get("device_id") or device.get("mac") or "")
-        if not device_id:
-            continue
-
-        radios = device.get("radio_table_stats") or []
-        device_radios = document.setdefault(device_id, {})
-        for index, radio in enumerate(radios):
-            item = {
-                "device_name": device.get("name") or "",
-                "device_model": device.get("model") or "",
-                "name": radio.get("name") or "",
-                "band": radio.get("radio") or "",
-                "channel": radio.get("channel"),
-                "state": radio.get("state") or "",
-            }
-            for field in fields:
-                item[field] = legacy_radio_value(radio, field)
-            device_radios[str(index)] = item
-
-    return document
-
-
-def first_value(mapping, *keys):
-    """Return the first non-empty value from a mapping."""
-    for key in keys:
-        value = mapping.get(key)
-        if value not in (None, ""):
-            return value
-    return None
-
-
-def legacy_port_index(port):
-    """Return the most stable port index exposed by legacy port tables."""
-    return first_value(port, "port_idx", "idx", "port", "port_id")
-
-
-def legacy_ports(device):
-    """Return the legacy `port_table` list safely."""
-    ports = device.get("port_table") or []
-    return ports if isinstance(ports, list) else []
-
-
-def legacy_discover_ports(payload):
-    """Discover richer switch/gateway ports from legacy `port_table` data."""
-    discovered = []
-    for device_id, device_ports in legacy_ports_document(payload).items():
-        for port_idx, port in device_ports.items():
-            discovered.append(lld_item({
-                "{#UNIFI.DEVICE.ID}": device_id,
-                "{#UNIFI.DEVICE.NAME}": port.get("device_name"),
-                "{#UNIFI.DEVICE.MODEL}": port.get("device_model"),
-                "{#UNIFI.PORT.IDX}": port_idx,
-                "{#UNIFI.PORT.NAME}": port.get("name"),
-                "{#UNIFI.PORT.IFNAME}": port.get("ifname"),
-                "{#UNIFI.PORT.POE_MODE}": port.get("poe_mode"),
-            }))
-    return {"data": discovered}
-
-
-def legacy_port_value(port, field):
-    """Return normalized legacy port metrics for Zabbix items."""
-    if field == "up":
-        return to_bool(first_value(port, "up", "link", "link_up"))
-    if field == "speed_mbps":
-        return to_float(first_value(port, "speed", "speedMbps", "speed_mbps"))
-    if field == "rx_bps":
-        return round(to_float(first_value(port, "rx_bytes-r", "rx_bytes_rate", "rx_rate")) * 8, 2)
-    if field == "tx_bps":
-        return round(to_float(first_value(port, "tx_bytes-r", "tx_bytes_rate", "tx_rate")) * 8, 2)
-    if field == "rx_errors":
-        return to_int(first_value(port, "rx_errors", "rx_error", "rx_errors_delta"))
-    if field == "tx_errors":
-        return to_int(first_value(port, "tx_errors", "tx_error", "tx_errors_delta"))
-    if field == "rx_dropped":
-        return to_int(first_value(port, "rx_dropped", "rx_drops", "rx_drop"))
-    if field == "tx_dropped":
-        return to_int(first_value(port, "tx_dropped", "tx_drops", "tx_drop"))
-    if field == "poe_power_w":
-        return to_float(first_value(port, "poe_power", "poe_power_w"))
-    if field == "poe_voltage_v":
-        return to_float(first_value(port, "poe_voltage", "poe_voltage_v"))
-    if field == "poe_good":
-        return to_bool(first_value(port, "poe_good", "poe_enable", "poe_power"))
-    if field == "poe_mode":
-        return first_value(port, "poe_mode", "poe_caps")
-    if field == "name":
-        return first_value(port, "name", "ifname", "label")
-    return port.get(field)
-
-
-def legacy_port_field(device, port_idx, field):
-    """Print one scalar field from a legacy `port_table` row."""
-    for port in legacy_ports(device):
-        if str(legacy_port_index(port)) == str(port_idx):
-            print_scalar(legacy_port_value(port, field))
-            return
-    print_scalar(None)
-
-
-def legacy_ports_document(payload):
-    """Build a compact device/port map for dependent item prototypes."""
-    document = {}
-    fields = (
-        "up",
-        "speed_mbps",
-        "rx_bps",
-        "tx_bps",
-        "rx_errors",
-        "tx_errors",
-        "rx_dropped",
-        "tx_dropped",
-        "poe_power_w",
-        "poe_voltage_v",
-        "poe_good",
-        "poe_mode",
-    )
-
-    for device in legacy_devices(payload):
-        device_id = str(device.get("external_id") or device.get("_id") or device.get("device_id") or device.get("mac") or "")
-        if not device_id:
-            continue
-
-        device_ports = document.setdefault(device_id, {})
-        for port in legacy_ports(device):
-            port_idx = legacy_port_index(port)
-            if port_idx is None:
-                continue
-
-            port_idx = str(port_idx)
-            item = {
-                "device_name": device.get("name") or "",
-                "device_model": device.get("model") or "",
-                "name": legacy_port_value(port, "name") or "",
-                "ifname": first_value(port, "ifname", "name") or "",
-            }
-            for field in fields:
-                item[field] = legacy_port_value(port, field)
-            device_ports[port_idx] = item
-
-    return document
-
-
-def poe_budget_value(device, field):
-    """Return normalized device-level PoE budget values."""
-    max_power = to_float(first_value(
-        device,
-        "total_max_power",
-        "total_poe_power",
-        "poe_power_budget",
-        "poe_budget",
-        "max_poe_power",
-    ))
-    used_power = to_float(first_value(
-        device,
-        "total_used_power",
-        "poe_power",
-        "poe_power_used",
-        "used_poe_power",
-    ))
-    available_power = max(0.0, max_power - used_power) if max_power else 0.0
-    used_percent = round(used_power / max_power * 100, 2) if max_power else 0.0
-    ports = legacy_ports(device)
-    poe_ports = sum(1 for port in ports if first_value(port, "poe_mode", "poe_caps", "poe_power", "poe_good") not in (None, ""))
-
-    if field == "used_power_w":
-        return round(used_power, 2)
-    if field == "max_power_w":
-        return round(max_power, 2)
-    if field == "available_power_w":
-        return round(available_power, 2)
-    if field == "used_percent":
-        return used_percent
-    if field == "poe_ports":
-        return poe_ports
-    if field == "near_limit":
-        return to_bool(first_value(device, "poe_near_limit", "poe_power_near_limit", "power_near_limit"))
-    return device.get(field)
-
-
-def has_poe_budget(device):
-    """Return true when a device exposes PoE budget or PoE-capable ports."""
-    return (
-        poe_budget_value(device, "max_power_w") > 0
-        or poe_budget_value(device, "used_power_w") > 0
-        or poe_budget_value(device, "poe_ports") > 0
-    )
-
-
-def poe_budget_document(payload):
-    """Build a compact device map for PoE budget dependent item prototypes."""
-    document = {}
-    fields = (
-        "used_power_w",
-        "max_power_w",
-        "available_power_w",
-        "used_percent",
-        "poe_ports",
-        "near_limit",
-    )
-
-    for device in legacy_devices(payload):
-        if not has_poe_budget(device):
-            continue
-
-        device_id = str(device.get("external_id") or device.get("_id") or device.get("device_id") or device.get("mac") or "")
-        if not device_id:
-            continue
-
-        item = {
-            "device_name": device.get("name") or "",
-            "device_model": device.get("model") or "",
-        }
-        for field in fields:
-            item[field] = poe_budget_value(device, field)
-        document[device_id] = item
-
-    return document
-
-
-def discover_poe_budget(payload):
-    """Discover devices with PoE budget data."""
-    return {
-        "data": [
-            lld_item({
-                "{#UNIFI.DEVICE.ID}": device_id,
-                "{#UNIFI.DEVICE.NAME}": device.get("device_name"),
-                "{#UNIFI.DEVICE.MODEL}": device.get("device_model"),
-            })
-            for device_id, device in poe_budget_document(payload).items()
-        ]
-    }
-
-
-def legacy_stat_devices(base_url, api_key, legacy_site, insecure=True, timeout=20):
-    """Fetch the legacy stat/device payload for the selected site."""
-    return request_legacy_json(base_url, api_key, legacy_site, "stat/device", insecure=insecure, timeout=timeout)
-
-
-def legacy_devices(payload):
-    """Return the legacy device list safely."""
-    data = payload.get("data", [])
-    return data if isinstance(data, list) else []
-
-
-def network_table(device):
-    """Return the legacy `network_table` list safely."""
-    networks = device.get("network_table") or []
-    return networks if isinstance(networks, list) else []
-
-
-def find_legacy_device(payload, device_id=None):
-    """Find a legacy device by common identifiers.
-
-    For UDM-level system/WAN metrics, the caller can omit `device_id`; in that
-    case the first legacy device with type `udm` or model `UDMPRO` is selected.
-    """
-    devices = legacy_devices(payload)
-    if is_blank_arg(device_id):
-        device_id = None
-
-    if device_id:
-        for device in devices:
-            identifiers = {
-                str(device.get("external_id", "")),
-                str(device.get("_id", "")),
-                str(device.get("device_id", "")),
-                str(device.get("mac", "")),
-                str(device.get("name", "")),
-            }
-            if str(device_id) in identifiers:
-                return device
-        fail("legacy device not found", device_id=device_id)
-
-    for device in devices:
-        if device.get("type") == "udm" or device.get("model") == "UDMPRO":
-            return device
-
-    if len(devices) == 1:
-        return devices[0]
-
-    fail("legacy device ID is required")
-
-
-def to_float(value, default=0.0):
-    """Best-effort float conversion for inconsistent UniFi numeric fields."""
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return default
-
-
-def to_int(value, default=0):
-    """Best-effort integer conversion for counters that may arrive as strings."""
-    try:
-        return int(float(value))
-    except (TypeError, ValueError):
-        return default
-
-
-def count_value(value):
-    """Return a count from either a scalar counter or a list-like payload value."""
-    if isinstance(value, list):
-        return len(value)
-    if isinstance(value, dict):
-        return len(value)
-    return to_int(value)
-
-
-def to_bool(value, default=False):
-    """Best-effort boolean conversion for inconsistent UniFi status fields."""
-    if value is None or value == "":
-        return default
-
-    if isinstance(value, bool):
-        return value
-
-    if isinstance(value, (int, float)):
-        return value != 0
-
-    text = str(value).strip().lower()
-    if text in {"1", "true", "yes", "y", "on", "up", "enabled", "enable", "good", "ok"}:
-        return True
-    if text in {"0", "false", "no", "n", "off", "down", "disabled", "disable", "bad"}:
-        return False
-
-    try:
-        return float(text) != 0
-    except ValueError:
-        pass
-
-    return default
-
-
-def to_epoch(value):
-    """Best-effort Unix timestamp conversion for UniFi time fields."""
-    timestamp = to_int(value)
-    if timestamp > 9999999999:
-        timestamp = int(timestamp / 1000)
-    return timestamp
-
-
-def text_contains(mapping, *needles):
-    """Return true when any common text field contains one of the needles."""
-    haystack = " ".join(
-        str(mapping.get(key, ""))
-        for key in ("name", "purpose", "type", "site_to_site", "vpn_type", "networkgroup")
-    ).lower()
-    return any(needle in haystack for needle in needles)
-
-
-def dhcp_enabled(network):
-    """Return whether a network row appears to provide DHCP service."""
-    value = first_value(
-        network,
-        "dhcpd_enabled",
-        "dhcp_enabled",
-        "dhcp_enable",
-        "dhcp_server_enabled",
-        "dhcpd",
-    )
-    return to_bool(value)
-
-
-def network_lease_count(network):
-    """Return the active DHCP lease count from known Network API fields."""
-    for key in (
-        "active_dhcp_lease_count",
-        "dhcp_lease_count",
-        "dhcp_leases_count",
-        "num_dhcp_leases",
-        "lease_count",
-        "leases",
-        "dhcp_leases",
-        "ipv4_active_leases",
-        "num_sta",
-    ):
-        value = network.get(key)
-        if value not in (None, ""):
-            return count_value(value)
-    return 0
-
-
-def vpn_enabled(network):
-    """Return whether a network row looks like an enabled VPN object."""
-    if not text_contains(network, "vpn"):
-        return False
-    value = first_value(network, "enabled", "up", "active")
-    return to_bool(value, True)
-
-
-def vpn_up(network):
-    """Return whether a VPN row appears operational."""
-    if not vpn_enabled(network):
-        return False
-    value = first_value(network, "up", "connected", "active", "enabled")
-    return to_bool(value, True)
-
-
-def ids_signature_info(device):
-    """Return the IDS/IPS signature object if present."""
-    for key in ("ids_ips_signature", "ips_signature", "ids_signature"):
-        value = device.get(key)
-        if isinstance(value, dict):
-            return value
-    return {}
-
-
-def network_services(device):
-    """Build a compact VPN, DHCP, and IDS/IPS health document."""
-    networks = network_table(device)
-    dhcp_networks = [network for network in networks if dhcp_enabled(network)]
-    vpn_networks = [network for network in networks if text_contains(network, "vpn")]
-    vpn_enabled_networks = [network for network in vpn_networks if vpn_enabled(network)]
-
-    signature = ids_signature_info(device)
-    ids_mode = first_value(device, "ids_ips_mode", "ips_mode", "ids_mode") or ""
-    ids_enabled = to_bool(
-        first_value(device, "ids_ips_enabled", "ips_enabled", "ids_enabled"),
-        bool(ids_mode or signature),
-    )
-    signature_rules = first_value(
-        signature,
-        "rules_count",
-        "rule_count",
-        "count",
-        "signature_count",
-        "num_rules",
-    )
-    signature_updated = to_epoch(first_value(
-        signature,
-        "last_update",
-        "last_updated",
-        "update_time",
-        "updated_at",
-        "timestamp",
-    ))
-
-    return {
-        "network_count": len(networks),
-        "dhcp_networks_total": len(dhcp_networks),
-        "dhcp_active_leases": sum(network_lease_count(network) for network in dhcp_networks),
-        "vpn_total": len(vpn_networks),
-        "vpn_enabled": len(vpn_enabled_networks),
-        "vpn_up": sum(1 for network in vpn_enabled_networks if vpn_up(network)),
-        "ids_enabled": ids_enabled,
-        "ids_mode": ids_mode,
-        "ids_signature_rules": count_value(signature_rules),
-        "ids_signature_version": first_value(signature, "version", "signature_version", "ruleset_version") or "",
-        "ids_signature_last_update": signature_updated,
-        "ids_signature_age_seconds": int(time.time()) - signature_updated if signature_updated else 0,
-    }
-
-
-def gateway_info(device):
-    """Build a compact gateway identity and firmware document."""
-    version = first_value(device, "version", "firmwareVersion", "fw_version")
-    displayable_version = first_value(device, "displayable_version", "displayableVersion", "firmware_version")
-
-    return {
-        "name": device.get("name") or "",
-        "model": device.get("model") or "",
-        "type": device.get("type") or "",
-        "mac": device.get("mac") or "",
-        "version": version or displayable_version or "",
-        "displayable_version": displayable_version or version or "",
-        "kernel_version": first_value(device, "kernel_version", "kernelVersion") or "",
-        "architecture": first_value(device, "architecture", "arch") or "",
-        "upgradable": to_bool(first_value(device, "upgradable", "upgradeable", "firmwareUpdatable")),
-    }
-
-
-def system_health(device):
-    """Build a compact system-health document from one legacy device.
-
-    The UDM Pro exposes CPU/memory percentages under `system-stats`, raw memory
-    counters under `sys_stats`, and storage/temperature arrays as top-level
-    lists. This function flattens those shapes into stable keys for dependent
-    Zabbix items.
-    """
-    system_stats = device.get("system-stats") or {}
-    sys_stats = device.get("sys_stats") or {}
-    storage = device.get("storage") or []
-    temperatures = device.get("temperatures") or []
-
-    storage_size = sum(to_int(item.get("size")) for item in storage)
-    storage_used = sum(to_int(item.get("used")) for item in storage)
-    storage_free = max(0, storage_size - storage_used)
-    storage_used_percent = (storage_used / storage_size * 100) if storage_size else 0
-
-    result = {
-        "cpu_percent": to_float(system_stats.get("cpu")),
-        "memory_percent": to_float(system_stats.get("mem")),
-        "uptime": to_int(system_stats.get("uptime") or device.get("uptime")),
-        "loadavg_1": to_float(sys_stats.get("loadavg_1")),
-        "loadavg_5": to_float(sys_stats.get("loadavg_5")),
-        "loadavg_15": to_float(sys_stats.get("loadavg_15")),
-        "memory_total": to_int(sys_stats.get("mem_total")),
-        "memory_used": to_int(sys_stats.get("mem_used")),
-        "memory_buffer": to_int(sys_stats.get("mem_buffer")),
-        "storage_total": storage_size,
-        "storage_used": storage_used,
-        "storage_free": storage_free,
-        "storage_used_percent": round(storage_used_percent, 2),
-        "storage_count": len(storage),
-        "temperature_count": len(temperatures),
-    }
-
-    for item in temperatures:
-        temp_type = item.get("type") or item.get("name")
-        if temp_type:
-            result[f"temperature_{temp_type}"] = to_float(item.get("value"))
-
-    return result
-
-
-def discover_storage(device):
-    """Discover storage volumes from a legacy UDM device."""
-    storage = device.get("storage") or []
-    return {
-        "data": [
-            lld_item({
-                "{#UNIFI.STORAGE.NAME}": item.get("name"),
-                "{#UNIFI.STORAGE.MOUNT}": item.get("mount_point"),
-                "{#UNIFI.STORAGE.TYPE}": item.get("type"),
-            })
-            for item in storage
-        ]
-    }
-
-
-def storage_field(device, mount_point, field):
-    """Return one storage field by mount point."""
-    storage = device.get("storage") or []
-    for item in storage:
-        if item.get("mount_point") == mount_point:
-            if field == "free":
-                print_scalar(to_int(item.get("size")) - to_int(item.get("used")))
-                return
-            if field == "used_percent":
-                size = to_int(item.get("size"))
-                used = to_int(item.get("used"))
-                print_scalar(round(used / size * 100, 2) if size else 0)
-                return
-            print_scalar(item.get(field))
-            return
-    print_scalar(None)
-
-
-def wan_candidates(device):
-    """Return the WAN names exposed by the legacy payload.
-
-    A single-WAN UDM usually exposes keys such as `WAN`, `wan1`, and `uplink`.
-    Multi-WAN systems may add `WAN2`, `wan2`, or additional entries under
-    `last_wan_interfaces`. The returned names are normalized to the controller
-    labels (`WAN`, `WAN2`, ...), which are stable LLD macro values.
-    """
-    names = set()
-
-    for name in (device.get("uptime_stats") or {}).keys():
-        if str(name).upper().startswith("WAN"):
-            names.add(str(name).upper())
-
-    for name in (device.get("last_wan_interfaces") or {}).keys():
-        if str(name).upper().startswith("WAN"):
-            names.add(str(name).upper())
-
-    for key in device.keys():
-        key_text = str(key).lower()
-        if key_text.startswith("wan") and key_text[3:].isdigit():
-            suffix = key_text[3:]
-            names.add("WAN" if suffix == "1" else f"WAN{suffix}")
-
-    if device.get("uplink"):
-        names.add("WAN")
-
-    return sorted(names, key=lambda name: (len(name), name))
-
-
-def wan_source(device, wan_name):
-    """Collect the legacy structures that describe one WAN link."""
-    wan_name = (wan_name or "WAN").upper()
-    wan_number = "1" if wan_name == "WAN" else wan_name.replace("WAN", "", 1)
-
-    uptime_stats = ((device.get("uptime_stats") or {}).get(wan_name) or {})
-    interface_state = ((device.get("last_wan_interfaces") or {}).get(wan_name) or {})
-    wan_table = device.get(f"wan{wan_number}") or {}
-    uplink = device.get("uplink") or {}
-    multi_wan = len(wan_candidates(device)) > 1
-
-    # On single-WAN systems, the `uplink` object is the most complete active WAN
-    # representation. For multi-WAN explicit labels, prefer the matching `wanN`
-    # object when the active uplink appears to point at a different WAN.
-    if wan_table and wan_name != "WAN":
-        uplink = wan_table
-    elif wan_table and multi_wan:
-        active_values = {
-            str(value).strip().lower()
-            for value in (uplink.get("name"), uplink.get("ifname"), uplink.get("ip"), uplink.get("mac"))
-            if value not in (None, "")
-        }
-        wan_values = {
-            str(value).strip().lower()
-            for value in (
-                wan_table.get("name"),
-                wan_table.get("ifname"),
-                wan_table.get("ip"),
-                wan_table.get("mac"),
-                interface_state.get("name"),
-                interface_state.get("ifname"),
-                interface_state.get("ip"),
-                interface_state.get("mac"),
-            )
-            if value not in (None, "")
-        }
-        if active_values and not active_values.intersection(wan_values):
-            uplink = wan_table
-
-    return uptime_stats, interface_state, wan_table, uplink
-
-
-def wan_role(wan_name):
-    """Return the logical failover role for a WAN label."""
-    return "primary" if (wan_name or "WAN").upper() == "WAN" else "backup"
-
-
-def wan_alive(interface_state, uplink):
-    """Return whether one WAN source is considered alive."""
-    alive = interface_state.get("alive")
-    if alive is None:
-        alive = uplink.get("up", False)
-    return to_bool(alive)
-
-
-def wan_active_name(device, candidates=None):
-    """Best-effort active WAN detection from the UDM uplink object."""
-    candidates = candidates or wan_candidates(device)
-    if not candidates:
-        return ""
-    if len(candidates) == 1:
-        return candidates[0]
-
-    active_uplink = device.get("uplink") or {}
-    active_values = {
-        str(value).strip().lower()
-        for value in (
-            active_uplink.get("name"),
-            active_uplink.get("ifname"),
-            active_uplink.get("ip"),
-            active_uplink.get("mac"),
-        )
-        if value not in (None, "")
-    }
-
-    for wan_name in candidates:
-        _, interface_state, wan_table, _ = wan_source(device, wan_name)
-        wan_values = {
-            str(value).strip().lower()
-            for value in (
-                wan_name,
-                wan_table.get("name"),
-                wan_table.get("ifname"),
-                wan_table.get("ip"),
-                wan_table.get("mac"),
-                interface_state.get("name"),
-                interface_state.get("ifname"),
-                interface_state.get("ip"),
-                interface_state.get("mac"),
-            )
-            if value not in (None, "")
-        }
-        if active_values and active_values.intersection(wan_values):
-            return wan_name
-
-    alive_wans = []
-    for wan_name in candidates:
-        _, interface_state, _, uplink = wan_source(device, wan_name)
-        if wan_alive(interface_state, uplink):
-            alive_wans.append(wan_name)
-
-    if len(alive_wans) == 1:
-        return alive_wans[0]
-    if "WAN" in alive_wans:
-        return "WAN"
-    if alive_wans:
-        return alive_wans[0]
-
-    return candidates[0]
-
-
-def discover_wans(device):
-    """Discover WAN links from the legacy UDM payload."""
-    discovered = []
-    candidates = wan_candidates(device)
-    active_name = wan_active_name(device, candidates)
-    for wan_name in candidates:
-        _, interface_state, wan_table, uplink = wan_source(device, wan_name)
-        alive = wan_alive(interface_state, uplink)
-        active = wan_name == active_name
-        discovered.append(lld_item({
-            "{#UNIFI.WAN.NAME}": wan_name,
-            "{#UNIFI.WAN.IFNAME}": uplink.get("name") or wan_table.get("ifname") or wan_table.get("name"),
-            "{#UNIFI.WAN.IP}": interface_state.get("ip") or uplink.get("ip") or wan_table.get("ip"),
-            "{#UNIFI.WAN.ALIVE}": alive,
-            "{#UNIFI.WAN.ROLE}": wan_role(wan_name),
-            "{#UNIFI.WAN.ACTIVE}": active,
-            "{#UNIFI.WAN.FAILOVER_STATE}": "active" if active else ("standby" if alive else "down"),
-        }))
-    return {"data": discovered}
-
-
-def wan_health(device, wan_name=None):
-    """Return WAN health for one WAN label.
-
-    When no label is provided, the active WAN is selected. Single-WAN systems
-    still resolve to `WAN`, while multi-WAN controller-level graphs follow the
-    uplink currently carrying traffic. Multi-WAN item prototypes call the same
-    function through `wan_field` with an explicit label.
-    """
-    candidates = wan_candidates(device)
-    active_name = wan_active_name(device, candidates)
-    wan_name = (wan_name or active_name or "WAN").upper()
-    uptime_stats, interface_state, wan_table, uplink = wan_source(device, wan_name)
-    speedtest = device.get("speedtest-status") or {}
-    speedtest_last_run = to_int(speedtest.get("rundate") or uplink.get("speedtest_lastrun"))
-    speedtest_age = int(time.time()) - speedtest_last_run if speedtest_last_run else 0
-
-    availability = to_float(uptime_stats.get("availability"), 0.0)
-    rx_bps = to_float(uplink.get("rx_bytes-r")) * 8
-    tx_bps = to_float(uplink.get("tx_bytes-r")) * 8
-    alive = wan_alive(interface_state, uplink)
-    active = wan_name == active_name
-    failover_enabled = len(candidates) > 1
-
-    return {
-        "name": wan_name,
-        "ifname": uplink.get("name") or wan_table.get("ifname") or wan_table.get("name") or "",
-        "ip": interface_state.get("ip") or uplink.get("ip") or wan_table.get("ip") or "",
-        "alive": alive,
-        "active": active,
-        "active_wan": active_name,
-        "failover_enabled": failover_enabled,
-        "failover_state": "active" if active else ("standby" if alive else "down"),
-        "primary_active": active_name == "WAN",
-        "role": wan_role(wan_name),
-        "wan_count": len(candidates),
-        "availability_percent": availability,
-        "packet_loss_percent": round(max(0.0, 100.0 - availability), 4),
-        "latency_ms": to_float(uptime_stats.get("latency_average") or uplink.get("latency")),
-        "uptime_seconds": to_int(uplink.get("uptime")),
-        "rx_bps": round(rx_bps, 2),
-        "tx_bps": round(tx_bps, 2),
-        "rx_mbps": round(rx_bps / 1000000, 4),
-        "tx_mbps": round(tx_bps / 1000000, 4),
-        "speed_mbps": to_float(uplink.get("speed")),
-        "max_speed_mbps": to_float(uplink.get("max_speed")),
-        "speedtest_download_mbps": to_float(speedtest.get("xput_download") or uplink.get("xput_down")),
-        "speedtest_upload_mbps": to_float(speedtest.get("xput_upload") or uplink.get("xput_up")),
-        "speedtest_latency_ms": to_float(speedtest.get("latency") or speedtest.get("speedtest_ping")),
-        "speedtest_last_run": speedtest_last_run,
-        "speedtest_age_seconds": speedtest_age,
-        "speedtest_status": uplink.get("speedtest_status") or speedtest.get("status_summary") or "",
-    }
-
-
-def wan_field(device, wan_name, field):
-    """Print one scalar field from a WAN health document."""
-    print_scalar(wan_health(device, wan_name).get(field))
-
-
-def summarize(payload, field):
-    data = payload.get("data", [])
-    if field == "devices":
-        online = sum(1 for item in data if item.get("state") == "ONLINE")
-        updatable = sum(1 for item in data if item.get("firmwareUpdatable") is True)
-        return {"total": len(data), "online": online, "offline": len(data) - online, "updatable": updatable}
-    if field == "clients":
-        wired = sum(1 for item in data if item.get("type") == "WIRED")
-        wireless = sum(1 for item in data if item.get("type") == "WIRELESS")
-        return {"total": len(data), "wired": wired, "wireless": wireless}
-    if field == "networks":
-        enabled = sum(1 for item in data if item.get("enabled") is True)
-        return {"total": len(data), "enabled": enabled, "disabled": len(data) - enabled}
-    return {"total": len(data)}
-
-
-def resolve_site_id(base_url, api_key, site_id, insecure=True, timeout=20, limit=DEFAULT_LIMIT):
-    if not is_blank_arg(site_id):
-        return site_id
-
-    payload = paginated_get(base_url, api_key, "sites", insecure=insecure, timeout=timeout, limit=limit)
-    sites = payload.get("data", [])
-    if len(sites) == 1 and sites[0].get("id"):
-        return sites[0]["id"]
-
-    if not sites:
-        fail("missing site ID and no sites were returned")
-
-    fail("missing site ID and multiple sites were returned", sites=len(sites))
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="Collect UniFi UDM Pro API data for Zabbix.")
-    parser.add_argument("command", help="Command to run.")
-    parser.add_argument("values", nargs="*", help="Optional URL/key/site/object arguments.")
-    parser.add_argument("--verify-tls", action="store_true", help="Verify TLS certificates.")
+VERSION = '0.8.0'
+CORE_SOURCE = '#!/usr/bin/env python3\n"""\nUniFi UDM Pro API Monitoring\nVersion: 0.7.0\nAuthor: Karim Mansur (Net Tech)\n\nExternal script for Zabbix templates.\n\nThis collector intentionally uses only Python standard library modules so it can\nrun in the Zabbix external scripts directory without a virtual environment.\n\nThe project uses two UniFi Network API surfaces:\n\n1. Integration API:\n   /proxy/network/integration/v1\n\n   This is the documented API key based interface used for sites, devices,\n   clients, networks, simple device details, and the documented\n   devices/{deviceId}/statistics/latest real-time statistics endpoint.\n\n2. Legacy Network API:\n   /proxy/network/api/s/<site>/...\n\n   This endpoint is still available on the tested UDM Pro and exposes richer\n   operational telemetry such as CPU, memory, storage, WAN statistics, and radio\n   runtime counters. The script keeps this path isolated in dedicated helper\n   functions so it remains easy to audit or disable if a future UniFi release\n   changes behavior.\n\nAll commands return valid JSON or a scalar value suitable for Zabbix items. On\nerrors, JSON commands return {"error": "..."} and exit with code 0. This avoids\nbreaking dependent items with malformed output.\n"""\n\nimport argparse\nimport json\nimport os\nimport ssl\nimport sys\nimport time\nimport urllib.error\nimport urllib.parse\nimport urllib.request\n\n\nDEFAULT_LIMIT = 200\n\nCOMMAND_ALIASES = {\n    "network-devices": "legacy-devices",\n    "port-telemetry": "legacy-ports",\n    "radio-performance": "legacy-radios",\n    "discover-port-telemetry": "legacy-discover-ports",\n    "discover-radio-performance": "legacy-discover-radios",\n    "port-telemetry-field": "legacy-port-field",\n    "radio-performance-field": "legacy-radio-field",\n}\n\n\ndef is_blank_arg(value):\n    """Return true for empty values and unresolved Zabbix user macros."""\n    if value is None:\n        return True\n    text = str(value)\n    return text == "" or (text.startswith("{$") and text.endswith("}"))\n\n\ndef print_json(payload):\n    """Print compact JSON.\n\n    Zabbix stores raw master item values frequently. Compact JSON reduces\n    history size while keeping the payload valid for JSONPath preprocessing.\n    """\n    print(json.dumps(payload, separators=(",", ":"), sort_keys=True))\n\n\ndef fail(message, **extra):\n    """Return a stable JSON error payload and stop.\n\n    External scripts commonly fail because of TLS, firewall, credentials, or API\n    changes. Returning JSON instead of raising a traceback makes failures visible\n    in the master item without causing every dependent item to receive invalid\n    text.\n    """\n    payload = {"error": message}\n    payload.update(extra)\n    print_json(payload)\n    sys.exit(0)\n\n\ndef normalize_base_url(base_url):\n    """Normalize the Integration API base URL.\n\n    The template macro can contain either the UDM Pro root URL\n    (https://<udm-pro-ip>) or the full integration prefix. Supporting both keeps\n    manual testing comfortable and prevents duplicated path segments.\n    """\n    if is_blank_arg(base_url):\n        fail("missing UniFi API URL")\n\n    base_url = base_url.rstrip("/")\n    if base_url.endswith("/proxy/network/integration/v1"):\n        return base_url\n\n    return base_url + "/proxy/network/integration/v1"\n\n\ndef normalize_root_url(base_url):\n    """Normalize the UDM Pro root URL for non-Integration API paths."""\n    if is_blank_arg(base_url):\n        fail("missing UniFi API URL")\n\n    base_url = base_url.rstrip("/")\n    integration_suffix = "/proxy/network/integration/v1"\n    if base_url.endswith(integration_suffix):\n        return base_url[: -len(integration_suffix)]\n\n    return base_url\n\n\ndef build_url(base_url, path, query=None):\n    """Build a URL for the documented Integration API."""\n    url = normalize_base_url(base_url) + "/" + path.lstrip("/")\n    if query:\n        url += "?" + urllib.parse.urlencode(query)\n    return url\n\n\ndef build_legacy_url(base_url, legacy_site, path, query=None):\n    """Build a URL for the legacy UniFi Network API.\n\n    `legacy_site` is usually `default`, which matches the `internalReference`\n    returned by the Integration API sites endpoint in single-site UDM Pro\n    deployments.\n    """\n    if is_blank_arg(base_url):\n        fail("missing UniFi API URL")\n\n    legacy_site = "default" if is_blank_arg(legacy_site) else legacy_site\n    base_url = normalize_root_url(base_url)\n    path = path.lstrip("/")\n    url = f"{base_url}/proxy/network/api/s/{urllib.parse.quote(legacy_site)}/{path}"\n    if query:\n        url += "?" + urllib.parse.urlencode(query)\n    return url\n\n\ndef request_json(base_url, api_key, path, query=None, insecure=True, timeout=20):\n    """Perform a GET request against the Integration API and parse JSON."""\n    if is_blank_arg(api_key):\n        fail("missing UniFi API key")\n\n    req = urllib.request.Request(\n        build_url(base_url, path, query),\n        headers={\n            "Accept": "application/json",\n            "X-API-KEY": api_key,\n        },\n        method="GET",\n    )\n\n    context = None\n    if insecure:\n        context = ssl._create_unverified_context()\n\n    try:\n        with urllib.request.urlopen(req, timeout=timeout, context=context) as response:\n            body = response.read().decode("utf-8")\n    except urllib.error.HTTPError as exc:\n        details = exc.read().decode("utf-8", errors="replace")\n        fail("http error", status=exc.code, details=details)\n    except urllib.error.URLError as exc:\n        fail("connection error", details=str(exc.reason))\n    except TimeoutError:\n        fail("request timed out")\n    except Exception as exc:\n        fail("request failed", details=str(exc))\n\n    try:\n        return json.loads(body)\n    except json.JSONDecodeError:\n        fail("invalid JSON response", body=body[:500])\n\n\ndef request_legacy_json(base_url, api_key, legacy_site, path, query=None, insecure=True, timeout=20):\n    """Perform a GET request against the legacy Network API and parse JSON."""\n    if is_blank_arg(api_key):\n        fail("missing UniFi API key")\n\n    req = urllib.request.Request(\n        build_legacy_url(base_url, legacy_site, path, query),\n        headers={\n            "Accept": "application/json",\n            "X-API-KEY": api_key,\n        },\n        method="GET",\n    )\n\n    context = None\n    if insecure:\n        context = ssl._create_unverified_context()\n\n    try:\n        with urllib.request.urlopen(req, timeout=timeout, context=context) as response:\n            body = response.read().decode("utf-8")\n    except urllib.error.HTTPError as exc:\n        details = exc.read().decode("utf-8", errors="replace")\n        fail("legacy http error", status=exc.code, details=details)\n    except urllib.error.URLError as exc:\n        fail("legacy connection error", details=str(exc.reason))\n    except TimeoutError:\n        fail("legacy request timed out")\n    except Exception as exc:\n        fail("legacy request failed", details=str(exc))\n\n    try:\n        return json.loads(body)\n    except json.JSONDecodeError:\n        fail("invalid legacy JSON response", body=body[:500])\n\n\ndef paginated_get(base_url, api_key, path, insecure=True, timeout=20, limit=DEFAULT_LIMIT):\n    """Read all pages from Integration API endpoints using offset/limit.\n\n    Tested endpoints return objects like:\n        {"offset": 0, "limit": 25, "count": 25, "totalCount": 28, "data": []}\n\n    The function preserves the envelope but replaces `data` with the combined\n    list from all pages.\n    """\n    items = []\n    offset = 0\n    last_payload = None\n\n    while True:\n        payload = request_json(\n            base_url,\n            api_key,\n            path,\n            query={"offset": offset, "limit": limit},\n            insecure=insecure,\n            timeout=timeout,\n        )\n        last_payload = payload\n\n        data = payload.get("data")\n        if not isinstance(data, list):\n            return payload\n\n        items.extend(data)\n\n        count = int(payload.get("count", len(data)))\n        total = int(payload.get("totalCount", len(items)))\n        offset = int(payload.get("offset", offset)) + count\n\n        if count <= 0 or offset >= total:\n            break\n\n    return {\n        "offset": 0,\n        "limit": limit,\n        "count": len(items),\n        "totalCount": last_payload.get("totalCount", len(items)) if last_payload else len(items),\n        "data": items,\n    }\n\n\ndef lld_item(macros):\n    """Normalize low-level discovery macro values to strings.\n\n    Zabbix LLD macros are text values. Booleans are normalized to lowercase so\n    filters and overrides can compare against predictable `true`/`false`\n    strings.\n    """\n    normalized = {}\n    for key, value in macros.items():\n        if value is None:\n            normalized[key] = ""\n        elif isinstance(value, bool):\n            normalized[key] = "true" if value else "false"\n        else:\n            normalized[key] = str(value)\n    return normalized\n\n\ndef discover_devices(payload):\n    """Convert Integration API devices into Zabbix LLD rows."""\n    data = payload.get("data", [])\n    return {\n        "data": [\n            lld_item({\n                "{#UNIFI.DEVICE.ID}": item.get("id"),\n                "{#UNIFI.DEVICE.NAME}": item.get("name"),\n                "{#UNIFI.DEVICE.MAC}": item.get("macAddress"),\n                "{#UNIFI.DEVICE.IP}": item.get("ipAddress"),\n                "{#UNIFI.DEVICE.MODEL}": item.get("model"),\n                "{#UNIFI.DEVICE.STATE}": item.get("state"),\n                "{#UNIFI.DEVICE.FIRMWARE}": item.get("firmwareVersion"),\n                "{#UNIFI.DEVICE.SUPPORTED}": item.get("supported"),\n                "{#UNIFI.DEVICE.UPDATABLE}": item.get("firmwareUpdatable"),\n                "{#UNIFI.DEVICE.FEATURES}": ",".join(item.get("features", [])),\n                "{#UNIFI.DEVICE.INTERFACES}": ",".join(item.get("interfaces", [])),\n            })\n            for item in data\n        ]\n    }\n\n\ndef discover_clients(payload):\n    """Convert Integration API clients into Zabbix LLD rows."""\n    data = payload.get("data", [])\n    return {\n        "data": [\n            lld_item({\n                "{#UNIFI.CLIENT.ID}": item.get("id"),\n                "{#UNIFI.CLIENT.NAME}": item.get("name"),\n                "{#UNIFI.CLIENT.TYPE}": item.get("type"),\n                "{#UNIFI.CLIENT.MAC}": item.get("macAddress"),\n                "{#UNIFI.CLIENT.IP}": item.get("ipAddress"),\n                "{#UNIFI.CLIENT.UPLINK_DEVICE_ID}": item.get("uplinkDeviceId"),\n                "{#UNIFI.CLIENT.ACCESS_TYPE}": (item.get("access") or {}).get("type"),\n                "{#UNIFI.CLIENT.CONNECTED_AT}": item.get("connectedAt"),\n            })\n            for item in data\n        ]\n    }\n\n\ndef discover_networks(payload):\n    """Convert Integration API networks/VLANs into Zabbix LLD rows."""\n    data = payload.get("data", [])\n    return {\n        "data": [\n            lld_item({\n                "{#UNIFI.NETWORK.ID}": item.get("id"),\n                "{#UNIFI.NETWORK.NAME}": item.get("name"),\n                "{#UNIFI.NETWORK.ENABLED}": item.get("enabled"),\n                "{#UNIFI.NETWORK.VLAN_ID}": item.get("vlanId"),\n                "{#UNIFI.NETWORK.MANAGEMENT}": item.get("management"),\n                "{#UNIFI.NETWORK.ORIGIN}": (item.get("metadata") or {}).get("origin"),\n                "{#UNIFI.NETWORK.CONFIGURABLE}": (item.get("metadata") or {}).get("configurable"),\n                "{#UNIFI.NETWORK.ZONE_ID}": item.get("zoneId"),\n                "{#UNIFI.NETWORK.DEFAULT}": item.get("default"),\n            })\n            for item in data\n        ]\n    }\n\n\ndef discover_ports(payload):\n    """Discover ports from a single Integration API device-detail payload."""\n    device = payload\n    ports = ((device.get("interfaces") or {}).get("ports") or [])\n    return {\n        "data": [\n            lld_item({\n                "{#UNIFI.DEVICE.ID}": device.get("id"),\n                "{#UNIFI.DEVICE.NAME}": device.get("name"),\n                "{#UNIFI.PORT.IDX}": port.get("idx"),\n                "{#UNIFI.PORT.STATE}": port.get("state"),\n                "{#UNIFI.PORT.CONNECTOR}": port.get("connector"),\n                "{#UNIFI.PORT.MAX_SPEED}": port.get("maxSpeedMbps"),\n                "{#UNIFI.PORT.SPEED}": port.get("speedMbps"),\n            })\n            for port in ports\n        ]\n    }\n\n\ndef discover_all_ports(base_url, api_key, site_id, insecure=True, timeout=20, limit=DEFAULT_LIMIT):\n    """Discover ports across all devices that advertise a `ports` interface.\n\n    The device list is cheap and tells us whether a detail call is worth making.\n    This avoids querying APs for port data they do not expose.\n    """\n    devices = paginated_get(\n        base_url,\n        api_key,\n        f"sites/{site_id}/devices",\n        insecure=insecure,\n        timeout=timeout,\n        limit=limit,\n    ).get("data", [])\n    discovered = []\n\n    for device in devices:\n        interfaces = device.get("interfaces") or []\n        if "ports" not in interfaces:\n            continue\n\n        detail = request_json(\n            base_url,\n            api_key,\n            f"sites/{site_id}/devices/{device.get(\'id\')}",\n            insecure=insecure,\n            timeout=timeout,\n        )\n        discovered.extend(discover_ports(detail).get("data", []))\n\n    return {"data": discovered}\n\n\ndef discover_radios(payload):\n    """Discover basic radio configuration from a single Integration API device."""\n    device = payload\n    radios = ((device.get("interfaces") or {}).get("radios") or [])\n    return {\n        "data": [\n            lld_item({\n                "{#UNIFI.DEVICE.ID}": device.get("id"),\n                "{#UNIFI.DEVICE.NAME}": device.get("name"),\n                "{#UNIFI.RADIO.INDEX}": index,\n                "{#UNIFI.RADIO.STANDARD}": radio.get("wlanStandard"),\n                "{#UNIFI.RADIO.FREQUENCY}": radio.get("frequencyGHz"),\n                "{#UNIFI.RADIO.CHANNEL_WIDTH}": radio.get("channelWidthMHz"),\n                "{#UNIFI.RADIO.CHANNEL}": radio.get("channel"),\n            })\n            for index, radio in enumerate(radios)\n        ]\n    }\n\n\ndef discover_all_radios(base_url, api_key, site_id, insecure=True, timeout=20, limit=DEFAULT_LIMIT):\n    """Discover basic radio configuration across all APs."""\n    devices = paginated_get(\n        base_url,\n        api_key,\n        f"sites/{site_id}/devices",\n        insecure=insecure,\n        timeout=timeout,\n        limit=limit,\n    ).get("data", [])\n    discovered = []\n\n    for device in devices:\n        interfaces = device.get("interfaces") or []\n        if "radios" not in interfaces:\n            continue\n\n        detail = request_json(\n            base_url,\n            api_key,\n            f"sites/{site_id}/devices/{device.get(\'id\')}",\n            insecure=insecure,\n            timeout=timeout,\n        )\n        discovered.extend(discover_radios(detail).get("data", []))\n\n    return {"data": discovered}\n\n\ndef legacy_discover_radios(payload):\n    """Discover runtime radio rows from legacy `radio_table_stats`.\n\n    These rows contain the useful Wi-Fi health indicators that resemble the\n    UniFi controller radio/channel views: channel utilization, retries, station\n    counts, and satisfaction.\n    """\n    discovered = []\n    for device_id, device_radios in legacy_radios_document(payload).items():\n        for index, radio in device_radios.items():\n            discovered.append(lld_item({\n                "{#UNIFI.DEVICE.ID}": device_id,\n                "{#UNIFI.DEVICE.NAME}": radio.get("device_name"),\n                "{#UNIFI.RADIO.INDEX}": index,\n                "{#UNIFI.RADIO.NAME}": radio.get("name"),\n                "{#UNIFI.RADIO.BAND}": radio.get("band"),\n                "{#UNIFI.RADIO.CHANNEL}": radio.get("channel"),\n                "{#UNIFI.RADIO.STATE}": radio.get("state"),\n            }))\n    return {"data": discovered}\n\n\ndef print_scalar(value):\n    """Print a scalar value for simple Zabbix external items."""\n    if value is None:\n        print("")\n    elif isinstance(value, bool):\n        print("1" if value else "0")\n    else:\n        print(value)\n\n\ndef port_field(base_url, api_key, site_id, device_id, port_idx, field, insecure=True, timeout=20):\n    """Return one port field from one Integration API device detail payload."""\n    payload = request_json(\n        base_url,\n        api_key,\n        f"sites/{site_id}/devices/{device_id}",\n        insecure=insecure,\n        timeout=timeout,\n    )\n    ports = ((payload.get("interfaces") or {}).get("ports") or [])\n    for port in ports:\n        if str(port.get("idx")) == str(port_idx):\n            value = port.get(field)\n            if field in {"speedMbps", "maxSpeedMbps"} and value in (None, ""):\n                print_scalar(0)\n                return\n            print_scalar(value)\n            return\n    print_scalar(None)\n\n\ndef radio_field(base_url, api_key, site_id, device_id, radio_index, field, insecure=True, timeout=20):\n    """Return one basic radio field from one Integration API device detail payload."""\n    payload = request_json(\n        base_url,\n        api_key,\n        f"sites/{site_id}/devices/{device_id}",\n        insecure=insecure,\n        timeout=timeout,\n    )\n    radios = ((payload.get("interfaces") or {}).get("radios") or [])\n    try:\n        radio = radios[int(radio_index)]\n    except (IndexError, TypeError, ValueError):\n        print_scalar(None)\n        return\n    print_scalar(radio.get(field))\n\n\ndef legacy_radio_field(device, radio_index, field):\n    """Return one runtime radio field from `radio_table_stats`."""\n    radios = device.get("radio_table_stats") or []\n    try:\n        radio = radios[int(radio_index)]\n    except (IndexError, TypeError, ValueError):\n        print_scalar(None)\n        return\n\n    value = radio.get(field)\n    if field == "satisfaction" and to_float(value, 0.0) < 0:\n        print_scalar(0)\n        return\n\n    print_scalar(value)\n\n\ndef legacy_radio_value(radio, field):\n    """Return normalized legacy radio metrics for Zabbix items."""\n    if field in {"cu_total", "cu_self_rx", "cu_self_tx", "tx_retries_pct", "satisfaction"}:\n        value = to_float(radio.get(field))\n        if field == "satisfaction" and value < 0:\n            return 0\n        return value\n    if field == "num_sta":\n        return to_int(radio.get(field))\n    return radio.get(field)\n\n\ndef legacy_radios_document(payload):\n    """Build a compact device/radio map for dependent item prototypes."""\n    document = {}\n    fields = (\n        "cu_total",\n        "cu_self_rx",\n        "cu_self_tx",\n        "tx_retries_pct",\n        "num_sta",\n        "satisfaction",\n    )\n\n    for device in legacy_devices(payload):\n        device_id = str(device.get("external_id") or device.get("_id") or device.get("device_id") or device.get("mac") or "")\n        if not device_id:\n            continue\n\n        radios = device.get("radio_table_stats") or []\n        device_radios = document.setdefault(device_id, {})\n        for index, radio in enumerate(radios):\n            item = {\n                "device_name": device.get("name") or "",\n                "device_model": device.get("model") or "",\n                "name": radio.get("name") or "",\n                "band": radio.get("radio") or "",\n                "channel": radio.get("channel"),\n                "state": radio.get("state") or "",\n            }\n            for field in fields:\n                item[field] = legacy_radio_value(radio, field)\n            device_radios[str(index)] = item\n\n    return document\n\n\ndef first_value(mapping, *keys):\n    """Return the first non-empty value from a mapping."""\n    for key in keys:\n        value = mapping.get(key)\n        if value not in (None, ""):\n            return value\n    return None\n\n\ndef legacy_port_index(port):\n    """Return the most stable port index exposed by legacy port tables."""\n    return first_value(port, "port_idx", "idx", "port", "port_id")\n\n\ndef legacy_ports(device):\n    """Return the legacy `port_table` list safely."""\n    ports = device.get("port_table") or []\n    return ports if isinstance(ports, list) else []\n\n\ndef legacy_discover_ports(payload):\n    """Discover richer switch/gateway ports from legacy `port_table` data."""\n    discovered = []\n    for device_id, device_ports in legacy_ports_document(payload).items():\n        for port_idx, port in device_ports.items():\n            discovered.append(lld_item({\n                "{#UNIFI.DEVICE.ID}": device_id,\n                "{#UNIFI.DEVICE.NAME}": port.get("device_name"),\n                "{#UNIFI.DEVICE.MODEL}": port.get("device_model"),\n                "{#UNIFI.PORT.IDX}": port_idx,\n                "{#UNIFI.PORT.NAME}": port.get("name"),\n                "{#UNIFI.PORT.IFNAME}": port.get("ifname"),\n                "{#UNIFI.PORT.POE_MODE}": port.get("poe_mode"),\n            }))\n    return {"data": discovered}\n\n\ndef legacy_port_value(port, field):\n    """Return normalized legacy port metrics for Zabbix items."""\n    if field == "up":\n        return to_bool(first_value(port, "up", "link", "link_up"))\n    if field == "speed_mbps":\n        return to_float(first_value(port, "speed", "speedMbps", "speed_mbps"))\n    if field == "rx_bps":\n        return round(to_float(first_value(port, "rx_bytes-r", "rx_bytes_rate", "rx_rate")) * 8, 2)\n    if field == "tx_bps":\n        return round(to_float(first_value(port, "tx_bytes-r", "tx_bytes_rate", "tx_rate")) * 8, 2)\n    if field == "rx_errors":\n        return to_int(first_value(port, "rx_errors", "rx_error", "rx_errors_delta"))\n    if field == "tx_errors":\n        return to_int(first_value(port, "tx_errors", "tx_error", "tx_errors_delta"))\n    if field == "rx_dropped":\n        return to_int(first_value(port, "rx_dropped", "rx_drops", "rx_drop"))\n    if field == "tx_dropped":\n        return to_int(first_value(port, "tx_dropped", "tx_drops", "tx_drop"))\n    if field == "poe_power_w":\n        return to_float(first_value(port, "poe_power", "poe_power_w"))\n    if field == "poe_voltage_v":\n        return to_float(first_value(port, "poe_voltage", "poe_voltage_v"))\n    if field == "poe_good":\n        return to_bool(first_value(port, "poe_good", "poe_enable", "poe_power"))\n    if field == "poe_mode":\n        return first_value(port, "poe_mode", "poe_caps")\n    if field == "name":\n        return first_value(port, "name", "ifname", "label")\n    return port.get(field)\n\n\ndef legacy_port_field(device, port_idx, field):\n    """Print one scalar field from a legacy `port_table` row."""\n    for port in legacy_ports(device):\n        if str(legacy_port_index(port)) == str(port_idx):\n            print_scalar(legacy_port_value(port, field))\n            return\n    print_scalar(None)\n\n\ndef legacy_ports_document(payload):\n    """Build a compact device/port map for dependent item prototypes."""\n    document = {}\n    fields = (\n        "up",\n        "speed_mbps",\n        "rx_bps",\n        "tx_bps",\n        "rx_errors",\n        "tx_errors",\n        "rx_dropped",\n        "tx_dropped",\n        "poe_power_w",\n        "poe_voltage_v",\n        "poe_good",\n        "poe_mode",\n    )\n\n    for device in legacy_devices(payload):\n        device_id = str(device.get("external_id") or device.get("_id") or device.get("device_id") or device.get("mac") or "")\n        if not device_id:\n            continue\n\n        device_ports = document.setdefault(device_id, {})\n        for port in legacy_ports(device):\n            port_idx = legacy_port_index(port)\n            if port_idx is None:\n                continue\n\n            port_idx = str(port_idx)\n            item = {\n                "device_name": device.get("name") or "",\n                "device_model": device.get("model") or "",\n                "name": legacy_port_value(port, "name") or "",\n                "ifname": first_value(port, "ifname", "name") or "",\n            }\n            for field in fields:\n                item[field] = legacy_port_value(port, field)\n            device_ports[port_idx] = item\n\n    return document\n\n\ndef poe_budget_value(device, field):\n    """Return normalized device-level PoE budget values."""\n    max_power = to_float(first_value(\n        device,\n        "total_max_power",\n        "total_poe_power",\n        "poe_power_budget",\n        "poe_budget",\n        "max_poe_power",\n    ))\n    used_power = to_float(first_value(\n        device,\n        "total_used_power",\n        "poe_power",\n        "poe_power_used",\n        "used_poe_power",\n    ))\n    available_power = max(0.0, max_power - used_power) if max_power else 0.0\n    used_percent = round(used_power / max_power * 100, 2) if max_power else 0.0\n    ports = legacy_ports(device)\n    poe_ports = sum(1 for port in ports if first_value(port, "poe_mode", "poe_caps", "poe_power", "poe_good") not in (None, ""))\n\n    if field == "used_power_w":\n        return round(used_power, 2)\n    if field == "max_power_w":\n        return round(max_power, 2)\n    if field == "available_power_w":\n        return round(available_power, 2)\n    if field == "used_percent":\n        return used_percent\n    if field == "poe_ports":\n        return poe_ports\n    if field == "near_limit":\n        return to_bool(first_value(device, "poe_near_limit", "poe_power_near_limit", "power_near_limit"))\n    return device.get(field)\n\n\ndef has_poe_budget(device):\n    """Return true when a device exposes PoE budget or PoE-capable ports."""\n    return (\n        poe_budget_value(device, "max_power_w") > 0\n        or poe_budget_value(device, "used_power_w") > 0\n        or poe_budget_value(device, "poe_ports") > 0\n    )\n\n\ndef poe_budget_document(payload):\n    """Build a compact device map for PoE budget dependent item prototypes."""\n    document = {}\n    fields = (\n        "used_power_w",\n        "max_power_w",\n        "available_power_w",\n        "used_percent",\n        "poe_ports",\n        "near_limit",\n    )\n\n    for device in legacy_devices(payload):\n        if not has_poe_budget(device):\n            continue\n\n        device_id = str(device.get("external_id") or device.get("_id") or device.get("device_id") or device.get("mac") or "")\n        if not device_id:\n            continue\n\n        item = {\n            "device_name": device.get("name") or "",\n            "device_model": device.get("model") or "",\n        }\n        for field in fields:\n            item[field] = poe_budget_value(device, field)\n        document[device_id] = item\n\n    return document\n\n\ndef discover_poe_budget(payload):\n    """Discover devices with PoE budget data."""\n    return {\n        "data": [\n            lld_item({\n                "{#UNIFI.DEVICE.ID}": device_id,\n                "{#UNIFI.DEVICE.NAME}": device.get("device_name"),\n                "{#UNIFI.DEVICE.MODEL}": device.get("device_model"),\n            })\n            for device_id, device in poe_budget_document(payload).items()\n        ]\n    }\n\n\ndef legacy_stat_devices(base_url, api_key, legacy_site, insecure=True, timeout=20):\n    """Fetch the legacy stat/device payload for the selected site."""\n    return request_legacy_json(base_url, api_key, legacy_site, "stat/device", insecure=insecure, timeout=timeout)\n\n\ndef legacy_devices(payload):\n    """Return the legacy device list safely."""\n    data = payload.get("data", [])\n    return data if isinstance(data, list) else []\n\n\ndef network_table(device):\n    """Return the legacy `network_table` list safely."""\n    networks = device.get("network_table") or []\n    return networks if isinstance(networks, list) else []\n\n\ndef find_legacy_device(payload, device_id=None):\n    """Find a legacy device by common identifiers.\n\n    For UDM-level system/WAN metrics, the caller can omit `device_id`; in that\n    case the first legacy device with type `udm` or model `UDMPRO` is selected.\n    """\n    devices = legacy_devices(payload)\n    if is_blank_arg(device_id):\n        device_id = None\n\n    if device_id:\n        for device in devices:\n            identifiers = {\n                str(device.get("external_id", "")),\n                str(device.get("_id", "")),\n                str(device.get("device_id", "")),\n                str(device.get("mac", "")),\n                str(device.get("name", "")),\n            }\n            if str(device_id) in identifiers:\n                return device\n        fail("legacy device not found", device_id=device_id)\n\n    for device in devices:\n        if device.get("type") == "udm" or device.get("model") == "UDMPRO":\n            return device\n\n    if len(devices) == 1:\n        return devices[0]\n\n    fail("legacy device ID is required")\n\n\ndef to_float(value, default=0.0):\n    """Best-effort float conversion for inconsistent UniFi numeric fields."""\n    try:\n        return float(value)\n    except (TypeError, ValueError):\n        return default\n\n\ndef to_int(value, default=0):\n    """Best-effort integer conversion for counters that may arrive as strings."""\n    try:\n        return int(float(value))\n    except (TypeError, ValueError):\n        return default\n\n\ndef count_value(value):\n    """Return a count from either a scalar counter or a list-like payload value."""\n    if isinstance(value, list):\n        return len(value)\n    if isinstance(value, dict):\n        return len(value)\n    return to_int(value)\n\n\ndef to_bool(value, default=False):\n    """Best-effort boolean conversion for inconsistent UniFi status fields."""\n    if value is None or value == "":\n        return default\n\n    if isinstance(value, bool):\n        return value\n\n    if isinstance(value, (int, float)):\n        return value != 0\n\n    text = str(value).strip().lower()\n    if text in {"1", "true", "yes", "y", "on", "up", "enabled", "enable", "good", "ok"}:\n        return True\n    if text in {"0", "false", "no", "n", "off", "down", "disabled", "disable", "bad"}:\n        return False\n\n    try:\n        return float(text) != 0\n    except ValueError:\n        pass\n\n    return default\n\n\ndef to_epoch(value):\n    """Best-effort Unix timestamp conversion for UniFi time fields."""\n    timestamp = to_int(value)\n    if timestamp > 9999999999:\n        timestamp = int(timestamp / 1000)\n    return timestamp\n\n\ndef text_contains(mapping, *needles):\n    """Return true when any common text field contains one of the needles."""\n    haystack = " ".join(\n        str(mapping.get(key, ""))\n        for key in ("name", "purpose", "type", "site_to_site", "vpn_type", "networkgroup")\n    ).lower()\n    return any(needle in haystack for needle in needles)\n\n\ndef dhcp_enabled(network):\n    """Return whether a network row appears to provide DHCP service."""\n    value = first_value(\n        network,\n        "dhcpd_enabled",\n        "dhcp_enabled",\n        "dhcp_enable",\n        "dhcp_server_enabled",\n        "dhcpd",\n    )\n    return to_bool(value)\n\n\ndef network_lease_count(network):\n    """Return the active DHCP lease count from known Network API fields."""\n    for key in (\n        "active_dhcp_lease_count",\n        "dhcp_lease_count",\n        "dhcp_leases_count",\n        "num_dhcp_leases",\n        "lease_count",\n        "leases",\n        "dhcp_leases",\n        "ipv4_active_leases",\n        "num_sta",\n    ):\n        value = network.get(key)\n        if value not in (None, ""):\n            return count_value(value)\n    return 0\n\n\ndef vpn_enabled(network):\n    """Return whether a network row looks like an enabled VPN object."""\n    if not text_contains(network, "vpn"):\n        return False\n    value = first_value(network, "enabled", "up", "active")\n    return to_bool(value, True)\n\n\ndef vpn_up(network):\n    """Return whether a VPN row appears operational."""\n    if not vpn_enabled(network):\n        return False\n    value = first_value(network, "up", "connected", "active", "enabled")\n    return to_bool(value, True)\n\n\ndef ids_signature_info(device):\n    """Return the IDS/IPS signature object if present."""\n    for key in ("ids_ips_signature", "ips_signature", "ids_signature"):\n        value = device.get(key)\n        if isinstance(value, dict):\n            return value\n    return {}\n\n\ndef network_services(device):\n    """Build a compact VPN, DHCP, and IDS/IPS health document."""\n    networks = network_table(device)\n    dhcp_networks = [network for network in networks if dhcp_enabled(network)]\n    vpn_networks = [network for network in networks if text_contains(network, "vpn")]\n    vpn_enabled_networks = [network for network in vpn_networks if vpn_enabled(network)]\n\n    signature = ids_signature_info(device)\n    ids_mode = first_value(device, "ids_ips_mode", "ips_mode", "ids_mode") or ""\n    ids_enabled = to_bool(\n        first_value(device, "ids_ips_enabled", "ips_enabled", "ids_enabled"),\n        bool(ids_mode or signature),\n    )\n    signature_rules = first_value(\n        signature,\n        "rules_count",\n        "rule_count",\n        "count",\n        "signature_count",\n        "num_rules",\n    )\n    signature_updated = to_epoch(first_value(\n        signature,\n        "last_update",\n        "last_updated",\n        "update_time",\n        "updated_at",\n        "timestamp",\n    ))\n\n    return {\n        "network_count": len(networks),\n        "dhcp_networks_total": len(dhcp_networks),\n        "dhcp_active_leases": sum(network_lease_count(network) for network in dhcp_networks),\n        "vpn_total": len(vpn_networks),\n        "vpn_enabled": len(vpn_enabled_networks),\n        "vpn_up": sum(1 for network in vpn_enabled_networks if vpn_up(network)),\n        "ids_enabled": ids_enabled,\n        "ids_mode": ids_mode,\n        "ids_signature_rules": count_value(signature_rules),\n        "ids_signature_version": first_value(signature, "version", "signature_version", "ruleset_version") or "",\n        "ids_signature_last_update": signature_updated,\n        "ids_signature_age_seconds": int(time.time()) - signature_updated if signature_updated else 0,\n    }\n\n\ndef gateway_info(device):\n    """Build a compact gateway identity and firmware document."""\n    version = first_value(device, "version", "firmwareVersion", "fw_version")\n    displayable_version = first_value(device, "displayable_version", "displayableVersion", "firmware_version")\n\n    return {\n        "name": device.get("name") or "",\n        "model": device.get("model") or "",\n        "type": device.get("type") or "",\n        "mac": device.get("mac") or "",\n        "version": version or displayable_version or "",\n        "displayable_version": displayable_version or version or "",\n        "kernel_version": first_value(device, "kernel_version", "kernelVersion") or "",\n        "architecture": first_value(device, "architecture", "arch") or "",\n        "upgradable": to_bool(first_value(device, "upgradable", "upgradeable", "firmwareUpdatable")),\n    }\n\n\ndef system_health(device):\n    """Build a compact system-health document from one legacy device.\n\n    The UDM Pro exposes CPU/memory percentages under `system-stats`, raw memory\n    counters under `sys_stats`, and storage/temperature arrays as top-level\n    lists. This function flattens those shapes into stable keys for dependent\n    Zabbix items.\n    """\n    system_stats = device.get("system-stats") or {}\n    sys_stats = device.get("sys_stats") or {}\n    storage = device.get("storage") or []\n    temperatures = device.get("temperatures") or []\n\n    storage_size = sum(to_int(item.get("size")) for item in storage)\n    storage_used = sum(to_int(item.get("used")) for item in storage)\n    storage_free = max(0, storage_size - storage_used)\n    storage_used_percent = (storage_used / storage_size * 100) if storage_size else 0\n\n    result = {\n        "cpu_percent": to_float(system_stats.get("cpu")),\n        "memory_percent": to_float(system_stats.get("mem")),\n        "uptime": to_int(system_stats.get("uptime") or device.get("uptime")),\n        "loadavg_1": to_float(sys_stats.get("loadavg_1")),\n        "loadavg_5": to_float(sys_stats.get("loadavg_5")),\n        "loadavg_15": to_float(sys_stats.get("loadavg_15")),\n        "memory_total": to_int(sys_stats.get("mem_total")),\n        "memory_used": to_int(sys_stats.get("mem_used")),\n        "memory_buffer": to_int(sys_stats.get("mem_buffer")),\n        "storage_total": storage_size,\n        "storage_used": storage_used,\n        "storage_free": storage_free,\n        "storage_used_percent": round(storage_used_percent, 2),\n        "storage_count": len(storage),\n        "temperature_count": len(temperatures),\n    }\n\n    for item in temperatures:\n        temp_type = item.get("type") or item.get("name")\n        if temp_type:\n            result[f"temperature_{temp_type}"] = to_float(item.get("value"))\n\n    return result\n\n\ndef discover_storage(device):\n    """Discover storage volumes from a legacy UDM device."""\n    storage = device.get("storage") or []\n    return {\n        "data": [\n            lld_item({\n                "{#UNIFI.STORAGE.NAME}": item.get("name"),\n                "{#UNIFI.STORAGE.MOUNT}": item.get("mount_point"),\n                "{#UNIFI.STORAGE.TYPE}": item.get("type"),\n            })\n            for item in storage\n        ]\n    }\n\n\ndef storage_field(device, mount_point, field):\n    """Return one storage field by mount point."""\n    storage = device.get("storage") or []\n    for item in storage:\n        if item.get("mount_point") == mount_point:\n            if field == "free":\n                print_scalar(to_int(item.get("size")) - to_int(item.get("used")))\n                return\n            if field == "used_percent":\n                size = to_int(item.get("size"))\n                used = to_int(item.get("used"))\n                print_scalar(round(used / size * 100, 2) if size else 0)\n                return\n            print_scalar(item.get(field))\n            return\n    print_scalar(None)\n\n\ndef wan_candidates(device):\n    """Return the WAN names exposed by the legacy payload.\n\n    A single-WAN UDM usually exposes keys such as `WAN`, `wan1`, and `uplink`.\n    Multi-WAN systems may add `WAN2`, `wan2`, or additional entries under\n    `last_wan_interfaces`. The returned names are normalized to the controller\n    labels (`WAN`, `WAN2`, ...), which are stable LLD macro values.\n    """\n    names = set()\n\n    for name in (device.get("uptime_stats") or {}).keys():\n        if str(name).upper().startswith("WAN"):\n            names.add(str(name).upper())\n\n    for name in (device.get("last_wan_interfaces") or {}).keys():\n        if str(name).upper().startswith("WAN"):\n            names.add(str(name).upper())\n\n    for key in device.keys():\n        key_text = str(key).lower()\n        if key_text.startswith("wan") and key_text[3:].isdigit():\n            suffix = key_text[3:]\n            names.add("WAN" if suffix == "1" else f"WAN{suffix}")\n\n    if device.get("uplink"):\n        names.add("WAN")\n\n    return sorted(names, key=lambda name: (len(name), name))\n\n\ndef wan_source(device, wan_name):\n    """Collect the legacy structures that describe one WAN link."""\n    wan_name = (wan_name or "WAN").upper()\n    wan_number = "1" if wan_name == "WAN" else wan_name.replace("WAN", "", 1)\n\n    uptime_stats = ((device.get("uptime_stats") or {}).get(wan_name) or {})\n    interface_state = ((device.get("last_wan_interfaces") or {}).get(wan_name) or {})\n    wan_table = device.get(f"wan{wan_number}") or {}\n    uplink = device.get("uplink") or {}\n    multi_wan = len(wan_candidates(device)) > 1\n\n    # On single-WAN systems, the `uplink` object is the most complete active WAN\n    # representation. For multi-WAN explicit labels, prefer the matching `wanN`\n    # object when the active uplink appears to point at a different WAN.\n    if wan_table and wan_name != "WAN":\n        uplink = wan_table\n    elif wan_table and multi_wan:\n        active_values = {\n            str(value).strip().lower()\n            for value in (uplink.get("name"), uplink.get("ifname"), uplink.get("ip"), uplink.get("mac"))\n            if value not in (None, "")\n        }\n        wan_values = {\n            str(value).strip().lower()\n            for value in (\n                wan_table.get("name"),\n                wan_table.get("ifname"),\n                wan_table.get("ip"),\n                wan_table.get("mac"),\n                interface_state.get("name"),\n                interface_state.get("ifname"),\n                interface_state.get("ip"),\n                interface_state.get("mac"),\n            )\n            if value not in (None, "")\n        }\n        if active_values and not active_values.intersection(wan_values):\n            uplink = wan_table\n\n    return uptime_stats, interface_state, wan_table, uplink\n\n\ndef wan_role(wan_name):\n    """Return the logical failover role for a WAN label."""\n    return "primary" if (wan_name or "WAN").upper() == "WAN" else "backup"\n\n\ndef wan_alive(interface_state, uplink):\n    """Return whether one WAN source is considered alive."""\n    alive = interface_state.get("alive")\n    if alive is None:\n        alive = uplink.get("up", False)\n    return to_bool(alive)\n\n\ndef wan_active_name(device, candidates=None):\n    """Best-effort active WAN detection from the UDM uplink object."""\n    candidates = candidates or wan_candidates(device)\n    if not candidates:\n        return ""\n    if len(candidates) == 1:\n        return candidates[0]\n\n    active_uplink = device.get("uplink") or {}\n    active_values = {\n        str(value).strip().lower()\n        for value in (\n            active_uplink.get("name"),\n            active_uplink.get("ifname"),\n            active_uplink.get("ip"),\n            active_uplink.get("mac"),\n        )\n        if value not in (None, "")\n    }\n\n    for wan_name in candidates:\n        _, interface_state, wan_table, _ = wan_source(device, wan_name)\n        wan_values = {\n            str(value).strip().lower()\n            for value in (\n                wan_name,\n                wan_table.get("name"),\n                wan_table.get("ifname"),\n                wan_table.get("ip"),\n                wan_table.get("mac"),\n                interface_state.get("name"),\n                interface_state.get("ifname"),\n                interface_state.get("ip"),\n                interface_state.get("mac"),\n            )\n            if value not in (None, "")\n        }\n        if active_values and active_values.intersection(wan_values):\n            return wan_name\n\n    alive_wans = []\n    for wan_name in candidates:\n        _, interface_state, _, uplink = wan_source(device, wan_name)\n        if wan_alive(interface_state, uplink):\n            alive_wans.append(wan_name)\n\n    if len(alive_wans) == 1:\n        return alive_wans[0]\n    if "WAN" in alive_wans:\n        return "WAN"\n    if alive_wans:\n        return alive_wans[0]\n\n    return candidates[0]\n\n\ndef discover_wans(device):\n    """Discover WAN links from the legacy UDM payload."""\n    discovered = []\n    candidates = wan_candidates(device)\n    active_name = wan_active_name(device, candidates)\n    for wan_name in candidates:\n        _, interface_state, wan_table, uplink = wan_source(device, wan_name)\n        alive = wan_alive(interface_state, uplink)\n        active = wan_name == active_name\n        discovered.append(lld_item({\n            "{#UNIFI.WAN.NAME}": wan_name,\n            "{#UNIFI.WAN.IFNAME}": uplink.get("name") or wan_table.get("ifname") or wan_table.get("name"),\n            "{#UNIFI.WAN.IP}": interface_state.get("ip") or uplink.get("ip") or wan_table.get("ip"),\n            "{#UNIFI.WAN.ALIVE}": alive,\n            "{#UNIFI.WAN.ROLE}": wan_role(wan_name),\n            "{#UNIFI.WAN.ACTIVE}": active,\n            "{#UNIFI.WAN.FAILOVER_STATE}": "active" if active else ("standby" if alive else "down"),\n        }))\n    return {"data": discovered}\n\n\ndef wan_health(device, wan_name=None):\n    """Return WAN health for one WAN label.\n\n    When no label is provided, the active WAN is selected. Single-WAN systems\n    still resolve to `WAN`, while multi-WAN controller-level graphs follow the\n    uplink currently carrying traffic. Multi-WAN item prototypes call the same\n    function through `wan_field` with an explicit label.\n    """\n    candidates = wan_candidates(device)\n    active_name = wan_active_name(device, candidates)\n    wan_name = (wan_name or active_name or "WAN").upper()\n    uptime_stats, interface_state, wan_table, uplink = wan_source(device, wan_name)\n    speedtest = device.get("speedtest-status") or {}\n    speedtest_last_run = to_int(speedtest.get("rundate") or uplink.get("speedtest_lastrun"))\n    speedtest_age = int(time.time()) - speedtest_last_run if speedtest_last_run else 0\n\n    availability = to_float(uptime_stats.get("availability"), 0.0)\n    rx_bps = to_float(uplink.get("rx_bytes-r")) * 8\n    tx_bps = to_float(uplink.get("tx_bytes-r")) * 8\n    alive = wan_alive(interface_state, uplink)\n    active = wan_name == active_name\n    failover_enabled = len(candidates) > 1\n\n    return {\n        "name": wan_name,\n        "ifname": uplink.get("name") or wan_table.get("ifname") or wan_table.get("name") or "",\n        "ip": interface_state.get("ip") or uplink.get("ip") or wan_table.get("ip") or "",\n        "alive": alive,\n        "active": active,\n        "active_wan": active_name,\n        "failover_enabled": failover_enabled,\n        "failover_state": "active" if active else ("standby" if alive else "down"),\n        "primary_active": active_name == "WAN",\n        "role": wan_role(wan_name),\n        "wan_count": len(candidates),\n        "availability_percent": availability,\n        "packet_loss_percent": round(max(0.0, 100.0 - availability), 4),\n        "latency_ms": to_float(uptime_stats.get("latency_average") or uplink.get("latency")),\n        "uptime_seconds": to_int(uplink.get("uptime")),\n        "rx_bps": round(rx_bps, 2),\n        "tx_bps": round(tx_bps, 2),\n        "rx_mbps": round(rx_bps / 1000000, 4),\n        "tx_mbps": round(tx_bps / 1000000, 4),\n        "speed_mbps": to_float(uplink.get("speed")),\n        "max_speed_mbps": to_float(uplink.get("max_speed")),\n        "speedtest_download_mbps": to_float(speedtest.get("xput_download") or uplink.get("xput_down")),\n        "speedtest_upload_mbps": to_float(speedtest.get("xput_upload") or uplink.get("xput_up")),\n        "speedtest_latency_ms": to_float(speedtest.get("latency") or speedtest.get("speedtest_ping")),\n        "speedtest_last_run": speedtest_last_run,\n        "speedtest_age_seconds": speedtest_age,\n        "speedtest_status": uplink.get("speedtest_status") or speedtest.get("status_summary") or "",\n    }\n\n\ndef wan_field(device, wan_name, field):\n    """Print one scalar field from a WAN health document."""\n    print_scalar(wan_health(device, wan_name).get(field))\n\n\ndef summarize(payload, field):\n    data = payload.get("data", [])\n    if field == "devices":\n        online = sum(1 for item in data if item.get("state") == "ONLINE")\n        updatable = sum(1 for item in data if item.get("firmwareUpdatable") is True)\n        return {"total": len(data), "online": online, "offline": len(data) - online, "updatable": updatable}\n    if field == "clients":\n        wired = sum(1 for item in data if item.get("type") == "WIRED")\n        wireless = sum(1 for item in data if item.get("type") == "WIRELESS")\n        return {"total": len(data), "wired": wired, "wireless": wireless}\n    if field == "networks":\n        enabled = sum(1 for item in data if item.get("enabled") is True)\n        return {"total": len(data), "enabled": enabled, "disabled": len(data) - enabled}\n    return {"total": len(data)}\n\n\ndef resolve_site_id(base_url, api_key, site_id, insecure=True, timeout=20, limit=DEFAULT_LIMIT):\n    if not is_blank_arg(site_id):\n        return site_id\n\n    payload = paginated_get(base_url, api_key, "sites", insecure=insecure, timeout=timeout, limit=limit)\n    sites = payload.get("data", [])\n    if len(sites) == 1 and sites[0].get("id"):\n        return sites[0]["id"]\n\n    if not sites:\n        fail("missing site ID and no sites were returned")\n\n    fail("missing site ID and multiple sites were returned", sites=len(sites))\n\n\ndef parse_args():\n    parser = argparse.ArgumentParser(description="Collect UniFi UDM Pro API data for Zabbix.")\n    parser.add_argument("command", help="Command to run.")\n    parser.add_argument("values", nargs="*", help="Optional URL/key/site/object arguments.")\n    parser.add_argument("--verify-tls", action="store_true", help="Verify TLS certificates.")\n    parser.add_argument("--timeout", type=int, default=20)\n    parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT)\n    args = parser.parse_args()\n    args.command = COMMAND_ALIASES.get(args.command, args.command)\n\n    args.base_url = os.getenv("UNIFI_API_URL")\n    args.api_key = os.getenv("UNIFI_API_KEY")\n    args.site_id = os.getenv("UNIFI_SITE_ID")\n    args.object_id = None\n\n    object_commands = {"device", "device-stats", "client", "discover-ports", "discover-radios"}\n    optional_legacy_device_commands = {\n        "system-health",\n        "wan-health",\n        "discover-wans",\n        "discover-storage",\n        "network-services",\n        "discover-poe-budget",\n        "poe-budget",\n        "gateway-info",\n    }\n\n    args.extra_values = []\n\n    if len(args.values) == 1 and args.command in object_commands:\n        args.object_id = args.values[0]\n    elif len(args.values) >= 2 and args.command == "info":\n        args.base_url = args.values[0]\n        args.api_key = args.values[1]\n    elif len(args.values) >= 3:\n        args.base_url = args.values[0]\n        args.api_key = args.values[1]\n        args.site_id = args.values[2]\n        if args.command == "storage-field":\n            if len(args.values) == 5:\n                # Storage field calls can auto-select the UDM device:\n                # url, key, legacy_site, mount_point, field.\n                args.extra_values = args.values[3:]\n            elif len(args.values) >= 6:\n                # Backward compatibility for an explicit device ID:\n                # url, key, legacy_site, device_id, mount_point, field.\n                args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]\n                args.extra_values = args.values[4:]\n            else:\n                fail("invalid argument count", command=args.command, count=len(args.values))\n        elif args.command == "wan-field":\n            if len(args.values) == 5:\n                # WAN field calls do not need a device ID because the script can\n                # auto-select the UDM device from the legacy payload. This\n                # accepts: url, key, legacy_site, wan_name, field.\n                args.extra_values = args.values[3:]\n            elif len(args.values) >= 6:\n                # Backward compatibility for older template keys:\n                # url, key, legacy_site, device_id, wan_name, field.\n                args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]\n                args.extra_values = args.values[4:]\n            else:\n                fail("invalid argument count", command=args.command, count=len(args.values))\n        elif args.command == "wan-health" and len(args.values) == 4:\n            # Accept either a device ID or a WAN label as the fourth argument.\n            # WAN labels always start with "WAN"; anything else is treated as a\n            # device identifier.\n            if str(args.values[3]).upper().startswith("WAN"):\n                args.extra_values = [args.values[3]]\n            else:\n                args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]\n        elif args.command in optional_legacy_device_commands and len(args.values) >= 4:\n            args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]\n            if len(args.values) >= 5:\n                args.extra_values = args.values[4:]\n        elif len(args.values) >= 4:\n            args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]\n            if len(args.values) >= 5:\n                args.extra_values = args.values[4:]\n    elif args.values:\n        fail("invalid argument count", command=args.command, count=len(args.values))\n\n    return args\n\n\ndef main():\n    args = parse_args()\n    command = args.command\n    insecure = not args.verify_tls\n\n    if command == "info":\n        print_json(request_json(args.base_url, args.api_key, "info", insecure=insecure, timeout=args.timeout))\n        return\n\n    if command == "sites":\n        print_json(paginated_get(args.base_url, args.api_key, "sites", insecure=insecure, timeout=args.timeout, limit=args.limit))\n        return\n\n    if command == "legacy-devices":\n        legacy_site = args.site_id or "default"\n        print_json(legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout))\n        return\n\n    if command == "system-health":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        print_json(system_health(find_legacy_device(payload, args.object_id)))\n        return\n\n    if command == "wan-health":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        wan_name = args.extra_values[0] if args.extra_values else None\n        print_json(wan_health(find_legacy_device(payload, args.object_id), wan_name))\n        return\n\n    if command == "discover-wans":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        print_json(discover_wans(find_legacy_device(payload, args.object_id)))\n        return\n\n    if command == "discover-storage":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        print_json(discover_storage(find_legacy_device(payload, args.object_id)))\n        return\n\n    if command == "network-services":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        print_json(network_services(find_legacy_device(payload, args.object_id)))\n        return\n\n    if command == "gateway-info":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        print_json(gateway_info(find_legacy_device(payload, args.object_id)))\n        return\n\n    if command == "discover-poe-budget":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        print_json(discover_poe_budget(payload))\n        return\n\n    if command == "poe-budget":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        print_json(poe_budget_document(payload))\n        return\n\n    if command == "legacy-discover-radios":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        print_json(legacy_discover_radios(payload))\n        return\n\n    if command == "legacy-radios":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        print_json(legacy_radios_document(payload))\n        return\n\n    if command == "legacy-discover-ports":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        print_json(legacy_discover_ports(payload))\n        return\n\n    if command == "legacy-ports":\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        print_json(legacy_ports_document(payload))\n        return\n\n    if command == "legacy-port-field":\n        if not args.object_id or len(args.extra_values) < 2:\n            fail("missing legacy port field arguments")\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        legacy_port_field(find_legacy_device(payload, args.object_id), args.extra_values[0], args.extra_values[1])\n        return\n\n    if command == "storage-field":\n        if len(args.extra_values) < 2:\n            fail("missing storage field arguments")\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        storage_field(find_legacy_device(payload, args.object_id), args.extra_values[0], args.extra_values[1])\n        return\n\n    if command == "legacy-radio-field":\n        if not args.object_id or len(args.extra_values) < 2:\n            fail("missing legacy radio field arguments")\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        legacy_radio_field(find_legacy_device(payload, args.object_id), args.extra_values[0], args.extra_values[1])\n        return\n\n    if command == "wan-field":\n        if len(args.extra_values) < 2:\n            fail("missing WAN field arguments")\n        legacy_site = args.site_id or "default"\n        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)\n        wan_field(find_legacy_device(payload, args.object_id), args.extra_values[0], args.extra_values[1])\n        return\n\n    args.site_id = resolve_site_id(\n        args.base_url,\n        args.api_key,\n        args.site_id,\n        insecure=insecure,\n        timeout=args.timeout,\n        limit=args.limit,\n    )\n\n    collection_paths = {\n        "devices": f"sites/{args.site_id}/devices",\n        "clients": f"sites/{args.site_id}/clients",\n        "networks": f"sites/{args.site_id}/networks",\n    }\n\n    if command in collection_paths:\n        print_json(paginated_get(args.base_url, args.api_key, collection_paths[command], insecure=insecure, timeout=args.timeout, limit=args.limit))\n        return\n\n    if command == "device":\n        if not args.object_id:\n            fail("missing device ID")\n        print_json(request_json(args.base_url, args.api_key, f"sites/{args.site_id}/devices/{args.object_id}", insecure=insecure, timeout=args.timeout))\n        return\n\n    if command == "device-stats":\n        if not args.object_id:\n            fail("missing device ID")\n        print_json(request_json(\n            args.base_url,\n            args.api_key,\n            f"sites/{args.site_id}/devices/{args.object_id}/statistics/latest",\n            insecure=insecure,\n            timeout=args.timeout,\n        ))\n        return\n\n    if command == "client":\n        if not args.object_id:\n            fail("missing client ID")\n        print_json(request_json(args.base_url, args.api_key, f"sites/{args.site_id}/clients/{args.object_id}", insecure=insecure, timeout=args.timeout))\n        return\n\n    if command == "discover-devices":\n        payload = paginated_get(args.base_url, args.api_key, collection_paths["devices"], insecure=insecure, timeout=args.timeout, limit=args.limit)\n        print_json(discover_devices(payload))\n        return\n\n    if command == "discover-clients":\n        payload = paginated_get(args.base_url, args.api_key, collection_paths["clients"], insecure=insecure, timeout=args.timeout, limit=args.limit)\n        print_json(discover_clients(payload))\n        return\n\n    if command == "discover-networks":\n        payload = paginated_get(args.base_url, args.api_key, collection_paths["networks"], insecure=insecure, timeout=args.timeout, limit=args.limit)\n        print_json(discover_networks(payload))\n        return\n\n    if command == "discover-ports":\n        if args.object_id:\n            payload = request_json(args.base_url, args.api_key, f"sites/{args.site_id}/devices/{args.object_id}", insecure=insecure, timeout=args.timeout)\n            print_json(discover_ports(payload))\n        else:\n            print_json(discover_all_ports(args.base_url, args.api_key, args.site_id, insecure=insecure, timeout=args.timeout, limit=args.limit))\n        return\n\n    if command == "discover-radios":\n        if args.object_id:\n            payload = request_json(args.base_url, args.api_key, f"sites/{args.site_id}/devices/{args.object_id}", insecure=insecure, timeout=args.timeout)\n            print_json(discover_radios(payload))\n        else:\n            print_json(discover_all_radios(args.base_url, args.api_key, args.site_id, insecure=insecure, timeout=args.timeout, limit=args.limit))\n        return\n\n    if command == "port-field":\n        if not args.object_id or len(args.extra_values) < 2:\n            fail("missing port field arguments")\n        port_field(\n            args.base_url,\n            args.api_key,\n            args.site_id,\n            args.object_id,\n            args.extra_values[0],\n            args.extra_values[1],\n            insecure=insecure,\n            timeout=args.timeout,\n        )\n        return\n\n    if command == "radio-field":\n        if not args.object_id or len(args.extra_values) < 2:\n            fail("missing radio field arguments")\n        radio_field(\n            args.base_url,\n            args.api_key,\n            args.site_id,\n            args.object_id,\n            args.extra_values[0],\n            args.extra_values[1],\n            insecure=insecure,\n            timeout=args.timeout,\n        )\n        return\n\n    if command == "summary-devices":\n        payload = paginated_get(args.base_url, args.api_key, collection_paths["devices"], insecure=insecure, timeout=args.timeout, limit=args.limit)\n        print_json(summarize(payload, "devices"))\n        return\n\n    if command == "summary-clients":\n        payload = paginated_get(args.base_url, args.api_key, collection_paths["clients"], insecure=insecure, timeout=args.timeout, limit=args.limit)\n        print_json(summarize(payload, "clients"))\n        return\n\n    if command == "summary-networks":\n        payload = paginated_get(args.base_url, args.api_key, collection_paths["networks"], insecure=insecure, timeout=args.timeout, limit=args.limit)\n        print_json(summarize(payload, "networks"))\n        return\n\n    fail("unknown command", command=command)\n\n\nif __name__ == "__main__":\n    main()\n'
+DASHBOARD_SOURCE = '#!/usr/bin/env python3\n"""\nUniFi Dashboard Telemetry collector\nVersion: 0.8.0-rc4\nAuthor: Karim Mansur / Net Tech\n\nCompanion collector for UniFi UDM Pro API Monitoring. It adds per-client\ntraffic/RSSI, site DPI application traffic and controller-local Wi-Fi\nconnectivity metrics used by Zabbix-UniFi-Dashboard.\n\nUniFi Network 10.6.x live validation established the following API-key\naccessible controller-local v2 endpoints:\n  /proxy/network/v2/api/site/<site>/traffic\n  /proxy/network/v2/api/site/<site>/wifi-connectivity\n  /proxy/network/v2/api/site/<site>/wifi-stats/radios\n\nThe v2 traffic endpoint expects start/end in Unix epoch milliseconds.\nOnly Python standard-library modules are required.\n"""\n\nimport argparse\nimport json\nimport ssl\nimport time\nimport urllib.error\nimport urllib.parse\nimport urllib.request\n\nVERSION = "0.8.0-rc4"\nDEFAULT_TIMEOUT = 20\nDEFAULT_WINDOW = 86400\nLIMIT = 200\n\n\nclass RequestError(RuntimeError):\n    def __init__(self, message, status=None, details=None):\n        super().__init__(message)\n        self.status = status\n        self.details = details\n\n\ndef emit(value):\n    print(json.dumps(value, separators=(",", ":"), sort_keys=True))\n\n\ndef root(base):\n    base = (base or "").rstrip("/")\n    for suffix in ("/proxy/network/integration/v1", "/proxy/network/integration"):\n        if base.endswith(suffix):\n            return base[:-len(suffix)]\n    return base\n\n\ndef req(url, key, method="GET", payload=None, query=None, timeout=DEFAULT_TIMEOUT, verify=False):\n    if query:\n        url += ("&" if "?" in url else "?") + urllib.parse.urlencode(query)\n    body = None if payload is None else json.dumps(payload).encode()\n    headers = {"Accept": "application/json", "X-API-KEY": key, "X-API-Key": key}\n    if body is not None:\n        headers["Content-Type"] = "application/json"\n    request = urllib.request.Request(url, headers=headers, data=body, method=method)\n    context = None if verify else ssl._create_unverified_context()\n    try:\n        with urllib.request.urlopen(request, timeout=timeout, context=context) as response:\n            raw = response.read().decode()\n    except urllib.error.HTTPError as exc:\n        details = exc.read().decode(errors="replace")[:500]\n        raise RequestError("HTTP error", exc.code, details) from exc\n    except urllib.error.URLError as exc:\n        raise RequestError("connection error", details=str(exc.reason)) from exc\n    except TimeoutError as exc:\n        raise RequestError("request timed out") from exc\n    try:\n        return json.loads(raw)\n    except json.JSONDecodeError as exc:\n        raise RequestError("invalid JSON response", details=raw[:500]) from exc\n\n\ndef legacy(base, site, path):\n    return f"{root(base)}/proxy/network/api/s/{urllib.parse.quote(site or \'default\')}/{path}"\n\n\ndef v2(base, site, path):\n    return f"{root(base)}/proxy/network/v2/api/site/{urllib.parse.quote(site or \'default\')}/{path}"\n\n\ndef integration(base, path):\n    return f"{root(base)}/proxy/network/integration/v1/{path}"\n\n\ndef num(value):\n    try:\n        return None if value in (None, "") else float(value)\n    except (TypeError, ValueError):\n        return None\n\n\ndef first(row, *keys):\n    if not isinstance(row, dict):\n        return None\n    for key in keys:\n        value = row.get(key)\n        if value not in (None, ""):\n            return value\n    return None\n\n\ndef safe_id(value):\n    return str(value or "").strip().replace("[", "_").replace("]", "_").replace(",", "_")\n\n\ndef rssi_dbm(row):\n    for key in ("signal", "signal_dbm", "signalDbm", "rssi"):\n        value = num(row.get(key))\n        if value is not None and -120 <= value <= 0:\n            return round(value, 1)\n    return None\n\n\ndef bytes_total(row):\n    direct = num(first(row, "traffic_bytes", "trafficBytes", "bytes", "total_bytes", "totalBytes"))\n    if direct is not None:\n        return max(0, int(direct))\n    rx = num(first(row, "rx_bytes", "rxBytes", "bytes_rx", "bytesRx", "bytes_received")) or 0\n    tx = num(first(row, "tx_bytes", "txBytes", "bytes_tx", "bytesTx", "bytes_transmitted")) or 0\n    usage = row.get("traffic_usage") or row.get("trafficUsage")\n    if isinstance(usage, dict):\n        rx = num(first(usage, "rx_bytes", "rxBytes", "downloadBytes", "bytes_received")) or rx\n        tx = num(first(usage, "tx_bytes", "txBytes", "uploadBytes", "bytes_transmitted")) or tx\n    return max(0, int(rx + tx))\n\n\ndef period(window):\n    end = int(time.time())\n    start = end - max(60, int(window))\n    return start, end\n\n\ndef traffic_snapshot(base, key, site, timeout, verify, window):\n    start, end = period(window)\n    payload = req(\n        v2(base, site, "traffic"), key,\n        query={\n            "start": start * 1000,\n            "end": end * 1000,\n            "includeUnidentified": "true"\n        },\n        timeout=timeout, verify=verify\n    )\n    return payload, start, end\n\n\ndef legacy_station_rows(base, key, site, timeout, verify):\n    payload = req(\n        legacy(base, site, "stat/sta"), key,\n        query={"include_traffic_usage": "true"}, timeout=timeout, verify=verify\n    )\n    return [row for row in payload.get("data", []) if isinstance(row, dict)]\n\n\ndef normalized_station(row, traffic_bytes=None):\n    cid = safe_id(first(row, "_id", "id", "client_id", "clientId", "mac"))\n    if not cid:\n        return None, None\n    wired = first(row, "is_wired", "isWired", "wired")\n    access = str(first(row, "type", "access_type", "accessType") or "").upper()\n    wireless = (\n        wired is False or str(wired).lower() in {"0", "false", "no"}\n        or access == "WIRELESS"\n        or any(row.get(k) not in (None, "") for k in ("essid", "radio", "ap_mac", "apMac"))\n    )\n    signal = rssi_dbm(row) if wireless else None\n    return cid, {\n        "name": str(first(row, "name", "hostname", "display_name", "displayName")\n                    or row.get("oui") or row.get("mac") or cid),\n        "mac": str(row.get("mac") or ""),\n        "ip": str(first(row, "ip", "ipAddress") or ""),\n        "wireless": wireless,\n        "rssi": signal,\n        "traffic_bytes": bytes_total(row) if traffic_bytes is None else max(0, int(traffic_bytes)),\n        "ap_mac": str(first(row, "ap_mac", "apMac") or ""),\n        "ssid": str(first(row, "essid", "ssid") or "")\n    }\n\n\ndef clients(base, key, site, timeout, verify, window):\n    result = {}\n    signals = []\n    source = "legacy/stat/sta"\n    start = end = None\n\n    # Keep the current station table for identity, RSSI, AP and SSID. Its\n    # internal client id is preserved to avoid unnecessary Zabbix LLD churn.\n    try:\n        rows = legacy_station_rows(base, key, site, timeout, verify)\n    except RequestError:\n        rows = []\n\n    station_by_mac = {}\n    for row in rows:\n        cid, station = normalized_station(row)\n        if not cid or not station:\n            continue\n        result[cid] = station\n        mac = str(station.get("mac") or "").lower()\n        if mac:\n            station_by_mac[mac] = cid\n\n    try:\n        payload, traffic_start, traffic_end = traffic_snapshot(\n            base, key, site, timeout, verify, window\n        )\n        entries = [\n            entry for entry in payload.get("client_usage_by_app", [])\n            if isinstance(entry, dict)\n        ]\n\n        if entries:\n            # Once v2 traffic is usable, all ranking values must come from the\n            # same rolling window. Do not mix 24-hour v2 totals with legacy\n            # counters for stations missing from client_usage_by_app.\n            source = "v2/traffic"\n            start, end = traffic_start, traffic_end\n            for current in result.values():\n                current["traffic_bytes"] = 0\n\n            for entry in entries:\n                client = entry.get("client") or {}\n                mac = str(first(client, "mac", "macAddress") or "")\n                cid = station_by_mac.get(mac.lower()) or safe_id(\n                    mac or first(client, "id", "client_id", "clientId", "name", "hostname")\n                )\n                if not cid:\n                    continue\n\n                usage = entry.get("usage_by_app") or []\n                total = sum(bytes_total(row) for row in usage if isinstance(row, dict))\n                wired = first(client, "is_wired", "isWired", "wired")\n                wireless = None if wired is None else (\n                    wired is False or str(wired).lower() in {"0", "false", "no"}\n                )\n                client_name = first(client, "name", "hostname", "display_name", "displayName")\n\n                if cid in result:\n                    current = result[cid]\n                    current["traffic_bytes"] += max(0, int(total))\n                    if client_name:\n                        current["name"] = str(client_name)\n                    if wireless is not None:\n                        current["wireless"] = wireless\n                else:\n                    result[cid] = {\n                        "name": str(client_name or mac or cid),\n                        "mac": mac,\n                        "ip": str(first(client, "ip", "ipAddress") or ""),\n                        "wireless": bool(wireless),\n                        "rssi": None,\n                        "traffic_bytes": max(0, int(total)),\n                        "ap_mac": "",\n                        "ssid": ""\n                    }\n    except RequestError:\n        if not result:\n            raise\n\n    for client in result.values():\n        signal = client.get("rssi")\n        if signal is not None:\n            signals.append(signal)\n\n    if not result:\n        raise RequestError("no client telemetry returned")\n\n    ordered = sorted(signals)\n    median = None\n    if ordered:\n        middle = len(ordered) // 2\n        median = ordered[middle] if len(ordered) % 2 else round(\n            (ordered[middle - 1] + ordered[middle]) / 2, 1\n        )\n\n    return {\n        "clients": result,\n        "summary": {\n            "clients": len(result),\n            "wireless_with_rssi": len(signals),\n            "rssi_average": round(sum(signals) / len(signals), 1) if signals else None,\n            "rssi_median": median,\n            "excellent": sum(v >= -60 for v in signals),\n            "good": sum(-70 <= v < -60 for v in signals),\n            "fair": sum(-75 <= v < -70 for v in signals),\n            "poor": sum(-80 <= v < -75 for v in signals),\n            "critical": sum(v < -80 for v in signals),\n            "traffic_source": source,\n            "window_seconds": int(window) if source == "v2/traffic" else None,\n            "start": start,\n            "end": end\n        }\n    }\n\n\ndef dpi_catalog(base, key, timeout, verify):\n    catalog, offset = {}, 0\n    try:\n        while True:\n            payload = req(\n                integration(base, "dpi/applications"), key,\n                query={"offset": offset, "limit": LIMIT}, timeout=timeout, verify=verify\n            )\n            rows = payload.get("data", [])\n            for row in rows:\n                appid = safe_id(first(row, "id", "applicationId", "appId"))\n                if appid:\n                    catalog[appid] = str(first(row, "name", "displayName") or f"App {appid}")\n            count = int(payload.get("count", len(rows)))\n            offset += count\n            if count <= 0 or offset >= int(payload.get("totalCount", offset)):\n                break\n    except RequestError:\n        pass\n    return catalog\n\n\ndef compound_dpi_id(category, application):\n    try:\n        return (int(category) << 16) + int(application)\n    except (TypeError, ValueError):\n        return None\n\n\ndef dpi_v2(base, key, site, timeout, verify, window):\n    payload, start, end = traffic_snapshot(base, key, site, timeout, verify, window)\n    rows = [row for row in payload.get("total_usage_by_app", []) if isinstance(row, dict)]\n    if not rows:\n        raise RequestError("v2 traffic returned no DPI applications")\n\n    catalog, apps = dpi_catalog(base, key, timeout, verify), {}\n    for row in rows:\n        category = first(row, "category", "category_id", "categoryId")\n        application = first(row, "application", "app", "application_id", "applicationId", "appId")\n        compound = compound_dpi_id(category, application)\n        if compound is None:\n            continue\n        appid = safe_id(compound)\n\n        rx = num(first(row, "bytes_received", "rx_bytes", "rxBytes", "bytes_rx", "bytesRx")) or 0\n        tx = num(first(row, "bytes_transmitted", "tx_bytes", "txBytes", "bytes_tx", "bytesTx")) or 0\n        total = num(first(row, "total_bytes", "totalBytes", "bytes", "num_bytes", "numBytes"))\n        total = rx + tx if total is None else total\n\n        try:\n            unidentified = int(category) == 255 or int(application) == 65535\n        except (TypeError, ValueError):\n            unidentified = False\n        fallback_name = "Unidentified / Unknown" if unidentified else f"App {category}/{application}"\n\n        item = apps.setdefault(appid, {\n            "name": catalog.get(appid) or fallback_name,\n            "bytes": 0,\n            "rx_bytes": 0,\n            "tx_bytes": 0,\n            "category": str(category),\n            "application": str(application),\n            "client_count": 0\n        })\n        item["bytes"] += max(0, int(total))\n        item["rx_bytes"] += max(0, int(rx))\n        item["tx_bytes"] += max(0, int(tx))\n        item["client_count"] = max(\n            item["client_count"], int(num(row.get("client_count")) or 0)\n        )\n\n    if not apps:\n        raise RequestError("v2 traffic contained no usable DPI applications")\n\n    return {\n        "applications": apps,\n        "summary": {\n            "applications": len(apps),\n            "bytes": sum(x["bytes"] for x in apps.values()),\n            "traffic_source": "v2/traffic",\n            "window_seconds": int(window),\n            "start": start,\n            "end": end\n        }\n    }\n\n\ndef dpi_legacy(base, key, site, timeout, verify):\n    payload = req(\n        legacy(base, site, "stat/sitedpi"), key, method="POST",\n        payload={"type": "by_app"}, timeout=timeout, verify=verify\n    )\n    catalog, apps = dpi_catalog(base, key, timeout, verify), {}\n    for row in payload.get("data", []):\n        if not isinstance(row, dict):\n            continue\n        category = first(row, "cat", "category", "category_id", "categoryId")\n        application = first(row, "app", "app_id", "appId", "application_id", "applicationId", "id")\n        compound = compound_dpi_id(category, application) if category is not None else None\n        appid = safe_id(compound if compound is not None else application)\n        if not appid:\n            continue\n\n        rx = num(first(row, "rx_bytes", "rxBytes", "bytes_rx", "bytesRx")) or 0\n        tx = num(first(row, "tx_bytes", "txBytes", "bytes_tx", "bytesTx")) or 0\n        total = num(first(row, "bytes", "total_bytes", "totalBytes", "num_bytes", "numBytes"))\n        total = rx + tx if total is None else total\n\n        item = apps.setdefault(appid, {\n            "name": str(first(row, "app_name", "appName", "name") or catalog.get(appid) or f"App {appid}"),\n            "bytes": 0,\n            "rx_bytes": 0,\n            "tx_bytes": 0,\n            "category": str(category or ""),\n            "application": str(application or ""),\n            "client_count": int(num(row.get("client_count")) or 0)\n        })\n        item["bytes"] += max(0, int(total))\n        item["rx_bytes"] += max(0, int(rx))\n        item["tx_bytes"] += max(0, int(tx))\n\n    return {\n        "applications": apps,\n        "summary": {\n            "applications": len(apps),\n            "bytes": sum(x["bytes"] for x in apps.values()),\n            "traffic_source": "legacy/stat/sitedpi"\n        }\n    }\n\n\ndef dpi(base, key, site, timeout, verify, window):\n    try:\n        return dpi_v2(base, key, site, timeout, verify, window)\n    except RequestError:\n        return dpi_legacy(base, key, site, timeout, verify)\n\n\nALIASES = {\n    "association": {"association", "association_ratio", "association_success", "association_success_rate",\n                    "association_success_pct", "associationsuccess", "associationsuccessrate",\n                    "assoc_success", "assoc_success_rate", "assoc_success_pct"},\n    "authentication": {"authentication", "authentication_ratio", "authentication_success",\n                       "authentication_success_rate", "authentication_success_pct", "authenticationsuccess",\n                       "authenticationsuccessrate", "auth_success", "auth_success_rate", "auth_success_pct"},\n    "dhcp": {"dhcp", "dhcp_ratio", "dhcp_success", "dhcp_success_rate", "dhcp_success_pct",\n             "dhcpsuccess", "dhcpsuccessrate"},\n    "dns": {"dns", "dns_ratio", "dns_success", "dns_success_rate", "dns_success_pct",\n            "dnssuccess", "dnssuccessrate"}\n}\n\n\ndef find_metric(payload, aliases):\n    found = []\n    aliases = {x.lower().replace("-", "_") for x in aliases}\n\n    def walk(value):\n        if isinstance(value, dict):\n            for key, child in value.items():\n                normalized = str(key).lower().replace("-", "_")\n                if normalized in aliases:\n                    candidate = num(child)\n                    if candidate is not None:\n                        found.append(candidate)\n                walk(child)\n        elif isinstance(value, list):\n            for child in value:\n                walk(child)\n\n    walk(payload)\n    if not found:\n        return None\n    value = found[0] * 100 if 0 <= found[0] <= 1 else found[0]\n    return round(value, 2) if 0 <= value <= 100 else None\n\n\ndef wifi_performance(base, key, site, timeout, verify, window):\n    del window\n    endpoint = "v2/api/site/<site>/wifi-connectivity"\n    try:\n        payload = req(v2(base, site, "wifi-connectivity"), key, timeout=timeout, verify=verify)\n    except RequestError as exc:\n        return {\n            "available": False,\n            "endpoint": endpoint,\n            "association": None,\n            "authentication": None,\n            "dhcp": None,\n            "dns": None,\n            "error": str(exc),\n            "status": exc.status\n        }\n\n    attempts = payload.get("attempts") if isinstance(payload, dict) else None\n    attempts = attempts if isinstance(attempts, dict) else {}\n    metrics = {\n        "association": num(attempts.get("association_ratio")),\n        "authentication": num(attempts.get("authentication_ratio")),\n        "dhcp": num(attempts.get("dhcp_ratio")),\n        "dns": num(attempts.get("dns_ratio"))\n    }\n    for name, aliases in ALIASES.items():\n        if metrics[name] is None:\n            metrics[name] = find_metric(payload, aliases)\n        if metrics[name] is not None:\n            metrics[name] = round(metrics[name], 2)\n\n    return {\n        "available": any(v is not None for v in metrics.values()),\n        "endpoint": endpoint,\n        **metrics,\n        "success": num(attempts.get("success_ratio")),\n        "total_attempts": int(num(attempts.get("total_attempts")) or 0),\n        "failed_client_connections": int(num(attempts.get("failed_client_connections")) or 0),\n        "total_clients": int(num(payload.get("total_clients")) or 0) if isinstance(payload, dict) else 0,\n        "latencies": payload.get("latencies", {}) if isinstance(payload, dict) else {}\n    }\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument("command", choices=("clients", "dpi", "wifi-performance", "version"))\n    parser.add_argument("base_url", nargs="?")\n    parser.add_argument("api_key", nargs="?")\n    parser.add_argument("site", nargs="?", default="default")\n    parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT)\n    parser.add_argument("--window", type=int, default=DEFAULT_WINDOW,\n                        help="rolling traffic/DPI window in seconds (default: 86400)")\n    parser.add_argument("--verify-tls", action="store_true")\n\n    # Zabbix can leave a user macro literal (for example {$UNIFI.TLS.ARG}) in\n    # the command line when a macro defined only on a sibling linked template\n    # is not resolved for this external item. Ignore only unresolved Zabbix\n    # macro tokens so real command-line mistakes remain visible.\n    args, unknown = parser.parse_known_args()\n    unexpected = [\n        token for token in unknown\n        if not (token.startswith("{$") and token.endswith("}"))\n    ]\n    if unexpected:\n        parser.error("unrecognized arguments: " + " ".join(unexpected))\n\n    if args.command == "version":\n        emit({"version": VERSION})\n        return\n    if not args.base_url or not args.api_key:\n        emit({"error": "missing UniFi API URL or API key"})\n        return\n\n    try:\n        func = {\n            "clients": clients,\n            "dpi": dpi,\n            "wifi-performance": wifi_performance\n        }[args.command]\n        emit(func(args.base_url, args.api_key, args.site, args.timeout, args.verify_tls, args.window))\n    except RequestError as exc:\n        emit({"error": str(exc), "status": exc.status, "details": exc.details})\n    except Exception as exc:\n        emit({"error": "collector failure", "details": str(exc)})\n\n\nif __name__ == "__main__":\n    main()\n'
+
+def load_namespace(source, name):
+    namespace = {"__name__": name, "__file__": __file__}
+    exec(compile(source, __file__, "exec"), namespace)
+    return namespace
+
+def emit(value):
+    print(json.dumps(value, separators=(",", ":"), sort_keys=True))
+
+def common_args():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("command")
+    parser.add_argument("base_url", nargs="?")
+    parser.add_argument("api_key", nargs="?")
+    parser.add_argument("site", nargs="?", default="default")
+    parser.add_argument("window", nargs="?")
     parser.add_argument("--timeout", type=int, default=20)
-    parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT)
-    args = parser.parse_args()
-    args.command = COMMAND_ALIASES.get(args.command, args.command)
-
-    args.base_url = os.getenv("UNIFI_API_URL")
-    args.api_key = os.getenv("UNIFI_API_KEY")
-    args.site_id = os.getenv("UNIFI_SITE_ID")
-    args.object_id = None
-
-    object_commands = {"device", "device-stats", "client", "discover-ports", "discover-radios"}
-    optional_legacy_device_commands = {
-        "system-health",
-        "wan-health",
-        "discover-wans",
-        "discover-storage",
-        "network-services",
-        "discover-poe-budget",
-        "poe-budget",
-        "gateway-info",
-    }
-
-    args.extra_values = []
-
-    if len(args.values) == 1 and args.command in object_commands:
-        args.object_id = args.values[0]
-    elif len(args.values) >= 2 and args.command == "info":
-        args.base_url = args.values[0]
-        args.api_key = args.values[1]
-    elif len(args.values) >= 3:
-        args.base_url = args.values[0]
-        args.api_key = args.values[1]
-        args.site_id = args.values[2]
-        if args.command == "storage-field":
-            if len(args.values) == 5:
-                # Storage field calls can auto-select the UDM device:
-                # url, key, legacy_site, mount_point, field.
-                args.extra_values = args.values[3:]
-            elif len(args.values) >= 6:
-                # Backward compatibility for an explicit device ID:
-                # url, key, legacy_site, device_id, mount_point, field.
-                args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]
-                args.extra_values = args.values[4:]
-            else:
-                fail("invalid argument count", command=args.command, count=len(args.values))
-        elif args.command == "wan-field":
-            if len(args.values) == 5:
-                # WAN field calls do not need a device ID because the script can
-                # auto-select the UDM device from the legacy payload. This
-                # accepts: url, key, legacy_site, wan_name, field.
-                args.extra_values = args.values[3:]
-            elif len(args.values) >= 6:
-                # Backward compatibility for older template keys:
-                # url, key, legacy_site, device_id, wan_name, field.
-                args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]
-                args.extra_values = args.values[4:]
-            else:
-                fail("invalid argument count", command=args.command, count=len(args.values))
-        elif args.command == "wan-health" and len(args.values) == 4:
-            # Accept either a device ID or a WAN label as the fourth argument.
-            # WAN labels always start with "WAN"; anything else is treated as a
-            # device identifier.
-            if str(args.values[3]).upper().startswith("WAN"):
-                args.extra_values = [args.values[3]]
-            else:
-                args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]
-        elif args.command in optional_legacy_device_commands and len(args.values) >= 4:
-            args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]
-            if len(args.values) >= 5:
-                args.extra_values = args.values[4:]
-        elif len(args.values) >= 4:
-            args.object_id = None if is_blank_arg(args.values[3]) else args.values[3]
-            if len(args.values) >= 5:
-                args.extra_values = args.values[4:]
-    elif args.values:
-        fail("invalid argument count", command=args.command, count=len(args.values))
-
+    parser.add_argument("--verify-tls", action="store_true")
+    args, unknown = parser.parse_known_args()
+    unknown = [x for x in unknown if not (x.startswith("{$") and x.endswith("}"))]
+    if unknown:
+        parser.error("unrecognized arguments: " + " ".join(unknown))
+    if args.window and args.window.startswith("{$") and args.window.endswith("}"):
+        args.window = None
     return args
 
+def dashboard_traffic(ns, args):
+    if not args.base_url or not args.api_key:
+        return {"error": "missing UniFi API URL or API key"}
+    try:
+        window = max(60, int(args.window or 86400))
+    except ValueError:
+        return {"error": "invalid traffic window", "window": args.window}
 
-def main():
-    args = parse_args()
-    command = args.command
-    insecure = not args.verify_tls
+    verify = args.verify_tls
+    rows = []
+    try:
+        rows = ns["legacy_station_rows"](args.base_url, args.api_key, args.site, args.timeout, verify)
+    except ns["RequestError"]:
+        pass
 
-    if command == "info":
-        print_json(request_json(args.base_url, args.api_key, "info", insecure=insecure, timeout=args.timeout))
-        return
+    clients = {}
+    station_by_mac = {}
+    for row in rows:
+        cid, station = ns["normalized_station"](row, traffic_bytes=0)
+        if not cid or not station:
+            continue
+        clients[cid] = station
+        mac = str(station.get("mac") or "").lower()
+        if mac:
+            station_by_mac[mac] = cid
 
-    if command == "sites":
-        print_json(paginated_get(args.base_url, args.api_key, "sites", insecure=insecure, timeout=args.timeout, limit=args.limit))
-        return
-
-    if command == "legacy-devices":
-        legacy_site = args.site_id or "default"
-        print_json(legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout))
-        return
-
-    if command == "system-health":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        print_json(system_health(find_legacy_device(payload, args.object_id)))
-        return
-
-    if command == "wan-health":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        wan_name = args.extra_values[0] if args.extra_values else None
-        print_json(wan_health(find_legacy_device(payload, args.object_id), wan_name))
-        return
-
-    if command == "discover-wans":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        print_json(discover_wans(find_legacy_device(payload, args.object_id)))
-        return
-
-    if command == "discover-storage":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        print_json(discover_storage(find_legacy_device(payload, args.object_id)))
-        return
-
-    if command == "network-services":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        print_json(network_services(find_legacy_device(payload, args.object_id)))
-        return
-
-    if command == "gateway-info":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        print_json(gateway_info(find_legacy_device(payload, args.object_id)))
-        return
-
-    if command == "discover-poe-budget":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        print_json(discover_poe_budget(payload))
-        return
-
-    if command == "poe-budget":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        print_json(poe_budget_document(payload))
-        return
-
-    if command == "legacy-discover-radios":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        print_json(legacy_discover_radios(payload))
-        return
-
-    if command == "legacy-radios":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        print_json(legacy_radios_document(payload))
-        return
-
-    if command == "legacy-discover-ports":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        print_json(legacy_discover_ports(payload))
-        return
-
-    if command == "legacy-ports":
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        print_json(legacy_ports_document(payload))
-        return
-
-    if command == "legacy-port-field":
-        if not args.object_id or len(args.extra_values) < 2:
-            fail("missing legacy port field arguments")
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        legacy_port_field(find_legacy_device(payload, args.object_id), args.extra_values[0], args.extra_values[1])
-        return
-
-    if command == "storage-field":
-        if len(args.extra_values) < 2:
-            fail("missing storage field arguments")
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        storage_field(find_legacy_device(payload, args.object_id), args.extra_values[0], args.extra_values[1])
-        return
-
-    if command == "legacy-radio-field":
-        if not args.object_id or len(args.extra_values) < 2:
-            fail("missing legacy radio field arguments")
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        legacy_radio_field(find_legacy_device(payload, args.object_id), args.extra_values[0], args.extra_values[1])
-        return
-
-    if command == "wan-field":
-        if len(args.extra_values) < 2:
-            fail("missing WAN field arguments")
-        legacy_site = args.site_id or "default"
-        payload = legacy_stat_devices(args.base_url, args.api_key, legacy_site, insecure=insecure, timeout=args.timeout)
-        wan_field(find_legacy_device(payload, args.object_id), args.extra_values[0], args.extra_values[1])
-        return
-
-    args.site_id = resolve_site_id(
-        args.base_url,
-        args.api_key,
-        args.site_id,
-        insecure=insecure,
-        timeout=args.timeout,
-        limit=args.limit,
+    payload, start, end = ns["traffic_snapshot"](
+        args.base_url, args.api_key, args.site, args.timeout, verify, window
     )
 
-    collection_paths = {
-        "devices": f"sites/{args.site_id}/devices",
-        "clients": f"sites/{args.site_id}/clients",
-        "networks": f"sites/{args.site_id}/networks",
+    for entry in payload.get("client_usage_by_app", []):
+        if not isinstance(entry, dict):
+            continue
+        client = entry.get("client") or {}
+        mac = str(ns["first"](client, "mac", "macAddress") or "")
+        cid = station_by_mac.get(mac.lower()) or ns["safe_id"](
+            mac or ns["first"](client, "id", "client_id", "clientId", "name", "hostname")
+        )
+        if not cid:
+            continue
+        usage = entry.get("usage_by_app") or []
+        total = sum(ns["bytes_total"](row) for row in usage if isinstance(row, dict))
+        wired = ns["first"](client, "is_wired", "isWired", "wired")
+        wireless = wired is False or str(wired).lower() in {"0", "false", "no"}
+        if cid in clients:
+            clients[cid]["traffic_bytes"] = max(0, int(total))
+            name = ns["first"](client, "name", "hostname", "display_name", "displayName")
+            if name:
+                clients[cid]["name"] = str(name)
+            clients[cid]["wireless"] = wireless
+        else:
+            clients[cid] = {
+                "name": str(ns["first"](client, "name", "hostname", "display_name", "displayName") or mac or cid),
+                "mac": mac,
+                "ip": str(ns["first"](client, "ip", "ipAddress") or ""),
+                "wireless": wireless,
+                "rssi": None,
+                "traffic_bytes": max(0, int(total)),
+                "ap_mac": "",
+                "ssid": ""
+            }
+
+    applications = {}
+    for row in payload.get("total_usage_by_app", []):
+        if not isinstance(row, dict):
+            continue
+        category = ns["first"](row, "category", "category_id", "categoryId")
+        application = ns["first"](row, "application", "app", "application_id", "applicationId", "appId")
+        compound = ns["compound_dpi_id"](category, application)
+        if compound is None:
+            continue
+        appid = ns["safe_id"](compound)
+        rx = ns["num"](ns["first"](row, "bytes_received", "rx_bytes", "rxBytes", "bytes_rx", "bytesRx")) or 0
+        tx = ns["num"](ns["first"](row, "bytes_transmitted", "tx_bytes", "txBytes", "bytes_tx", "bytesTx")) or 0
+        total = ns["num"](ns["first"](row, "total_bytes", "totalBytes", "bytes", "num_bytes", "numBytes"))
+        total = rx + tx if total is None else total
+        applications[appid] = {
+            "name": "Unknown" if int(category) == 255 or int(application) == 65535 else f"App {category}/{application}",
+            "bytes": max(0, int(total)),
+            "rx_bytes": max(0, int(rx)),
+            "tx_bytes": max(0, int(tx)),
+            "category": str(category),
+            "application": str(application),
+            "client_count": int(ns["num"](row.get("client_count")) or 0)
+        }
+
+    return {
+        "clients": clients,
+        "applications": applications,
+        "summary": {
+            "window_seconds": window,
+            "start": start,
+            "end": end,
+            "clients": len(clients),
+            "applications": len(applications),
+            "bytes": sum(app["bytes"] for app in applications.values()),
+            "traffic_source": "v2/traffic"
+        }
     }
 
-    if command in collection_paths:
-        print_json(paginated_get(args.base_url, args.api_key, collection_paths[command], insecure=insecure, timeout=args.timeout, limit=args.limit))
+def client_status(ns, args):
+    rows = ns["legacy_station_rows"](
+        args.base_url, args.api_key, args.site, args.timeout, args.verify_tls
+    )
+    clients = {}
+    for row in rows:
+        cid, station = ns["normalized_station"](row, traffic_bytes=0)
+        if cid and station:
+            clients[cid] = station
+    return {"clients": clients, "summary": {"clients": len(clients), "source": "legacy/stat/sta"}}
+
+def dpi_catalog(ns, args):
+    catalog = ns["dpi_catalog"](
+        args.base_url, args.api_key, args.timeout, args.verify_tls
+    )
+    return {"applications": catalog, "summary": {"applications": len(catalog)}}
+
+def main():
+    command = sys.argv[1] if len(sys.argv) > 1 else ""
+    if command == "version":
+        emit({"version": VERSION, "unified": True})
         return
 
-    if command == "device":
-        if not args.object_id:
-            fail("missing device ID")
-        print_json(request_json(args.base_url, args.api_key, f"sites/{args.site_id}/devices/{args.object_id}", insecure=insecure, timeout=args.timeout))
+    unified_commands = {"dashboard-traffic", "dashboard-client-status", "dpi-catalog", "wifi-connectivity"}
+    if command in unified_commands:
+        args = common_args()
+        ns = load_namespace(DASHBOARD_SOURCE, "_unifi_dashboard_embedded")
+        try:
+            if command == "dashboard-traffic":
+                emit(dashboard_traffic(ns, args))
+            elif command == "dashboard-client-status":
+                emit(client_status(ns, args))
+            elif command == "dpi-catalog":
+                emit(dpi_catalog(ns, args))
+            else:
+                emit(ns["wifi_performance"](
+                    args.base_url, args.api_key, args.site,
+                    args.timeout, args.verify_tls, 0
+                ))
+        except ns["RequestError"] as exc:
+            emit({"error": str(exc), "status": exc.status, "details": exc.details})
+        except Exception as exc:
+            emit({"error": "collector failure", "details": str(exc)})
         return
 
-    if command == "device-stats":
-        if not args.object_id:
-            fail("missing device ID")
-        print_json(request_json(
-            args.base_url,
-            args.api_key,
-            f"sites/{args.site_id}/devices/{args.object_id}/statistics/latest",
-            insecure=insecure,
-            timeout=args.timeout,
-        ))
+    if command in {"clients", "dpi", "wifi-performance"}:
+        ns = load_namespace(DASHBOARD_SOURCE, "_unifi_dashboard_embedded")
+        ns["main"]()
         return
 
-    if command == "client":
-        if not args.object_id:
-            fail("missing client ID")
-        print_json(request_json(args.base_url, args.api_key, f"sites/{args.site_id}/clients/{args.object_id}", insecure=insecure, timeout=args.timeout))
-        return
-
-    if command == "discover-devices":
-        payload = paginated_get(args.base_url, args.api_key, collection_paths["devices"], insecure=insecure, timeout=args.timeout, limit=args.limit)
-        print_json(discover_devices(payload))
-        return
-
-    if command == "discover-clients":
-        payload = paginated_get(args.base_url, args.api_key, collection_paths["clients"], insecure=insecure, timeout=args.timeout, limit=args.limit)
-        print_json(discover_clients(payload))
-        return
-
-    if command == "discover-networks":
-        payload = paginated_get(args.base_url, args.api_key, collection_paths["networks"], insecure=insecure, timeout=args.timeout, limit=args.limit)
-        print_json(discover_networks(payload))
-        return
-
-    if command == "discover-ports":
-        if args.object_id:
-            payload = request_json(args.base_url, args.api_key, f"sites/{args.site_id}/devices/{args.object_id}", insecure=insecure, timeout=args.timeout)
-            print_json(discover_ports(payload))
-        else:
-            print_json(discover_all_ports(args.base_url, args.api_key, args.site_id, insecure=insecure, timeout=args.timeout, limit=args.limit))
-        return
-
-    if command == "discover-radios":
-        if args.object_id:
-            payload = request_json(args.base_url, args.api_key, f"sites/{args.site_id}/devices/{args.object_id}", insecure=insecure, timeout=args.timeout)
-            print_json(discover_radios(payload))
-        else:
-            print_json(discover_all_radios(args.base_url, args.api_key, args.site_id, insecure=insecure, timeout=args.timeout, limit=args.limit))
-        return
-
-    if command == "port-field":
-        if not args.object_id or len(args.extra_values) < 2:
-            fail("missing port field arguments")
-        port_field(
-            args.base_url,
-            args.api_key,
-            args.site_id,
-            args.object_id,
-            args.extra_values[0],
-            args.extra_values[1],
-            insecure=insecure,
-            timeout=args.timeout,
-        )
-        return
-
-    if command == "radio-field":
-        if not args.object_id or len(args.extra_values) < 2:
-            fail("missing radio field arguments")
-        radio_field(
-            args.base_url,
-            args.api_key,
-            args.site_id,
-            args.object_id,
-            args.extra_values[0],
-            args.extra_values[1],
-            insecure=insecure,
-            timeout=args.timeout,
-        )
-        return
-
-    if command == "summary-devices":
-        payload = paginated_get(args.base_url, args.api_key, collection_paths["devices"], insecure=insecure, timeout=args.timeout, limit=args.limit)
-        print_json(summarize(payload, "devices"))
-        return
-
-    if command == "summary-clients":
-        payload = paginated_get(args.base_url, args.api_key, collection_paths["clients"], insecure=insecure, timeout=args.timeout, limit=args.limit)
-        print_json(summarize(payload, "clients"))
-        return
-
-    if command == "summary-networks":
-        payload = paginated_get(args.base_url, args.api_key, collection_paths["networks"], insecure=insecure, timeout=args.timeout, limit=args.limit)
-        print_json(summarize(payload, "networks"))
-        return
-
-    fail("unknown command", command=command)
-
+    ns = load_namespace(CORE_SOURCE, "_unifi_core_embedded")
+    ns["main"]()
 
 if __name__ == "__main__":
     main()
