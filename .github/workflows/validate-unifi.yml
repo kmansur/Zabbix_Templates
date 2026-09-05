@@ -1,0 +1,59 @@
+name: Validate UniFi template
+
+on:
+  push:
+    paths:
+      - 'UniFi UDM Pro API Monitoring/**'
+      - '.github/workflows/validate-unifi.yml'
+  pull_request:
+    paths:
+      - 'UniFi UDM Pro API Monitoring/**'
+      - '.github/workflows/validate-unifi.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check pyyaml
+      - name: Python syntax
+        run: python -m py_compile 'UniFi UDM Pro API Monitoring/unifi_udm_pro_api.py'
+      - name: YAML and contracts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          root = Path('UniFi UDM Pro API Monitoring')
+          for version in ('7.0', '8.0'):
+              path = root / version / f'UniFi_UDM_Pro_API_Monitoring_{version}.yaml'
+              doc = yaml.safe_load(path.read_text(encoding='utf-8'))
+              template = doc['zabbix_export']['templates'][0]
+              assert template['vendor']['version'] == '0.8-0'
+
+              all_keys = []
+              for item in template.get('items', []):
+                  all_keys.append(str(item.get('key', '')))
+              for rule in template.get('discovery_rules', []):
+                  all_keys.append(str(rule.get('key', '')))
+                  all_keys.extend(str(p.get('key', '')) for p in rule.get('item_prototypes', []))
+
+              for period in ('1h', '1d', '1w', '1m'):
+                  assert any(k.startswith(f'unifi.client.traffic.bytes[{period},') for k in all_keys)
+                  assert any(k.startswith(f'unifi.dpi.app.bytes[{period},') for k in all_keys)
+
+              for key in (
+                  'unifi.wifi.association.success',
+                  'unifi.wifi.authentication.success',
+                  'unifi.wifi.dhcp.success',
+                  'unifi.wifi.dns.success',
+              ):
+                  assert key in all_keys
+
+              assert any(k.startswith('unifi.radio.rssi[') for k in all_keys)
+              assert not any(k.startswith('unifi.client.traffic.bytes[{#') for k in all_keys)
+              assert not any(k.startswith('unifi.dpi.app.bytes[{#') for k in all_keys)
+          PY
