@@ -28,7 +28,9 @@ jobs:
         run: python -m pip install --disable-pip-version-check pyyaml
 
       - name: Build and validate unified files
-        run: python 'UniFi UDM Pro API Monitoring/tools/build_unified_0_8.py' --check
+        run: |
+          python 'UniFi UDM Pro API Monitoring/tools/build_unified_0_8.py' --check
+          python 'UniFi UDM Pro API Monitoring/tools/build_staging_unified_0_8.py'
 
       - name: Commit generated RC artifacts
         run: |
