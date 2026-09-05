@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Create side-by-side staging copies of the generated unified 0.8 templates.
 
-The staging templates use a different template name/UUID so they can be imported
-without updating the production `UniFi UDM Pro API Monitoring` template. Link a
+The staging templates use a different template name/UUID and an isolated
+external-script filename so they can be imported and exercised without
+updating either the production template or production collector. Link a
 staging template only to a cloned Zabbix host during RC validation.
 """
 
@@ -17,6 +18,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 GENERATED = ROOT / "generated"
 PRODUCTION_NAME = "UniFi UDM Pro API Monitoring"
 STAGING_NAME = "UniFi UDM Pro API Monitoring Unified RC"
+PRODUCTION_SCRIPT = "unifi_udm_pro_api.py["
+STAGING_SCRIPT = "unifi_udm_pro_api_unified.py["
 
 
 def replace_strings(value):
@@ -25,7 +28,11 @@ def replace_strings(value):
     if isinstance(value, list):
         return [replace_strings(child) for child in value]
     if isinstance(value, str):
-        return value.replace(f"/{PRODUCTION_NAME}/", f"/{STAGING_NAME}/")
+        return (
+            value
+            .replace(f"/{PRODUCTION_NAME}/", f"/{STAGING_NAME}/")
+            .replace(PRODUCTION_SCRIPT, STAGING_SCRIPT)
+        )
     return value
 
 
