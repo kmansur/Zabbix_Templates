@@ -1,0 +1,43 @@
+name: Build UniFi Unified 0.8 RC
+
+on:
+  push:
+    branches:
+      - feature/unifi-unified-0.8
+    paths-ignore:
+      - 'UniFi UDM Pro API Monitoring/generated/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/unifi-unified-0.8
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build dependency
+        run: python -m pip install --disable-pip-version-check pyyaml
+
+      - name: Build and validate unified files
+        run: python 'UniFi UDM Pro API Monitoring/tools/build_unified_0_8.py' --check
+
+      - name: Commit generated RC artifacts
+        run: |
+          git add 'UniFi UDM Pro API Monitoring/generated'
+          if git diff --cached --quiet; then
+            echo 'Generated artifacts are already current.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Build unified UniFi 0.8 RC artifacts'
+          git push origin HEAD:feature/unifi-unified-0.8
