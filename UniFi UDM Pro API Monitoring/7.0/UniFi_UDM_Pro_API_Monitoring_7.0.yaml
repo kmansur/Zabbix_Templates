@@ -1562,7 +1562,7 @@ zabbix_export:
         opdata: 'Uptime: {ITEM.LASTVALUE1}'
         priority: INFO
         manual_close: 'YES'
-    - uuid: 5d2af0923570576b85809472024bd489
+    - uuid: a60fdb02eddf4ee19b506d93fc21d847
       name: UniFi dashboard traffic 1h raw
       type: EXTERNAL
       key: unifi_udm_pro_api.py["dashboard-traffic","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","3600","{$UNIFI.TLS.ARG}"]
@@ -1576,7 +1576,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: traffic
-    - uuid: 2b6c47e96e4f5f5bad4e8882d9f91382
+    - uuid: 982fcc1219a14d65a58a33bc1414836b
       name: UniFi dashboard traffic 1d raw
       type: EXTERNAL
       key: unifi_udm_pro_api.py["dashboard-traffic","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","86400","{$UNIFI.TLS.ARG}"]
@@ -1590,7 +1590,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: traffic
-    - uuid: 53279502bb5f52988c4d76d1b547f2b7
+    - uuid: 754f06c43e5949b59ad3e6ff74bf7d50
       name: UniFi dashboard traffic 1w raw
       type: EXTERNAL
       key: unifi_udm_pro_api.py["dashboard-traffic","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","604800","{$UNIFI.TLS.ARG}"]
@@ -1604,7 +1604,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: traffic
-    - uuid: c6b64f9d7dcc5af7bbf04f04991f1559
+    - uuid: 35b99ebb69544b9c93b526f18ac2565e
       name: UniFi dashboard traffic 1m raw
       type: EXTERNAL
       key: unifi_udm_pro_api.py["dashboard-traffic","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","2592000","{$UNIFI.TLS.ARG}"]
@@ -1618,7 +1618,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: traffic
-    - uuid: e90b1cf5801650998176e0ce522d2df6
+    - uuid: b3edcceacb424adeb9559521312d8ae3
       name: UniFi dashboard current client status raw
       type: EXTERNAL
       key: unifi_udm_pro_api.py["dashboard-client-status","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -1632,7 +1632,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: clients
-    - uuid: eacf2df7119b59afbb0c28bfadd3642f
+    - uuid: 42f3607ae335470cb226d47ca3ef063a
       name: UniFi DPI application catalog raw
       type: EXTERNAL
       key: unifi_udm_pro_api.py["dpi-catalog","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -1646,7 +1646,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: dpi
-    - uuid: 56d7b5b8d61052f58a5f1ec987a24b1a
+    - uuid: 28082af416f9443db3a98acf80565a63
       name: UniFi Wi-Fi connectivity raw
       type: EXTERNAL
       key: unifi_udm_pro_api.py["wifi-connectivity","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{$UNIFI.TLS.ARG}"]
@@ -1660,7 +1660,7 @@ zabbix_export:
         value: dashboard-telemetry
       - tag: component
         value: wifi
-    - uuid: 4cf76f9917735bc7b3419d35e5b85f3d
+    - uuid: 837291b2113e4a0f8a978c5069d393d5
       name: UniFi Wi-Fi association success
       type: DEPENDENT
       key: unifi.wifi.association.success
@@ -1678,7 +1678,7 @@ zabbix_export:
         value: dashboard-telemetry
       value_type: CHAR
       trends: '0'
-    - uuid: ea3e429285365aaf916e8bda3452b3e1
+    - uuid: dba41abaf647401f9b13b90d1309fafb
       name: UniFi Wi-Fi authentication success
       type: DEPENDENT
       key: unifi.wifi.authentication.success
@@ -1696,7 +1696,7 @@ zabbix_export:
         value: dashboard-telemetry
       value_type: CHAR
       trends: '0'
-    - uuid: 3c304b05c72d5cec96481674b8c6c9e9
+    - uuid: 0dca74796fac46a79180cf0bcbe1f746
       name: UniFi Wi-Fi DHCP success
       type: DEPENDENT
       key: unifi.wifi.dhcp.success
@@ -1714,7 +1714,7 @@ zabbix_export:
         value: dashboard-telemetry
       value_type: CHAR
       trends: '0'
-    - uuid: e3000997b83b5921a10ffc9c086cb04f
+    - uuid: 729a9c13df154d348e1c445029f04c13
       name: UniFi Wi-Fi DNS success
       type: DEPENDENT
       key: unifi.wifi.dns.success
@@ -3018,13 +3018,13 @@ zabbix_export:
           item:
             host: UniFi UDM Pro API Monitoring
             key: unifi_udm_pro_api.py["wan-field","{$UNIFI.API.URL}","{$UNIFI.API.KEY}","{$UNIFI.NETWORK.SITE}","{#UNIFI.WAN.NAME}","tx_bps","{$UNIFI.TLS.ARG}"]
-    - uuid: ff1f0650c4895957bb6240d186904c91
+    - uuid: 7089f49fec0646439420dac29c641041
       name: UniFi dashboard client traffic discovery
       type: DEPENDENT
       key: unifi.dashboard.clients.traffic.discovery
       lifetime: 30d
       item_prototypes:
-      - uuid: d5d13c0ff944534ab1aa09e88fa2d561
+      - uuid: 2203cfb12cd843d3a6d157c60c27f699
         name: UniFi client {#UNIFI.CLIENT.NAME} name
         type: DEPENDENT
         key: unifi.client.name[{#UNIFI.CLIENT.ID}]
@@ -3041,7 +3041,7 @@ zabbix_export:
           value: dashboard-telemetry
         value_type: CHAR
         trends: '0'
-      - uuid: 791ecb0bc308529d88e1bfbc1aa90cad
+      - uuid: 7b11d10d8ade4140ab90744aa611914b
         name: UniFi client {#UNIFI.CLIENT.NAME} traffic 1h
         type: DEPENDENT
         key: unifi.client.traffic.bytes[1h,{#UNIFI.CLIENT.ID}]
@@ -3057,7 +3057,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: ccd92f8349cd59ceb0d7e9f0ac622677
+      - uuid: 5f6f817d63ac4e47afb92ff21ecb0902
         name: UniFi client {#UNIFI.CLIENT.NAME} traffic 1d
         type: DEPENDENT
         key: unifi.client.traffic.bytes[1d,{#UNIFI.CLIENT.ID}]
@@ -3073,7 +3073,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: 1226f43f4b6a522ea6726185a4a24040
+      - uuid: 1900ae0f89f54fe4ab5a7a50a65d1aef
         name: UniFi client {#UNIFI.CLIENT.NAME} traffic 1w
         type: DEPENDENT
         key: unifi.client.traffic.bytes[1w,{#UNIFI.CLIENT.ID}]
@@ -3089,7 +3089,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: 32f3ce5a4467589390b2eb424e304d48
+      - uuid: 661ce2a86c62471f9d73254936352f6c
         name: UniFi client {#UNIFI.CLIENT.NAME} traffic 1m
         type: DEPENDENT
         key: unifi.client.traffic.bytes[1m,{#UNIFI.CLIENT.ID}]
@@ -3112,13 +3112,13 @@ zabbix_export:
         parameters:
         - "var d=JSON.parse(value), out=[], clients=d.clients||{};\nObject.keys(clients).forEach(function(id) {\n  var c=clients[id]||{};\n\
           \  out.push({\"{#UNIFI.CLIENT.ID}\":id,\"{#UNIFI.CLIENT.NAME}\":c.name||id});\n});\nreturn JSON.stringify(out);"
-    - uuid: 39ad03ef17fa5d20b90c327ab8e77520
+    - uuid: 926d13fefaa94e7494c16ff834d162eb
       name: UniFi dashboard current wireless RSSI discovery
       type: DEPENDENT
       key: unifi.dashboard.clients.rssi.discovery
       lifetime: 7d
       item_prototypes:
-      - uuid: 6e5171b55ce65ab7be10d6b949819a75
+      - uuid: 5a907d3491524e1a804581faedcc5d40
         name: UniFi wireless client {#UNIFI.CLIENT.NAME} RSSI
         type: DEPENDENT
         key: unifi.radio.rssi[{#UNIFI.CLIENT.ID}]
@@ -3143,13 +3143,13 @@ zabbix_export:
         - "var d=JSON.parse(value), out=[], clients=d.clients||{};\nObject.keys(clients).forEach(function(id) {\n  var c=clients[id]||{};\n\
           \  if (c.rssi !== null && typeof c.rssi !== \"undefined\") {\n    out.push({\"{#UNIFI.CLIENT.ID}\":id,\"{#UNIFI.CLIENT.NAME}\"\
           :c.name||id});\n  }\n});\nreturn JSON.stringify(out);"
-    - uuid: bf0b97c5d678535494732437ca0839f9
+    - uuid: eaa6f75fa540483ea1cca0b8633b6076
       name: UniFi dashboard DPI application discovery
       type: DEPENDENT
       key: unifi.dashboard.dpi.app.discovery
       lifetime: 90d
       item_prototypes:
-      - uuid: ae986971d5265642a36a9c2210927b85
+      - uuid: 1b14417b9f0c4a78915ada214ac9f46f
         name: UniFi DPI application {#UNIFI.DPI.APP.NAME} name
         type: DEPENDENT
         key: unifi.dpi.app.name[{#UNIFI.DPI.APP.ID}]
@@ -3166,7 +3166,7 @@ zabbix_export:
           value: dashboard-telemetry
         value_type: CHAR
         trends: '0'
-      - uuid: 02cd3fc77d505382856287dc5af8a011
+      - uuid: 6f011688c34d4758a2ade94815965fb9
         name: UniFi DPI application {#UNIFI.DPI.APP.NAME} traffic 1h
         type: DEPENDENT
         key: unifi.dpi.app.bytes[1h,{#UNIFI.DPI.APP.ID}]
@@ -3182,7 +3182,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: e27dd9a2f0365337b1cd35d8277d9d1a
+      - uuid: 557ddee36a554cb5b479284d0ced159f
         name: UniFi DPI application {#UNIFI.DPI.APP.NAME} traffic 1d
         type: DEPENDENT
         key: unifi.dpi.app.bytes[1d,{#UNIFI.DPI.APP.ID}]
@@ -3198,7 +3198,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: c4e892677d7a5deb8742d8908fcd629c
+      - uuid: 6b3727abde3a48d28c72283d508c8076
         name: UniFi DPI application {#UNIFI.DPI.APP.NAME} traffic 1w
         type: DEPENDENT
         key: unifi.dpi.app.bytes[1w,{#UNIFI.DPI.APP.ID}]
@@ -3214,7 +3214,7 @@ zabbix_export:
         - tag: component
           value: dashboard-telemetry
         units: B
-      - uuid: 905bdd753bfd5dabadfac79d35cdf6ca
+      - uuid: 11102b317cab42a0a90b82684d080d6e
         name: UniFi DPI application {#UNIFI.DPI.APP.NAME} traffic 1m
         type: DEPENDENT
         key: unifi.dpi.app.bytes[1m,{#UNIFI.DPI.APP.ID}]
