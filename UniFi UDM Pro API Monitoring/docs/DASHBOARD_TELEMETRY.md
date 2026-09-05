@@ -60,6 +60,10 @@ UniFi Network 10.6.101 was verified to require `start` and `end` on the v2 `/tra
 
 When usable v2 client traffic is returned, RC4 resets the legacy station traffic counters before applying v2 totals. This prevents mixing a 24-hour v2 window with legacy counters for clients not present in `client_usage_by_app`.
 
+## DPI identifiers
+
+The v2 traffic payload exposes separate numeric `category` and `application` values. RC4 converts them to UniFi's compound DPI identifier using `(category << 16) + application` before looking up the Integration API application catalog. Live validation confirmed that this mapping resolves real application names (for example SSL/TLS, Instagram, iCloud and YouTube) and avoids collisions where the same application number exists in more than one category.
+
 ## Manual collector tests
 
 Use the same URL, API key and Network site configured in the base template. Do not paste the API key into tickets or logs.
@@ -87,20 +91,20 @@ Expected top-level shapes:
 
 Validated on Zabbix 8.0.0beta2 with UniFi Network 10.6.101 / UniFi OS 5.1.31:
 
-- Legacy `stat/sta` returned 27 active clients, including 17 wireless clients with valid negative dBm RSSI values.
 - `GET /proxy/network/v2/api/site/<site>/traffic` with epoch seconds returned HTTP 200 but empty traffic arrays.
 - The same request with epoch milliseconds returned 74 `total_usage_by_app` entries and 29 `client_usage_by_app` entries over the tested 24-hour window.
-- A sample client entry included MAC, name, wired/wireless state and per-application `category`, `application`, RX, TX and total byte counters.
+- RC4 `clients` returned 33 normalized client records across the current station table and rolling traffic window, with 19 current wireless RSSI values and non-zero 24-hour Top Clients ranking.
+- RC4 `dpi` returned 74 applications totaling 32,575,858,256 bytes in the tested 24-hour window. Compound DPI IDs resolved to catalog names correctly.
 - The Integration API DPI catalog returned `totalCount: 2112` and application identifiers/names.
-- `GET /proxy/network/v2/api/site/<site>/wifi-connectivity` returned live association, authentication, DHCP and DNS ratios plus total attempts, failed client connections and latency data. The tested sample returned 100% for all four stages with 388 attempts and 14 clients.
+- `GET /proxy/network/v2/api/site/<site>/wifi-connectivity` returned live association, authentication, DHCP and DNS ratios plus total attempts, failed client connections and latency data. The latest tested sample returned 100% for all four stages with 392 attempts, zero failed client connections and 14 clients.
 - Legacy `stat/sitedpi` returned an empty application set on the tested controller; RC4 therefore prefers the validated v2 traffic source and only uses the legacy endpoint as fallback.
 
 ## Validation checklist
 
 1. `python3 -m py_compile unifi_dashboard_telemetry.py` succeeds.
-2. `clients` reports `traffic_source: v2/traffic` and a non-zero rolling-window Top Clients ranking.
-3. `dpi` reports `traffic_source: v2/traffic` and one or more applications.
-4. `wifi-performance` reports `available:true` and the four connectivity success values.
+2. `clients` reports `traffic_source: v2/traffic` and a non-zero rolling-window Top Clients ranking. **Validated.**
+3. `dpi` reports `traffic_source: v2/traffic`, non-zero application traffic, and correct catalog name resolution. **Validated.**
+4. `wifi-performance` reports `available:true` and the four connectivity success values. **Validated.**
 5. The Zabbix LLD rules create `unifi.client.*`, `unifi.radio.rssi[*]`, and `unifi.dpi.app.*` items.
 6. The UniFi Dashboard fills Top clients, Density / signal strength, Top applications and Wi-Fi Connectivity from those item contracts.
 
