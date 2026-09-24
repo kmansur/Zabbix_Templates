@@ -2,146 +2,218 @@
 
 Portuguese version: [README.pt-BR.md](README.pt-BR.md)
 
-> Development version: 2.0.0
+> Development version: 3.0.0
 >
-> Documentation maintenance: when this English README is updated, update `README.pt-BR.md` in the same change.
+> Status: development branch. Validate in homologation before production.
+>
+> Documentation maintenance: when this English README is updated, update README.pt-BR.md in the same change.
 
-Zabbix template project for monitoring Dovecot through Zabbix agent UserParameters. Version 2.0.0 adds a Zabbix 7.0 YAML template, JSON-based collection, dependent items, service enable macros, port macros, recovery macros, process monitoring, service response-time checks, value mapping, graphs, and validation documentation while keeping the 1.0.0 XML template available for reference.
+Zabbix template project for monitoring Dovecot with a small POSIX shell collector and Zabbix agent UserParameters. Version 3.0.0 keeps the existing monitoring surface and history-compatible keys/UUIDs while improving privilege separation, portability, protocol validation, regression testing, and operational visibility.
 
-## Files
+## Design goals
 
-- `templates/7.0/Template_Dovecot_7.0.yaml`: current Zabbix 7.0 template export for version 2.0.0.
-- `templates/6.0/`: reserved for a future Zabbix 6.0-compatible export.
-- `templates/8.0/Template_Dovecot_8.0.yaml`: Zabbix 8.0 template export, statically validated and ready for import testing.
-- `dovecot_stats.sh`: JSON master collection script for Dovecot sessions.
-- `userparameter_dovecot.conf`: Zabbix agent UserParameter definitions.
-- `legacy/zabbix-5.0/`: legacy Zabbix 5.0 XML template, legacy IMAP/POP3 counters, and matching UserParameter file.
-- `docs/VALIDATION.md`: validation and pre-production checklist.
-- `tests/test_dovecot_stats.sh`: local parser test for the collector scripts.
-- `CHANGELOG.md`: English changelog.
-- `CHANGELOG.pt-BR.md`: Portuguese changelog.
+- Preserve existing Dovecot metrics and template identifiers whenever possible.
+- Keep the collector small, auditable, POSIX-shell compatible, and dependency-free.
+- Run the collector as the unprivileged Zabbix agent user.
+- Escalate only the exact read-only command doveadm who -1 when access to the Dovecot anvil socket requires it.
+- Prefer one JSON master collection with dependent items.
+- Avoid storing usernames or addresses in Zabbix.
+- Support the common FreeBSD and Linux Dovecot paths.
+- Keep Zabbix 7.0 and 8.0 exports aligned.
 
-## Monitored Data
+## Repository layout
 
-- Dovecot collector availability and last error.
+- templates/7.0/Template_Dovecot_7.0.yaml - Zabbix 7.0 export.
+- templates/8.0/Template_Dovecot_8.0.yaml - Zabbix 8.0 export.
+- templates/6.0/ - reserved for a future validated Zabbix 6.0 export.
+- scripts/dovecot_stats.sh - current JSON collector.
+- agent/userparameter_dovecot.conf - current UserParameter configuration.
+- agent/sudoers.d/ - least-privilege sudoers examples for FreeBSD and Linux.
+- docs/VALIDATION.md - static, host, import, and production checks.
+- docs/MIGRATION-2.x-to-3.0.md - migration notes for existing installations.
+- tests/test_dovecot_stats.sh - collector regression tests.
+- tests/validate_templates.py - static YAML/template consistency validator.
+- legacy/zabbix-5.0/ - preserved Zabbix 5.0 template and legacy scripts.
+
+## Monitored data
+
+Version 3.0.0 preserves the existing monitored data:
+
+- Collector availability and last error.
 - Active IMAP connections.
 - Active POP3 connections.
 - Total active IMAP and POP3 connections.
 - Dovecot master process count.
 - Dovecot version.
-- IMAP, IMAPS, POP3, and POP3S TCP service availability.
-- IMAP, IMAPS, POP3, and POP3S TCP service response time.
+- IMAP, IMAPS, POP3, and POP3S service availability.
+- IMAP, IMAPS, POP3, and POP3S service response time.
 - Checksum changes for selected Dovecot configuration files.
 
-## Requirements
+It also adds:
 
-- Zabbix server compatible with template export version 7.0.
-- Zabbix agent installed on the Dovecot host.
-- Dovecot installed with `doveadm` available.
-- `sudo` access for the Zabbix agent user to run the Dovecot session scripts.
+- Number of unique users with active IMAP/POP3 sessions.
+- Maximum active IMAP/POP3 connections observed for a single user.
+- Collector version.
 
-Default paths used by this version:
+The collector never sends usernames to Zabbix. Usernames are used only in memory to calculate aggregate counters.
 
-```text
-/usr/local/bin/doveadm
-/usr/local/sbin/dovecot
-/usr/local/scripts/
-/usr/local/etc/dovecot/
-```
+## Collection architecture
 
-The scripts support `DOVECOT_DOVEADM` as an environment override for the `doveadm` path. When scripts run through `sudo -n`, your sudoers policy might not preserve environment variables.
+The master key is:
 
-## Installation
+~~~text
+dovecot.stats
+~~~
 
-1. Copy `dovecot_stats.sh` to `/usr/local/scripts/` and set mode `755`.
-2. Restrict ownership:
+Example output:
 
-   ```bash
-   # FreeBSD
-   chown root:wheel /usr/local/scripts/dovecot_stats.sh
-
-   # Linux
-   chown root:root /usr/local/scripts/dovecot_stats.sh
-   ```
-
-3. Copy `userparameter_dovecot.conf` to the Zabbix agent include directory.
-4. Configure sudoers:
-
-   ```text
-   zabbix ALL=(root) NOPASSWD: /usr/local/scripts/dovecot_stats.sh
-   ```
-
-5. Restart the Zabbix agent.
-6. Import `templates/7.0/Template_Dovecot_7.0.yaml` into Zabbix 7.0.
-7. Link `Template App Dovecot` to the Dovecot host.
-
-## Validation
-
-```bash
-sh -n /usr/local/scripts/dovecot_stats.sh
-sudo -u zabbix sudo -n /usr/local/scripts/dovecot_stats.sh
-sudo -u zabbix zabbix_agentd -t dovecot.stats
-sudo -u zabbix zabbix_agentd -t dovecot.version
-```
-
-More checks are available in `docs/VALIDATION.md`.
-
-## Script Output
-
-```json
-{"status":1,"imap":10,"pop3":2,"total":12,"error":""}
-```
+~~~json
+{"status":1,"imap":10,"pop3":2,"total":12,"users":8,"max_user_connections":3,"error":""}
+~~~
 
 If collection fails:
 
-```json
-{"status":0,"imap":0,"pop3":0,"total":0,"error":"doveadm_who_failed"}
-```
+~~~json
+{"status":0,"imap":0,"pop3":0,"total":0,"users":0,"max_user_connections":0,"error":"doveadm_who_failed"}
+~~~
 
-## Counting Method
+The collector uses doveadm who -1. Dovecot documents -1 as one output line per user and connection, preventing undercounting when a user has multiple simultaneous connections.
 
-Version 2.0.0 uses:
+## Security model
 
-```bash
+The collector must run as the Zabbix agent user. Do not grant sudo permission for the collector script.
+
+The collector first executes:
+
+~~~text
 doveadm who -1
-```
+~~~
 
-This avoids undercounting when `doveadm who` groups several connections from the same user into one line.
+without privilege escalation. If the Zabbix user cannot query the Dovecot anvil socket, it retries only the same command through sudo -n.
 
-## Template Macros
+FreeBSD example:
 
-| Macro | Default | Description |
-| --- | ---: | --- |
-| `{$DOVECOT.IMAP.CONN.WARN}` | `200` | Warning threshold for average active IMAP connections. |
-| `{$DOVECOT.IMAP.CONN.WARN.RECOVERY}` | `180` | Recovery threshold for IMAP warning connection trigger. |
-| `{$DOVECOT.IMAP.CONN.HIGH}` | `350` | High threshold for average active IMAP connections. |
-| `{$DOVECOT.IMAP.CONN.HIGH.RECOVERY}` | `320` | Recovery threshold for IMAP high connection trigger. |
-| `{$DOVECOT.POP3.CONN.WARN}` | `200` | Warning threshold for average active POP3 connections. |
-| `{$DOVECOT.POP3.CONN.WARN.RECOVERY}` | `180` | Recovery threshold for POP3 warning connection trigger. |
-| `{$DOVECOT.POP3.CONN.HIGH}` | `350` | High threshold for average active POP3 connections. |
-| `{$DOVECOT.POP3.CONN.HIGH.RECOVERY}` | `320` | Recovery threshold for POP3 high connection trigger. |
-| `{$DOVECOT.TOTAL.CONN.WARN}` | `350` | Warning threshold for average active IMAP and POP3 connections. |
-| `{$DOVECOT.TOTAL.CONN.WARN.RECOVERY}` | `320` | Recovery threshold for total connection warning trigger. |
-| `{$DOVECOT.TOTAL.CONN.HIGH}` | `600` | High threshold for average active IMAP and POP3 connections. |
-| `{$DOVECOT.TOTAL.CONN.HIGH.RECOVERY}` | `550` | Recovery threshold for total connection high trigger. |
-| `{$DOVECOT.SERVICE.RESPONSE.WARN}` | `2` | Warning threshold in seconds for TCP service response time. |
-| `{$DOVECOT.IMAP.ENABLED}` | `1` | Set to `0` to disable IMAP service availability triggers. |
-| `{$DOVECOT.IMAPS.ENABLED}` | `1` | Set to `0` to disable IMAPS service availability triggers. |
-| `{$DOVECOT.POP3.ENABLED}` | `1` | Set to `0` to disable POP3 service availability triggers. |
-| `{$DOVECOT.POP3S.ENABLED}` | `1` | Set to `0` to disable POP3S service availability triggers. |
-| `{$DOVECOT.IMAP.PORT}` | `143` | IMAP TCP port. |
-| `{$DOVECOT.IMAPS.PORT}` | `993` | IMAPS TCP port. |
-| `{$DOVECOT.POP3.PORT}` | `110` | POP3 TCP port. |
-| `{$DOVECOT.POP3S.PORT}` | `995` | POP3S TCP port. |
-| `{$DOVECOT.PROCESS.NAME}` | `dovecot` | Dovecot master process name used by `proc.num[]`. |
-| `{$DOVECOT.CONF.FILE}` | `/usr/local/etc/dovecot/dovecot.conf` | Main Dovecot configuration file to checksum. |
-| `{$DOVECOT.SQL.CONF.FILE}` | `/usr/local/etc/dovecot/dovecot-mysql.conf` | SQL authentication configuration file to checksum. |
+~~~text
+zabbix ALL=(root) NOPASSWD: /usr/local/bin/doveadm who -1
+~~~
 
-## Compatibility Notes
+Linux example:
 
-- `templates/7.0/Template_Dovecot_7.0.yaml` is the main template for version 2.0.0.
-- `templates/6.0/` is a placeholder until a Zabbix 6.0 export is validated.
-- `templates/8.0/Template_Dovecot_8.0.yaml` is available for Zabbix 8.0 import testing; validate in homologation before production use.
-- `legacy/zabbix-5.0/Template_App_Dovecot.xml` is kept as the version 1.0.0 legacy template.
-- `legacy/zabbix-5.0/dovecot_num_imap.sh`, `legacy/zabbix-5.0/dovecot_num_pop.sh`, and `legacy/zabbix-5.0/userparameter_dovecot_legacy.conf` preserve the `dovecot.imap` and `dovecot.pop` keys for Zabbix 5.0 deployments.
-- IMAPS and POP3S checks validate TCP connectivity only. They do not validate TLS negotiation or authentication.
+~~~text
+zabbix ALL=(root) NOPASSWD: /usr/bin/doveadm who -1
+~~~
+
+Do not replace these rules with unrestricted doveadm access and do not grant NOPASSWD permission to dovecot_stats.sh.
+
+See SECURITY.md for additional guidance.
+
+## Requirements
+
+- Zabbix 7.0 or 8.0 matching the chosen export.
+- Zabbix agent or agent 2 on the Dovecot host.
+- Dovecot with doveadm available.
+- POSIX shell and awk.
+- sudo only when the Zabbix user cannot query the Dovecot anvil socket directly.
+
+Common paths detected automatically:
+
+~~~text
+FreeBSD
+/usr/local/bin/doveadm
+/usr/local/sbin/dovecot
+
+Linux
+/usr/bin/doveadm
+/usr/sbin/dovecot
+~~~
+
+## Installation
+
+1. Install the collector:
+
+~~~sh
+install -o root -g wheel -m 0755 scripts/dovecot_stats.sh /usr/local/scripts/dovecot_stats.sh
+~~~
+
+On Linux, use the appropriate root group for the distribution.
+
+2. Install agent/userparameter_dovecot.conf in the Zabbix agent include directory.
+
+3. Test direct access first:
+
+~~~sh
+sudo -u zabbix /usr/local/bin/doveadm who -1
+~~~
+
+or on Linux:
+
+~~~sh
+sudo -u zabbix /usr/bin/doveadm who -1
+~~~
+
+4. Only if direct access fails because of socket permissions, install the matching sudoers example and validate it with visudo -cf.
+
+5. Restart the Zabbix agent.
+
+6. Validate the keys:
+
+~~~sh
+sudo -u zabbix zabbix_agentd -t dovecot.stats
+sudo -u zabbix zabbix_agentd -t dovecot.version
+sudo -u zabbix zabbix_agentd -t dovecot.collector.version
+~~~
+
+7. Import the matching YAML template and link Template App Dovecot to the host.
+
+## Service checks
+
+Plain IMAP and POP3 use protocol-aware Zabbix checks:
+
+~~~text
+net.tcp.service[imap,...]
+net.tcp.service[pop,...]
+~~~
+
+IMAPS and POP3S remain TCP-level checks because Zabbix agent service checks do not perform IMAPS/POP3S negotiation on ports 993/995.
+
+## Configuration checksum items
+
+The main and SQL configuration checksum items are preserved from 2.x.
+
+Do not weaken file permissions only to make a checksum item work. If the Zabbix agent cannot safely read a protected configuration file, disable that item for the host or use a deliberately designed integrity-monitoring method.
+
+## Compatibility
+
+| Component | Status |
+| --- | --- |
+| Zabbix 7.0 | Template export maintained |
+| Zabbix 8.0 | Template export maintained |
+| Zabbix 6.0 | Planned, not validated |
+| Dovecot 2.3 | Collector design compatible; validate on target host |
+| Dovecot 2.4 | Collector design compatible; validate on target host |
+| FreeBSD | Supported path layout |
+| Linux | Supported common path layout |
+
+## Upgrade from 2.x
+
+Version 3.0.0 reorganizes the project into scripts/ and agent/ directories and changes the sudo model. Existing template keys and UUIDs are preserved where practical so an import updates the template instead of creating parallel items.
+
+Read docs/MIGRATION-2.x-to-3.0.md before upgrading an existing host.
+
+## Validation
+
+Run:
+
+~~~sh
+sh -n scripts/dovecot_stats.sh
+sh tests/test_dovecot_stats.sh
+python3 tests/validate_templates.py
+~~~
+
+The Python validator requires PyYAML and is intended for development/CI only. The monitored host does not require Python.
+
+See docs/VALIDATION.md for the complete checklist.
+
+## License
+
+This project is licensed under the MIT License. See LICENSE.

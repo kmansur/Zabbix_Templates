@@ -4,6 +4,37 @@ Portuguese version: [CHANGELOG.pt-BR.md](CHANGELOG.pt-BR.md)
 
 All notable changes to this project are documented here.
 
+## 3.0.0 - Unreleased
+
+### Added
+
+- Added active IMAP/POP3 user count.
+- Added maximum active connections per user.
+- Added collector version monitoring.
+- Added FreeBSD and Linux least-privilege sudoers examples.
+- Added migration documentation from 2.x.
+- Added static template validation and expanded collector regression tests.
+- Added GitHub Actions validation for Dovecot changes.
+
+### Changed
+
+- Reworked the collector to run as the unprivileged Zabbix agent user.
+- Changed privilege escalation to the exact read-only command `doveadm who -1` only when direct access fails.
+- Added automatic detection for common FreeBSD and Linux Dovecot executable paths.
+- Changed plain IMAP and POP3 service checks from generic TCP to protocol-aware checks.
+- Kept IMAPS and POP3S as TCP checks because encrypted IMAP/POP3 service negotiation is not supported by the Zabbix agent service check.
+- Added response-time recovery hysteresis.
+- Reorganized current deployment files into `scripts/` and `agent/`.
+- Rewrote English and Brazilian Portuguese documentation for the 3.0 workflow.
+- Preserved existing template keys and UUIDs wherever practical to avoid unnecessary object recreation.
+
+### Security
+
+- Removed the requirement to execute the full collector script as root.
+- Documented that protected SQL/authentication file permissions must not be weakened for checksum monitoring.
+
+
+
 Documentation maintenance: when this English changelog is updated, update `CHANGELOG.pt-BR.md` in the same change.
 
 ## 2.0.0 - Unreleased

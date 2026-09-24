@@ -1,7 +1,7 @@
 # Dovecot Template for Zabbix 6.0
 
-Status: planned, not yet validated.
+Status: planned, not validated.
 
-This directory is reserved for a Zabbix 6.0-compatible Dovecot template export.
-Do not import the Zabbix 7.0 template into Zabbix 6.0 before validating the export format and trigger syntax in a Zabbix 6.0 test environment.
+Version 3.0.0 does not provide a Zabbix 6.0 export yet. Do not import the 7.0 or 8.0 export into Zabbix 6.0 without validating export format, preprocessing, and trigger syntax in a dedicated test environment.
 
+The collector and agent files are version-independent, but template compatibility must be validated separately.

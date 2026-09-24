@@ -1,0 +1,5 @@
+# Zabbix Dovecot monitoring - FreeBSD
+# Install with visudo -cf before enabling.
+#
+# Least privilege: allow only the exact read-only session query.
+zabbix ALL=(root) NOPASSWD: /usr/local/bin/doveadm who -1

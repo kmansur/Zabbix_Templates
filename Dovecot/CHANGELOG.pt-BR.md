@@ -6,6 +6,36 @@ Todas as alteracoes relevantes deste projeto sao documentadas aqui.
 
 Manutencao da documentacao: quando este changelog em portugues for atualizado, atualize tambem o `CHANGELOG.md`.
 
+## 3.0.0 - Não lançado
+
+### Adicionado
+
+- Contagem de usuários com sessões IMAP/POP3 ativas.
+- Maior quantidade de conexões ativas por usuário.
+- Monitoramento da versão do coletor.
+- Exemplos de sudoers com privilégio mínimo para FreeBSD e Linux.
+- Documentação de migração da versão 2.x.
+- Validação estática dos templates e ampliação dos testes de regressão.
+- Validação por GitHub Actions para alterações no Dovecot.
+
+### Alterado
+
+- O coletor passa a executar como usuário não privilegiado do Zabbix agent.
+- A elevação de privilégio fica limitada ao comando exato e somente leitura `doveadm who -1`, apenas quando o acesso direto falhar.
+- Adicionada detecção automática dos caminhos comuns de Dovecot em FreeBSD e Linux.
+- Checks de IMAP e POP3 sem TLS passam de TCP genérico para verificação do protocolo.
+- IMAPS e POP3S permanecem como checks TCP porque o service check do Zabbix agent não negocia IMAPS/POP3S.
+- Adicionada histerese de recuperação nos tempos de resposta.
+- Arquivos atuais de instalação reorganizados em `scripts/` e `agent/`.
+- Documentação em inglês e português do Brasil reescrita para o fluxo 3.0.
+- Keys e UUIDs existentes preservados sempre que possível para evitar recriação desnecessária de objetos.
+
+### Segurança
+
+- Removida a necessidade de executar o script coletor inteiro como root.
+- Documentado que permissões de arquivos SQL/autenticação protegidos não devem ser reduzidas para permitir checksum.
+
+
 ## 2.0.0 - Unreleased
 
 ### Adicionado

@@ -10,27 +10,27 @@ zabbix_export:
       description: |
         Template for monitoring Dovecot through Zabbix agent UserParameters.
         
-        Version: 2.0.0
-        Date: 2026-05-04
+        Version: 3.0.0
+        Date: 2026-09-24
         Vendor: Net Tech
         Author: Karim Mansur
         
         This version uses a JSON master item with dependent items for connection counters.
         The collector uses doveadm who -1 so every Dovecot connection is counted individually.
         
-        Main changes in 2.0.0:
-        - Added Zabbix 8.0 YAML template export.
-        - Added JSON master item dovecot.stats.
-        - Added dependent items for collector status, IMAP, POP3, and total connections.
-        - Added service availability checks for IMAP, IMAPS, POP3, and POP3S.
-        - Added Dovecot process count monitoring.
-        - Added service state value map.
-        - Added recovery macros for connection thresholds.
-        - Added graph for Dovecot connections.
+        Main changes in 3.0.0:
+        - Hardened collection with least-privilege execution and exact sudo command scope.
+        - Preserved the JSON master item and all existing monitoring keys/UUIDs.
+        - Added active user and maximum per-user connection metrics.
+        - Added protocol-aware IMAP and POP3 checks while keeping TCP checks for encrypted ports.
+        - Added portable FreeBSD/Linux collector path detection.
+        - Added collector version tracking.
+        - Added response-time recovery hysteresis.
+        - Expanded validation and regression testing.
         - Added graph for Dovecot service response time.
       vendor:
         name: 'Net Tech'
-        version: 2.0.0
+        version: 3.0.0
       groups:
         - name: Templates/Applications
       items:
@@ -73,6 +73,19 @@ zabbix_export:
                 - $.error
           master_item:
             key: dovecot.stats
+          tags:
+            - tag: component
+              value: collector
+        - uuid: 3bcd274f73fa36367efc8560dc449ae0
+          name: 'Dovecot collector version'
+          key: dovecot.collector.version
+          delay: 1h
+          history: 90d
+          value_type: CHAR
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1d
           tags:
             - tag: component
               value: collector
@@ -202,6 +215,36 @@ zabbix_export:
               tags:
                 - tag: scope
                   value: capacity
+        - uuid: 7b303d2f07b6217f5c3e7f1fa5931bb8
+          name: 'Dovecot active users'
+          type: DEPENDENT
+          key: dovecot.connections.users
+          history: 90d
+          units: '#'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.users
+          master_item:
+            key: dovecot.stats
+          tags:
+            - tag: component
+              value: connections
+        - uuid: 070ad5a681306bf98a9eb8ba9ecccd79
+          name: 'Dovecot maximum connections per user'
+          type: DEPENDENT
+          key: dovecot.connections.max_per_user
+          history: 90d
+          units: '#'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.max_user_connections
+          master_item:
+            key: dovecot.stats
+          tags:
+            - tag: component
+              value: connections
         - uuid: dfe360d0946145b3a583ad80897a8b43
           name: 'Dovecot stats raw'
           key: dovecot.stats
@@ -245,7 +288,7 @@ zabbix_export:
                   value: change
         - uuid: bb1e9d2df4cc40babb1fce85d32b5fe0
           name: 'Dovecot IMAP service response time'
-          key: 'net.tcp.service.perf[tcp,,{$DOVECOT.IMAP.PORT}]'
+          key: 'net.tcp.service.perf[imap,,{$DOVECOT.IMAP.PORT}]'
           history: 90d
           value_type: FLOAT
           units: s
@@ -256,11 +299,13 @@ zabbix_export:
               value: imap
           triggers:
             - uuid: 3d1d441933c849f8a03bc58ca143e1a6
-              expression: 'avg(/Template App Dovecot/net.tcp.service.perf[tcp,,{$DOVECOT.IMAP.PORT}],5m)>{$DOVECOT.SERVICE.RESPONSE.WARN} and {$DOVECOT.IMAP.ENABLED}=1'
+              expression: 'avg(/Template App Dovecot/net.tcp.service.perf[imap,,{$DOVECOT.IMAP.PORT}],5m)>{$DOVECOT.SERVICE.RESPONSE.WARN} and {$DOVECOT.IMAP.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Template App Dovecot/net.tcp.service.perf[imap,,{$DOVECOT.IMAP.PORT}],5m)<{$DOVECOT.SERVICE.RESPONSE.RECOVERY}'
               name: 'WARNING - Dovecot IMAP service response time is high'
               opdata: 'Current: {ITEM.LASTVALUE1}'
               priority: WARNING
-              description: 'Average IMAP TCP connection response time exceeded the warning threshold.'
+              description: 'Average IMAP protocol response time exceeded the warning threshold.'
               tags:
                 - tag: protocol
                   value: imap
@@ -280,6 +325,8 @@ zabbix_export:
           triggers:
             - uuid: 1b9cb4a69dc048d6a1058054331db54b
               expression: 'avg(/Template App Dovecot/net.tcp.service.perf[tcp,,{$DOVECOT.IMAPS.PORT}],5m)>{$DOVECOT.SERVICE.RESPONSE.WARN} and {$DOVECOT.IMAPS.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Template App Dovecot/net.tcp.service.perf[tcp,,{$DOVECOT.IMAPS.PORT}],5m)<{$DOVECOT.SERVICE.RESPONSE.RECOVERY}'
               name: 'WARNING - Dovecot IMAPS service response time is high'
               opdata: 'Current: {ITEM.LASTVALUE1}'
               priority: WARNING
@@ -291,7 +338,7 @@ zabbix_export:
                   value: performance
         - uuid: f473e3119959403e9f65baa711a46da2
           name: 'Dovecot POP3 service response time'
-          key: 'net.tcp.service.perf[tcp,,{$DOVECOT.POP3.PORT}]'
+          key: 'net.tcp.service.perf[pop,,{$DOVECOT.POP3.PORT}]'
           history: 90d
           value_type: FLOAT
           units: s
@@ -302,11 +349,13 @@ zabbix_export:
               value: pop3
           triggers:
             - uuid: 948c186f284b4f4482cf2fb3ccbf0a2c
-              expression: 'avg(/Template App Dovecot/net.tcp.service.perf[tcp,,{$DOVECOT.POP3.PORT}],5m)>{$DOVECOT.SERVICE.RESPONSE.WARN} and {$DOVECOT.POP3.ENABLED}=1'
+              expression: 'avg(/Template App Dovecot/net.tcp.service.perf[pop,,{$DOVECOT.POP3.PORT}],5m)>{$DOVECOT.SERVICE.RESPONSE.WARN} and {$DOVECOT.POP3.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Template App Dovecot/net.tcp.service.perf[pop,,{$DOVECOT.POP3.PORT}],5m)<{$DOVECOT.SERVICE.RESPONSE.RECOVERY}'
               name: 'WARNING - Dovecot POP3 service response time is high'
               opdata: 'Current: {ITEM.LASTVALUE1}'
               priority: WARNING
-              description: 'Average POP3 TCP connection response time exceeded the warning threshold.'
+              description: 'Average POP3 protocol response time exceeded the warning threshold.'
               tags:
                 - tag: protocol
                   value: pop3
@@ -326,6 +375,8 @@ zabbix_export:
           triggers:
             - uuid: b87a23d22d1747c385af920a1972317d
               expression: 'avg(/Template App Dovecot/net.tcp.service.perf[tcp,,{$DOVECOT.POP3S.PORT}],5m)>{$DOVECOT.SERVICE.RESPONSE.WARN} and {$DOVECOT.POP3S.ENABLED}=1'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/Template App Dovecot/net.tcp.service.perf[tcp,,{$DOVECOT.POP3S.PORT}],5m)<{$DOVECOT.SERVICE.RESPONSE.RECOVERY}'
               name: 'WARNING - Dovecot POP3S service response time is high'
               opdata: 'Current: {ITEM.LASTVALUE1}'
               priority: WARNING
@@ -337,7 +388,7 @@ zabbix_export:
                   value: performance
         - uuid: 1521026587694b47a2fb9b02a13ef87f
           name: 'Dovecot IMAP service is running'
-          key: 'net.tcp.service[tcp,,{$DOVECOT.IMAP.PORT}]'
+          key: 'net.tcp.service[imap,,{$DOVECOT.IMAP.PORT}]'
           delay: 30s
           history: 90d
           valuemap:
@@ -349,11 +400,11 @@ zabbix_export:
               value: imap
           triggers:
             - uuid: 4e69b892fe7748f99acca812d7e291ed
-              expression: 'max(/Template App Dovecot/net.tcp.service[tcp,,{$DOVECOT.IMAP.PORT}],3m)=0 and {$DOVECOT.IMAP.ENABLED}=1'
+              expression: 'max(/Template App Dovecot/net.tcp.service[imap,,{$DOVECOT.IMAP.PORT}],3m)=0 and {$DOVECOT.IMAP.ENABLED}=1'
               name: 'PROBLEM - Dovecot IMAP service is down'
               opdata: 'Current: {ITEM.LASTVALUE1}'
               priority: HIGH
-              description: 'IMAP TCP service check failed for the full evaluation window. For TLS ports, this validates TCP connectivity only.'
+              description: 'IMAP protocol check failed for the full evaluation window.'
               tags:
                 - tag: protocol
                   value: imap
@@ -385,7 +436,7 @@ zabbix_export:
                   value: availability
         - uuid: 481a6de1eaff472b991ce1d30168058a
           name: 'Dovecot POP3 service is running'
-          key: 'net.tcp.service[tcp,,{$DOVECOT.POP3.PORT}]'
+          key: 'net.tcp.service[pop,,{$DOVECOT.POP3.PORT}]'
           delay: 30s
           history: 90d
           valuemap:
@@ -397,11 +448,11 @@ zabbix_export:
               value: pop3
           triggers:
             - uuid: 2f6fee30f7944d4ca5657d59416f8f89
-              expression: 'max(/Template App Dovecot/net.tcp.service[tcp,,{$DOVECOT.POP3.PORT}],3m)=0 and {$DOVECOT.POP3.ENABLED}=1'
+              expression: 'max(/Template App Dovecot/net.tcp.service[pop,,{$DOVECOT.POP3.PORT}],3m)=0 and {$DOVECOT.POP3.ENABLED}=1'
               name: 'PROBLEM - Dovecot POP3 service is down'
               opdata: 'Current: {ITEM.LASTVALUE1}'
               priority: HIGH
-              description: 'POP3 TCP service check failed for the full evaluation window. For TLS ports, this validates TCP connectivity only.'
+              description: 'POP3 protocol check failed for the full evaluation window.'
               tags:
                 - tag: protocol
                   value: pop3
@@ -512,6 +563,9 @@ zabbix_export:
         - macro: '{$DOVECOT.IMAP.CONN.WARN.RECOVERY}'
           value: '180'
           description: 'Recovery threshold for IMAP warning connection trigger.'
+        - macro: '{$DOVECOT.SERVICE.RESPONSE.RECOVERY}'
+          value: '1.5'
+          description: 'Recovery threshold in seconds for service response-time triggers.'
         - macro: '{$DOVECOT.IMAP.ENABLED}'
           value: '1'
           description: 'Set to 0 to disable IMAP service availability triggers.'
@@ -596,6 +650,16 @@ zabbix_export:
           item:
             host: 'Template App Dovecot'
             key: dovecot.connections.total
+        - sortorder: '4'
+          color: 6C59DC
+          item:
+            host: 'Template App Dovecot'
+            key: dovecot.connections.users
+        - sortorder: '5'
+          color: C7A72D
+          item:
+            host: 'Template App Dovecot'
+            key: dovecot.connections.max_per_user
     - uuid: 8703031bf5224c21b02fa6f76ddc99a0
       name: 'Dovecot service response time'
       graph_items:
@@ -603,7 +667,7 @@ zabbix_export:
           color: 199C0D
           item:
             host: 'Template App Dovecot'
-            key: 'net.tcp.service.perf[tcp,,{$DOVECOT.IMAP.PORT}]'
+            key: 'net.tcp.service.perf[imap,,{$DOVECOT.IMAP.PORT}]'
         - sortorder: '2'
           color: F63100
           item:
@@ -613,7 +677,7 @@ zabbix_export:
           color: 2774A4
           item:
             host: 'Template App Dovecot'
-            key: 'net.tcp.service.perf[tcp,,{$DOVECOT.POP3.PORT}]'
+            key: 'net.tcp.service.perf[pop,,{$DOVECOT.POP3.PORT}]'
         - sortorder: '4'
           color: F7941D
           item:
